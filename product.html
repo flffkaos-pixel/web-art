@@ -20,24 +20,31 @@
     </div>
     <div class="controls-hint">Drag to rotate • Scroll to zoom</div>
     <div id="error"></div>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/0.160.0/three.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/three@0.160.0/examples/js/controls/OrbitControls.js"></script>
-    <script>
-        window.onload = function() {
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+                "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+            }
+        }
+    </script>
+    <script type="module">
+        import * as THREE from 'three';
+        import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+        window.onload = async function() {
             const errorDiv = document.getElementById('error');
             try {
-                if (typeof THREE === 'undefined') throw new Error("Three.js library failed to load from CDN.");
-
                 const scene = new THREE.Scene();
                 const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
                 const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
                 renderer.setSize(window.innerWidth, window.innerHeight);
-                renderer.setPixelRatio(window.devicePixelRatio);
+                renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
                 renderer.toneMapping = THREE.ACESFilmicToneMapping;
                 renderer.toneMappingExposure = 1.2;
                 document.body.appendChild(renderer.domElement);
 
-                const controls = new THREE.OrbitControls(camera, renderer.domElement);
+                const controls = new OrbitControls(camera, renderer.domElement);
                 controls.enableDamping = true;
                 camera.position.set(3, 2, 5);
 
@@ -80,7 +87,6 @@
             } catch(e) {
                 errorDiv.style.display = 'flex';
                 errorDiv.innerText = "CRITICAL ERROR: " + e.message;
-                console.error(e);
             }
         };
     </script>
