@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VISUAL PORTFOLIO | High-End Experience</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@200;400;700&display=swap');
+        
+        body { 
+            margin: 0; 
+            background: #050505; 
+            color: white; 
+            font-family: 'Inter', sans-serif; 
+            overflow-x: hidden;
+            scroll-behavior: smooth;
+        }
+
+        .hero {
+            height: 100vh; 
+            display: flex; 
+            flex-direction: column; 
+            justify-content: center; 
+            align-items: center;
+            text-align: center; 
+            background: radial-gradient(circle at center, #111 0%, #000 100%);
+            position: relative;
+        }
+
+        h1 { 
+            font-size: clamp(3rem, 10vw, 6rem); 
+            font-weight: 200; 
+            letter-spacing: 15px; 
+            text-transform: uppercase; 
+            margin: 0; 
+            background: linear-gradient(to bottom, #fff 30%, #444 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            animation: fadeIn 2s ease-out;
+        }
+
+        p.subtitle { 
+            font-size: 1.2rem; 
+            opacity: 0.5; 
+            max-width: 700px; 
+            margin-top: 20px; 
+            line-height: 1.6;
+            font-weight: 200;
+            animation: fadeIn 3s ease-out;
+        }
+
+        .grid-container {
+            padding: 100px 40px;
+            max-width: 1300px;
+            margin: 0 auto;
+        }
+
+        .grid {
+            display: grid; 
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 30px; 
+        }
+
+        .card {
+            position: relative; 
+            height: 500px; 
+            background: #0a0a0a; 
+            border: 1px solid #222;
+            border-radius: 24px; 
+            overflow: hidden; 
+            cursor: pointer; 
+            transition: all 0.5s cubic-bezier(0.23, 1, 0.32, 1);
+            display: flex; 
+            flex-direction: column; 
+            justify-content: flex-end; 
+            padding: 40px;
+            text-decoration: none;
+            color: white;
+        }
+
+        .card:hover { 
+            border-color: #555; 
+            transform: translateY(-15px) scale(1.02); 
+            background: #111;
+            box-shadow: 0 30px 60px rgba(0,0,0,0.5);
+        }
+
+        .card h2 { 
+            font-size: 2rem; 
+            margin: 0; 
+            font-weight: 300; 
+            letter-spacing: 2px;
+            transition: transform 0.3s ease;
+        }
+
+        .card:hover h2 {
+            transform: translateX(10px);
+        }
+
+        .card span.category { 
+            font-size: 0.8rem; 
+            opacity: 0.4; 
+            margin-bottom: 10px; 
+            display: block; 
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        .tag {
+            position: absolute; 
+            top: 30px; 
+            right: 30px; 
+            font-size: 0.7rem;
+            padding: 6px 12px; 
+            border: 1px solid #333; 
+            border-radius: 30px; 
+            opacity: 0.6;
+            background: rgba(255,255,255,0.05);
+            backdrop-filter: blur(5px);
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .scroll-indicator {
+            position: absolute; bottom: 30px;
+            width: 2px; height: 50px; background: linear-gradient(to bottom, transparent, #fff);
+            animation: scrollMove 2s infinite;
+        }
+
+        @keyframes scrollMove {
+            0% { transform: translateY(0); opacity: 0; }
+            50% { opacity: 1; }
+            100% { transform: translateY(20px); opacity: 0; }
+        }
+    </style>
+</head>
+<body>
+    <div class="hero">
+        <h1>VISUAL GALLERY</h1>
+        <p class="subtitle">WebGPU & High-End Shaders.<br>우리는 웹에서 가능한 가장 압도적인 시각적 경험을 설계합니다.</p>
+        <div class="scroll-indicator"></div>
+    </div>
+
+    <div class="grid-container">
+        <div class="grid">
+            <a href="./ocean/index.html" class="card">
+                <span class="tag">WebGPU / FFT</span>
+                <span class="category">Oceanic Flow</span>
+                <h2>Real-time FFT Ocean</h2>
+            </a>
+            <a href="./particles/index.html" class="card">
+                <span class="tag">GPU Particles</span>
+                <span class="category">Cosmic Dust</span>
+                <h2>Nebula Particle System</h2>
+            </a>
+            <a href="./product/index.html" class="card">
+                <span class="tag">PBR Material</span>
+                <span class="category">Luxury Chrome</span>
+                <h2>High-End Product Viewer</h2>
+            </a>
+        </div>
+    </div>
+</body>
+</html>
