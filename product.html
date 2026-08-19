@@ -44,44 +44,80 @@
     <script type="module">
         import * as THREE from 'three';
         import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+        import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 
         window.onload = async function() {
             const errorDiv = document.getElementById('error');
             try {
                 const scene = new THREE.Scene();
+                scene.background = new THREE.Color(0x0a0a0f);
                 const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
                 const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
                 renderer.setSize(window.innerWidth, window.innerHeight);
                 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
                 renderer.toneMapping = THREE.ACESFilmicToneMapping;
-                renderer.toneMappingExposure = 1.2;
+                renderer.toneMappingExposure = 1.1;
+                renderer.shadowMap.enabled = true;
+                renderer.shadowMap.type = THREE.PCFSoftShadowMap;
                 document.body.appendChild(renderer.domElement);
 
                 const controls = new OrbitControls(camera, renderer.domElement);
                 controls.enableDamping = true;
                 camera.position.set(3, 2, 5);
 
-                const ambientLight = new THREE.AmbientLight(0xffffff, 0.3);
+                // Premium studio IBL so chrome reflects a bright room instead of blackness
+                const pmrem = new THREE.PMREMGenerator(renderer);
+                const envTex = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
+                scene.environment = envTex;
+
+                // --- Studio 3-point lighting (pin lights) ---
+                // Key light: warm, from front-right, tight cone like a spotlight
+                const keyLight = new THREE.SpotLight(0xfff2e0, 300);
+                keyLight.position.set(4, 6, 5);
+                keyLight.angle = 0.25;
+                keyLight.penumbra = 0.6;
+                keyLight.decay = 1.5;
+                keyLight.distance = 30;
+                keyLight.castShadow = true;
+                keyLight.shadow.mapSize.set(1024, 1024);
+                keyLight.target.position.set(0, 0, 0);
+                scene.add(keyLight, keyLight.target);
+
+                // Fill light: cool, soft, from front-left to lift shadows
+                const fillLight = new THREE.PointLight(0x88aaff, 120);
+                fillLight.position.set(-5, 1, 4);
+                fillLight.decay = 2;
+                scene.add(fillLight);
+
+                // Rim/back light: cyan accent to carve the silhouette
+                const rimLight = new THREE.PointLight(0x33e0ff, 200);
+                rimLight.position.set(-2, 3, -5);
+                rimLight.decay = 2;
+                scene.add(rimLight);
+
+                // Top accent pin
+                const topLight = new THREE.SpotLight(0xffffff, 150);
+                topLight.position.set(0, 8, 0);
+                topLight.angle = 0.4;
+                topLight.penumbra = 0.7;
+                topLight.decay = 1.5;
+                scene.add(topLight, topLight.target);
+
+                const ambientLight = new THREE.AmbientLight(0x223355, 0.5);
                 scene.add(ambientLight);
-                const spotLight = new THREE.SpotLight(0xffffff, 50);
-                spotLight.position.set(5, 10, 5);
-                spotLight.angle = 0.3;
-                spotLight.penumbra = 0.5;
-                scene.add(spotLight);
-                const blueLight = new THREE.PointLight(0x0066ff, 20);
-                blueLight.position.set(-5, 2, -2);
-                scene.add(blueLight);
 
                 const geometry = new THREE.TorusKnotGeometry(1, 0.3, 200, 32);
                 const material = new THREE.MeshStandardMaterial({ color: 0xffffff, metalness: 1.0, roughness: 0.05 });
                 const product = new THREE.Mesh(geometry, material);
+                product.castShadow = true;
                 scene.add(product);
 
                 const floorGeo = new THREE.PlaneGeometry(20, 20);
-                const floorMat = new THREE.MeshStandardMaterial({ color: 0x111111, roughness: 0.1, metalness: 0.5 });
+                const floorMat = new THREE.MeshStandardMaterial({ color: 0x14141a, roughness: 0.15, metalness: 0.9, envMapIntensity: 0.8 });
                 const floor = new THREE.Mesh(floorGeo, floorMat);
                 floor.rotation.x = -Math.PI / 2;
                 floor.position.y = -1.5;
+                floor.receiveShadow = true;
                 scene.add(floor);
 
                 function animate() {
