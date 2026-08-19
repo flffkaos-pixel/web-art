@@ -1139,6 +1139,161 @@ void main(){
 });
 
 /* ══════════════════════════════════════════════════════════════════════
+   FOLIAGE — gaia-style wind-swept grass + dryad-style palm trees
+   (both instanced, sky-lit exactly like the terrain/buoys)
+   ══════════════════════════════════════════════════════════════════════ */
+const foliageMats = [];
+function makeFoliageMat(albedo){
+  const m = new THREE.RawShaderMaterial({
+    glslVersion: THREE.GLSL3, side: THREE.DoubleSide,
+    uniforms: mix2(SKY_U, { uCamPos:{value:new THREE.Vector3()}, uSunColor:{value:SUN.color}, uTime:{value:0} }),
+    vertexShader: `${GL_HEAD}
+in vec3 position; in vec3 normal; in mat4 instanceMatrix; in vec3 instanceColor;
+uniform mat4 projectionMatrix, viewMatrix;
+uniform float uTime;
+out vec3 vW; out vec3 vN; out vec3 vC;
+void main(){
+  vec3 inst = (instanceMatrix*vec4(0,0,0,1)).xyz;
+  vec3 p = position;
+  float bend = smoothstep(0.0, 1.0, position.y);
+  float wind = sin(uTime*1.8 + inst.x*0.35 + inst.z*0.28)*0.22
+             + cos(uTime*1.3 + inst.z*0.22)*0.12;
+  p.x += wind*bend*0.30;
+  p.z += wind*bend*0.16;
+  vec4 wp = instanceMatrix*vec4(p, 1.0);
+  vW = wp.xyz;
+  vN = normalize(mat3(instanceMatrix)*normal);
+  vC = instanceColor;
+  gl_Position = projectionMatrix*viewMatrix*wp;
+}`,
+    fragmentShader: `${GL_HEAD}${GL_SKY}
+in vec3 vW; in vec3 vN; in vec3 vC;
+uniform vec3 uCamPos, uSunColor;
+layout(location=0) out vec4 oC;
+void main(){
+  vec3 N = normalize(vN);
+  float ndl = sat(dot(N, uSunDir));
+  vec3 amb = skyRadiance(normalize(N*0.6 + vec3(0.0,1.0,0.0)))*1.1;
+  vec3 col = vC*(uSunColor*ndl*0.9 + amb*0.75);
+  oC = vec4(min(col, vec3(900.0)), 1.0);
+}`
+  });
+  foliageMats.push(m);
+  return m;
+}
+
+/* ── grass blades (gaia) ── */
+const GRASS_COUNT = 3500;
+const bladeGeo = new THREE.BufferGeometry();
+{
+  const w = 0.07, h = 1.0;
+  const pos = new Float32Array([
+    -w/2, 0, 0,    w/2, 0, 0,
+    -w/2, h*0.6,   w*0.35,   w/2, h*0.6, w*0.35,
+    -w*0.25, h,    w*0.6,    w*0.25, h, w*0.6
+  ]);
+  const idx = [0,1,2, 1,3,2, 2,3,4, 3,5,4];
+  const nor = new Float32Array(pos.length);
+  for (let i = 0; i < pos.length; i += 3) nor[i+1] = 1.0;
+  bladeGeo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+  bladeGeo.setAttribute('normal',   new THREE.BufferAttribute(nor, 3));
+  bladeGeo.setIndex(idx);
+}
+const grassMat = makeFoliageMat(0x3f8f3a);
+const grassMesh = new THREE.InstancedMesh(bladeGeo, grassMat, GRASS_COUNT);
+grassMesh.frustumCulled = false;
+{
+  const dummy = new THREE.Object3D();
+  const c = new THREE.Color();
+  let placed = 0, guard = 0;
+  while (placed < GRASS_COUNT && guard++ < GRASS_COUNT*60){
+    const a = Math.random()*Math.PI*2;
+    const r = 150 + Math.random()*250;                 // island slopes
+    const x = Math.cos(a)*r, z = Math.sin(a)*r;
+    const h = terrainH(x, z);
+    if (h < 8.0 || h > 17.5) continue;                 // grass band
+    const e = 3.0;
+    const sx = terrainH(x+e,z) - terrainH(x-e,z);
+    const sz = terrainH(x,z+e) - terrainH(x,z-e);
+    if (sx*sx + sz*sz > 0.9) continue;                 // skip steep rock
+    dummy.position.set(x, h + 0.05, z);
+    dummy.rotation.set(0, Math.random()*Math.PI*2, 0);
+    const s = 0.7 + Math.random()*1.3;
+    dummy.scale.set(s, s*0.85, s);
+    dummy.updateMatrix();
+    grassMesh.setMatrixAt(placed, dummy.matrix);
+    c.setHSL(0.27 + Math.random()*0.07, 0.55 + Math.random()*0.25, 0.30 + Math.random()*0.20);
+    grassMesh.setColorAt(placed, c);
+    placed++;
+  }
+  grassMesh.count = placed;
+}
+
+/* ── palm trees (dryad) ── */
+function makeLeafGeo(){
+  const len = 3.0, w = 0.55, seg = 8;
+  const pos = [], idx = [];
+  for (let i = 0; i <= seg; i++){
+    const t = i/seg;
+    const x = t*len;
+    const y = -Math.sin(t*Math.PI*0.5)*1.5;            // droop
+    const ww = w*(1 - t*0.82);
+    pos.push(x, y+ww, 0, x, y-ww, 0);
+  }
+  for (let i = 0; i < seg; i++){
+    const a = i*2, b = i*2+1, c = i*2+2, d = i*2+3;
+    idx.push(a,c,b, b,c,d);
+  }
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+  geo.setIndex(idx);
+  geo.computeVertexNormals();
+  return geo;
+}
+const PALM_COUNT = 22, FRONDS = 9;
+const trunkGeo = new THREE.CylinderGeometry(0.16, 0.34, 5.2, 7);
+const leafGeo  = makeLeafGeo();
+const trunkMat = makeFoliageMat(0x7a5a3c);
+const leafMat  = makeFoliageMat(0x2f7a33);
+const trunkMesh = new THREE.InstancedMesh(trunkGeo, trunkMat, PALM_COUNT);
+const leafMesh  = new THREE.InstancedMesh(leafGeo,  leafMat,  PALM_COUNT*FRONDS);
+trunkMesh.frustumCulled = false;
+leafMesh.frustumCulled = false;
+{
+  const dummy = new THREE.Object3D();
+  const c = new THREE.Color();
+  let placed = 0, guard = 0;
+  while (placed < PALM_COUNT && guard++ < PALM_COUNT*80){
+    const a = Math.random()*Math.PI*2;
+    const r = 175 + Math.random()*160;                 // beach ring
+    const x = Math.cos(a)*r, z = Math.sin(a)*r;
+    const h = terrainH(x, z);
+    if (h < 1.2 || h > 7.0) continue;
+    const s = 0.8 + Math.random()*0.55;
+    dummy.position.set(x, h, z);
+    dummy.rotation.set((Math.random()-0.5)*0.12, Math.random()*Math.PI*2, (Math.random()-0.5)*0.12);
+    dummy.scale.set(s, s, s);
+    dummy.updateMatrix();
+    trunkMesh.setMatrixAt(placed, dummy.matrix);
+    c.setHSL(0.07 + Math.random()*0.03, 0.35, 0.30 + Math.random()*0.10);
+    trunkMesh.setColorAt(placed, c);
+    const top = h + s*5.2;
+    for (let f = 0; f < FRONDS; f++){
+      dummy.position.set(x, top, z);
+      dummy.rotation.set(0, (f/FRONDS)*Math.PI*2, 0);
+      dummy.scale.set(s, s, s);
+      dummy.updateMatrix();
+      leafMesh.setMatrixAt(placed*FRONDS + f, dummy.matrix);
+      c.setHSL(0.27 + Math.random()*0.08, 0.5 + Math.random()*0.3, 0.26 + Math.random()*0.2);
+      leafMesh.setColorAt(placed*FRONDS + f, c);
+    }
+    placed++;
+  }
+  trunkMesh.count = placed;
+  leafMesh.count  = placed*FRONDS;
+}
+
+/* ══════════════════════════════════════════════════════════════════════
    OCEAN — camera-centred exponential radial grid (crack-free, to horizon)
    ══════════════════════════════════════════════════════════════════════ */
 step('building ocean grid…');
@@ -1442,6 +1597,7 @@ const sceneA = new THREE.Scene();          // sky + island + buoys
 sceneA.add(skyMesh, terrainMesh);
 buoyMeshes.forEach(b => sceneA.add(b));
 sceneA.add(sprayMesh);                     // + spray particles (Poseidon)
+sceneA.add(grassMesh, trunkMesh, leafMesh); // + foliage (gaia grass + dryad palms)
 const sceneO = new THREE.Scene();          // water surface
 sceneO.add(oceanMesh);
 
@@ -1615,6 +1771,10 @@ function syncUniforms(t){
   oceanU.uCamPos.value.copy(cp);
   oceanU.uTime.value = t;
   buoyMeshes.forEach(m => m.material.uniforms.uCamPos.value.copy(cp));
+  foliageMats.forEach(m => {
+    m.uniforms.uCamPos.value.copy(cp);
+    m.uniforms.uTime.value = t;
+  });
 
   const inv = 1.0/Math.max(0.15, P.clarity);
   oceanU.uAbsorb.value.set(P.absorbR*inv, P.absorbG*inv, P.absorbB*inv);
