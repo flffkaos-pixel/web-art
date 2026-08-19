@@ -37,7 +37,7 @@
         text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
       }
 
-      /* Loading overlay ??shown immediately (in markup) so the boot is never a black screen.
+      /* Loading overlay — shown immediately (in markup) so the boot is never a black screen.
          The spinner is a CSS animation (runs on the compositor, so it keeps spinning even
          while the main thread is blocked baking the planet). main.ts updates the bar/text
          at load milestones and fades this out on the first rendered frame. */
@@ -102,7 +102,7 @@
     <div id="loading">
       <div class="loading-inner">
         <div class="spinner"></div>
-        <div id="loading-text">Generating planet??/div>
+        <div id="loading-text">Generating planet…</div>
         <div class="loading-track"><div id="loading-bar"></div></div>
       </div>
     </div>
