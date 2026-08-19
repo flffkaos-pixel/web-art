@@ -11,6 +11,13 @@
         p { font-size: 0.9rem; opacity: 0.6; margin-top: 10px; }
         .controls-hint { position: absolute; bottom: 40px; left: 50%; transform: translateX(-50%); font-size: 0.8rem; opacity: 0.4; text-transform: uppercase; letter-spacing: 2px; }
         #error { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); display: none; justify-content: center; align-items: center; z-index: 100; color: red; font-family: monospace; padding: 20px; text-align: center; }
+        #side-spec { position: fixed; right: 34px; top: 50%; z-index: 10; display: flex; min-height: 242px; transform: translateY(-50%); flex-direction: column; justify-content: space-between; align-items: flex-end; color: rgba(255,223,181,.76); font-size: 9px; letter-spacing: .14em; text-transform: uppercase; pointer-events: none; }
+        #side-spec::before { content: ''; position: absolute; right: 4px; top: 34px; bottom: 34px; width: 1px; background: linear-gradient(transparent, rgba(255,211,150,.85), transparent); }
+        #side-spec .spec-title { writing-mode: vertical-rl; transform: rotate(180deg); }
+        #side-spec .spec-dot { position: relative; right: 1px; width: 9px; height: 9px; border: 1px solid currentColor; border-radius: 50%; background: radial-gradient(circle, #fff6e9 0 25%, transparent 31%); box-shadow: 0 0 15px rgba(255,204,135,.55); }
+        #side-spec .spec-bar { position: relative; right: 1px; width: 18px; height: 2px; background: linear-gradient(90deg, transparent, currentColor); box-shadow: 0 6px 0 rgba(255,224,180,.52), 0 12px 0 rgba(255,224,180,.26); }
+        #side-spec .spec-code { font-size: 8px; color: rgba(232,199,161,.58); writing-mode: vertical-rl; }
+        @media (max-width: 640px) { #ui { top: 24px; left: 24px; } .controls-hint { bottom: 22px; width: 100%; text-align: center; } #side-spec { right: 17px; min-height: 158px; font-size: 7px; } #side-spec::before { top: 25px; bottom: 25px; } }
     </style>
 </head>
 <body>
@@ -19,6 +26,12 @@
         <p>High-End PBR Material Study</p>
     </div>
     <div class="controls-hint">Drag to rotate • Scroll to zoom</div>
+    <aside id="side-spec" aria-hidden="true">
+        <span class="spec-title">material profile</span>
+        <span class="spec-dot"></span>
+        <span class="spec-bar"></span>
+        <span class="spec-code">R 0.05 / M 1.00</span>
+    </aside>
     <div id="error"></div>
     <script type="importmap">
         {
