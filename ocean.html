@@ -1360,10 +1360,88 @@ void main(){
 const oceanMesh = new THREE.Mesh(oceanGeo, oceanMat);
 oceanMesh.frustumCulled = false;
 
+/* ══════════════════════════════════════════════════════════════════════
+   SPRAY PARTICLES — ported from Poseidon (ballistic droplets off crests)
+   ══════════════════════════════════════════════════════════════════════ */
+const SPRAY_MAX = 4000;
+const spray = {
+  pos:  new Float32Array(SPRAY_MAX*3),
+  vel:  new Float32Array(SPRAY_MAX*3),
+  life: new Float32Array(SPRAY_MAX),
+  mlife:new Float32Array(SPRAY_MAX),
+  next: 0,
+  gravity: -9.81,
+  wind: new THREE.Vector3(0.45, 0, 0.35)
+};
+for (let i = 0; i < SPRAY_MAX; i++) spray.pos[i*3+1] = -9999;   // park unused
+function spawnSpray(x, y, z, nx, ny, nz, vel){
+  const i = spray.next; spray.next = (spray.next + 1) % SPRAY_MAX;
+  spray.pos[i*3]=x; spray.pos[i*3+1]=y; spray.pos[i*3+2]=z;
+  const v = vel*(0.4 + Math.random()*0.8);
+  spray.vel[i*3]   = nx*v + spray.wind.x*(0.3 + Math.random()*0.3);
+  spray.vel[i*3+1] = ny*v + Math.random()*0.6;
+  spray.vel[i*3+2] = nz*v + spray.wind.z*(0.3 + Math.random()*0.3);
+  spray.life[i] = 1; spray.mlife[i] = 0.5 + Math.random()*0.9;
+}
+/* drop droplets wherever the animated shoreline foam is breaking */
+function spawnSprayFromShore(t, dt){
+  const n = Math.min(8, Math.ceil(dt*140));
+  for (let k = 0; k < n; k++){
+    const ang = Math.random()*Math.PI*2;
+    const rad = 150 + Math.random()*160;
+    const x = Math.cos(ang)*rad, z = Math.sin(ang)*rad;
+    const bed = terrainH(x, z);
+    const wd  = Math.max(0.0, -bed);                 // water depth above the bed
+    const shore = 1.0 - sstep(0.0, 2.6, wd);
+    const anim = 0.5 + 0.5*Math.sin(wd*2.7 - t*1.7 + fbmJs(x*0.22, z*0.22, 3)*7.0);
+    const st = shore*anim;
+    if (st > 0.5 && Math.random() < st*0.6){
+      const nx = (Math.random()-0.5)*0.3, nz = (Math.random()-0.5)*0.3;
+      for (let d = 0; d < 3; d++)
+        spawnSpray(x+(Math.random()-0.5)*3.0, 0.3+Math.random()*2.5, z+(Math.random()-0.5)*3.0,
+                   nx, 1.0, nz, 6.0 + Math.random()*5.0);
+    }
+  }
+}
+const sprayGeoPos = new Float32Array(SPRAY_MAX*3);
+const sprayGeoCol = new Float32Array(SPRAY_MAX*3);
+for (let i = 0; i < SPRAY_MAX; i++){ sprayGeoPos[i*3+1] = -9999; sprayGeoCol[i*3] = 1; sprayGeoCol[i*3+1] = 1; sprayGeoCol[i*3+2] = 1; }
+const sprayGeo = new THREE.BufferGeometry();
+sprayGeo.setAttribute('position', new THREE.BufferAttribute(sprayGeoPos, 3));
+sprayGeo.setAttribute('color',   new THREE.BufferAttribute(sprayGeoCol, 3));
+const sprayMat = new THREE.PointsMaterial({
+  size: 0.85, vertexColors: true, transparent: true, opacity: 0.85,
+  depthWrite: false, blending: THREE.AdditiveBlending
+});
+const sprayMesh = new THREE.Points(sprayGeo, sprayMat);
+sprayMesh.frustumCulled = false;
+
+function updateSpray(dt){
+  const p = spray.pos, v = spray.vel, L = spray.life, M = spray.mlife;
+  const g = spray.gravity;
+  for (let i = 0; i < SPRAY_MAX; i++){
+    if (L[i] <= 0) continue;
+    L[i] -= dt;
+    v[i*3+1] += g*dt;
+    v[i*3]   += (spray.wind.x - v[i*3])*0.3*dt;
+    v[i*3+2] += (spray.wind.z - v[i*3+2])*0.3*dt;
+    p[i*3]   += v[i*3]*dt; p[i*3+1] += v[i*3+1]*dt; p[i*3+2] += v[i*3+2]*dt;
+    if (p[i*3+1] < 0.05 && v[i*3+1] < 0){            // splash on the waterline
+      v[i*3+1] *= -0.25; v[i*3] *= 0.6; v[i*3+2] *= 0.6;
+    }
+    sprayGeoPos[i*3]=p[i*3]; sprayGeoPos[i*3+1]=p[i*3+1]; sprayGeoPos[i*3+2]=p[i*3+2];
+    const a = Math.max(0, L[i]/M[i]);
+    sprayGeoCol[i*3]=a; sprayGeoCol[i*3+1]=a; sprayGeoCol[i*3+2]=a;
+  }
+  sprayGeo.attributes.position.needsUpdate = true;
+  sprayGeo.attributes.color.needsUpdate = true;
+}
+
 /* scenes */
 const sceneA = new THREE.Scene();          // sky + island + buoys
 sceneA.add(skyMesh, terrainMesh);
 buoyMeshes.forEach(b => sceneA.add(b));
+sceneA.add(sprayMesh);                     // + spray particles (Poseidon)
 const sceneO = new THREE.Scene();          // water surface
 sceneO.add(oceanMesh);
 
@@ -1727,6 +1805,10 @@ function loop(now){
   /* ---- ocean simulation ---- */
   simulate(simTime, dt);
   for (let c = 0; c < CASC; c++) oceanU['uF'+c].value = foamRT[c][foamIdx].texture;
+
+  /* ---- spray particles (Poseidon) ---- */
+  spawnSprayFromShore(simTime, dt);
+  updateSpray(dt);
 
   /* ---- water-height probe under the camera (for the underwater state) ---- */
   probePass.u.uPos.value.set(camera.position.x, camera.position.z);
