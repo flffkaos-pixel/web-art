@@ -166,6 +166,7 @@
     .desk-hint{display:none}
     body.tools-hidden #panel{transform:translateX(110%)}
   }
+  #hud.hidden, #pads.hidden { display:none !important; }
 </style>
 </head>
 <body>
@@ -295,8 +296,25 @@ canvas.addEventListener('wheel', e => {
   e.preventDefault();
 }, {passive:false});
 addEventListener('keydown', e => { ctl.keys[e.code] = true;  if (e.code === 'Space') e.preventDefault(); });
-addEventListener('keyup',   e => { ctl.keys[e.code] = false; });
-addEventListener('blur',    () => { ctl.keys = Object.create(null); ctl.drag = false; ctl.lookYaw = 0; ctl.lookPitch = 0; });
+  addEventListener('keyup',   e => { ctl.keys[e.code] = false; });
+
+  /* ── keyboard toggles ── */
+  addEventListener('keydown', e => {
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+    if (e.code === 'KeyH'){
+      e.preventDefault();
+      const open = !document.body.classList.contains('tools-hidden');
+      document.body.classList.toggle('tools-hidden', open);
+      document.getElementById('tools-hide').setAttribute('aria-expanded', String(!open));
+      document.getElementById('tools-show').setAttribute('aria-expanded', String(!open));
+    }else if (e.code === 'KeyM'){
+      e.preventDefault();
+      document.getElementById('hud').classList.toggle('hidden');
+      document.getElementById('pads').classList.toggle('hidden');
+    }
+  });
+
+  addEventListener('blur',    () => { ctl.keys = Object.create(null); ctl.drag = false; ctl.lookYaw = 0; ctl.lookPitch = 0; });
 
 {
   const hideBtn = document.getElementById('tools-hide');
