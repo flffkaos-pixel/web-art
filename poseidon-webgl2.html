@@ -1,0 +1,1251 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>POSEIDON WebGL2 — Spectral FFT Ocean</title>
+<style>
+:root{--bg:#05080c;--panel:rgba(10,16,22,.9);--line:rgba(140,200,230,.16);--txt:#cfe3ee;--dim:#7d95a4;--acc:#5fd0e8}
+*{box-sizing:border-box}html,body{margin:0;height:100%;background:var(--bg);overflow:hidden;font:13px/1.5 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;color:var(--txt);color-scheme:dark}
+canvas{display:block;width:100%;height:100%;touch-action:none}
+#panel{position:fixed;top:12px;right:12px;width:320px;max-height:calc(100vh - 24px);overflow:auto;background:var(--panel);backdrop-filter:blur(14px);border:1px solid var(--line);border-radius:10px;padding:12px;box-shadow:0 18px 50px rgba(0,0,0,.55)}
+#panel h1{font-size:12px;letter-spacing:.22em;margin:0 0 10px;color:var(--acc);font-weight:600}
+#panel h2{font-size:10px;letter-spacing:.18em;margin:14px 0 4px;color:var(--acc);font-weight:600;border-top:1px solid var(--line);padding-top:10px}
+#panel .row{display:flex;align-items:center;gap:8px;margin:7px 0}
+#panel label{flex:1;font-size:11px;color:var(--dim);text-transform:uppercase;letter-spacing:.08em}
+#panel input[type=range]{flex:2;accent-color:var(--acc)}
+#panel output{width:4.5ch;text-align:right;font-variant-numeric:tabular-nums;font-size:11px;color:var(--txt)}
+#panel .btn{flex:1 1 45%;padding:6px 10px;border:1px solid var(--line);background:rgba(140,200,230,.08);color:var(--acc);font:inherit;font-size:10px;letter-spacing:.14em;text-transform:uppercase;border-radius:6px;cursor:pointer}
+#panel .btn:active{background:rgba(140,200,230,.18)}
+.hud{position:fixed;bottom:12px;left:12px;z-index:10;background:rgba(10,16,22,.8);border:1px solid var(--line);border-radius:8px;padding:10px 14px;font-size:11px;color:var(--dim);white-space:pre;line-height:1.7}
+#err{position:fixed;top:12px;left:12px;z-index:99;display:none;max-width:80vw;background:rgba(120,10,10,.92);border:1px solid #ff8080;border-radius:8px;padding:10px 14px;font-size:11px;color:#ffd0d0;white-space:pre-wrap;font-family:monospace}
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div id="err"></div>
+<div id="panel">
+<h1>POSEIDON · WebGL2</h1>
+<h2>SIMULATION</h2>
+<div class="row"><label>Cascades</label><input type="range" id="pCasc" min="1" max="3" value="3"><output id="pCascv">3</output></div>
+<div class="row"><label>Choppiness λ</label><input type="range" id="pLambda" min="0" max="2.5" step="0.05" value="1.3"><output id="pLambdav">1.30</output></div>
+<div class="row"><label>Time Scale</label><input type="range" id="pTS" min="0.1" max="3" step="0.1" value="1"><output id="pTSv">1.0</output></div>
+<h2>LOCAL WIND</h2>
+<div class="row"><label>Wind Speed</label><input type="range" id="pWS" min="4" max="28" step="0.5" value="16"><output id="pWSv">16</output></div>
+<div class="row"><label>Wind Dir (°)</label><input type="range" id="pWD" min="0" max="360" step="1" value="45"><output id="pWDv">45</output></div>
+<div class="row"><label>Fetch (km)</label><input type="range" id="pFetch" min="10" max="300" step="1" value="100"><output id="pFetchv">100</output></div>
+<div class="row"><label>Swell mix</label><input type="range" id="pSwell" min="0" max="1" step="0.01" value="0.2"><output id="pSwellv">0.20</output></div>
+<div class="row"><label>Depth (m)</label><input type="range" id="pDepth" min="10" max="2000" step="10" value="500"><output id="pDepthv">500</output></div>
+<h2>SHADING</h2>
+<div class="row"><label>Sun Elev (°)</label><input type="range" id="pSunEl" min="2" max="80" step="1" value="28"><output id="pSunElv">28</output></div>
+<div class="row"><label>Sun Azim (°)</label><input type="range" id="pSunAz" min="0" max="360" step="1" value="135"><output id="pSunAzv">135</output></div>
+<div class="row"><label>SSS Strength</label><input type="range" id="pSSS" min="0" max="2" step="0.05" value="1"><output id="pSSSv">1.00</output></div>
+<div class="row"><label>Detail Noise</label><input type="range" id="pDetail" min="0" max="0.3" step="0.01" value="0.1"><output id="pDetailv">0.10</output></div>
+<div class="row"><label>Amplitude</label><input type="range" id="pAmp" min="0.2" max="2" step="0.05" value="1"><output id="pAmpv">1.00</output></div>
+<h2>FOAM</h2>
+<div class="row"><label>Threshold</label><input type="range" id="pFoamT" min="0.1" max="1.2" step="0.01" value="0.4"><output id="pFoamTv">0.40</output></div>
+<div class="row"><label>Scale</label><input type="range" id="pFoamS" min="0.5" max="5" step="0.1" value="2.5"><output id="pFoamSv">2.5</output></div>
+<div class="row"><label>Decay</label><input type="range" id="pFoamD" min="0.05" max="1" step="0.05" value="0.4"><output id="pFoamDv">0.40</output></div>
+<div style="display:flex;gap:6px;margin-top:14px"><button class="btn" id="btnReseed">Reseed</button><button class="btn" id="btnReset">Reset</button></div>
+</div>
+<div class="hud" id="hud">initialising…</div>
+
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js",
+    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.180.0/examples/jsm/"
+  }
+}
+</script>
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+const canvas = document.getElementById('c');
+const hud = document.getElementById('hud');
+const errBox = document.getElementById('err');
+const fail = (msg) => { errBox.style.display = 'block'; errBox.textContent = msg; hud.textContent = 'ERROR — see log'; };
+window.addEventListener('error', e => fail('JS ERROR: ' + e.message));
+window.addEventListener('unhandledrejection', e => fail('PROMISE ERROR: ' + (e.reason && e.reason.message || e.reason)));
+
+/* ════════════════════════════════════════════════════════════════════════
+   PARAMETERS (mirrors Poseidon params.js)
+   ════════════════════════════════════════════════════════════════════════ */
+const params = {
+  N: 256, cascades: 3, lengthScales: [250, 17, 5], boundaryFactor: 6,
+  g: 9.81, depth: 500, lambda: 1.3,
+  local: { scale: 1, windSpeed: 16, windDirection: 45, fetch: 100000, spreadBlend: 1, swell: 0.2, peakEnhancement: 3.3, shortWavesFade: 0.02 },
+  swell: { scale: 0.8, windSpeed: 2, windDirection: 70, fetch: 300000, spreadBlend: 1, swell: 1.0, peakEnhancement: 3.3, shortWavesFade: 0.01 },
+  timeScale: 1.0, amplitude: 1.0,
+  sunAzimuth: 135, sunElevation: 28,
+  sssStrength: 1.0,
+  colors: { deep: 0x071a26, scatter: 0x2e8f8f, sun: 0xfff1dc, skyHorizon: 0x9fb8cc, skyZenith: 0x2a5b9c, foam: 0xdce7ea },
+  foamThreshold: 0.4, foamScale: 2.5, foamDecay: 0.4,
+  detailStrength: 0.1,
+};
+const C0 = (c) => new THREE.Color(c);
+
+/* ════════════════════════════════════════════════════════════════════════
+   WEBGL2 + THREE RENDERER
+   ════════════════════════════════════════════════════════════════════════ */
+const gl = canvas.getContext('webgl2', { antialias: true, alpha: false, depth: true, stencil: false, powerPreference: 'high-performance' });
+if (!gl) { fail('WebGL2 is not available on this browser/device.'); throw new Error('no webgl2'); }
+if (!gl.getExtension('EXT_color_buffer_float') && !gl.getExtension('EXT_color_buffer_half_float')) {
+  fail('Floating-point render targets not supported (EXT_color_buffer_float/half_float).');
+  throw new Error('no float rtt');
+}
+
+const renderer = new THREE.WebGLRenderer({ canvas, context: gl, antialias: true });
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+renderer.setSize(window.innerWidth, window.innerHeight);
+renderer.autoClear = false;
+
+/* Fullscreen triangle (uv 0..2; texelFetch uses gl_FragCoord so fine) */
+const quadGeo = new THREE.BufferGeometry();
+quadGeo.setAttribute('position', new THREE.Float32BufferAttribute([-1, -1, 0, 3, -1, 0, -1, 3, 0], 3));
+quadGeo.setAttribute('uv', new THREE.Float32BufferAttribute([0, 0, 2, 0, 0, 2], 2));
+const quadScene = new THREE.Scene();
+const quadCam = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
+const quadMesh = new THREE.Mesh(quadGeo, null);
+quadScene.add(quadMesh);
+
+const VS = `in vec3 position; in vec2 uv;
+out vec2 vUv;
+void main(){ vUv = uv; gl_Position = vec4(position, 1.0); }`;
+
+/* ════════════════════════════════════════════════════════════════════════
+   FFT ENGINE — exact port of Poseidon fft.js (verified vs naive DFT)
+   ════════════════════════════════════════════════════════════════════════ */
+function makeButterfly(N) {
+  const logN = Math.log2(N);
+  const arr = new Float32Array(logN * N * 4);
+  for (let step = 0; step < logN; step++) {
+    const b = N >> (step + 1);
+    for (let j = 0; j < N / 2; j++) {
+      const i = (2 * b * Math.floor(j / b) + (j % b)) % N;
+      const X = Math.floor(j / b) * b;
+      const twRe = Math.cos((2 * Math.PI * X) / N);
+      const twIm = -Math.sin((2 * Math.PI * X) / N);
+      const put = (col, re, im) => {
+        const o = (step * N + col) * 4;
+        arr[o] = re; arr[o + 1] = im; arr[o + 2] = i; arr[o + 3] = i + b;
+      };
+      put(j, twRe, twIm);
+      put(j + N / 2, -twRe, -twIm);
+    }
+  }
+  return arr;
+}
+
+const FSHSTEP = `precision highp float;
+in vec2 vUv;
+uniform sampler2D uSrc; uniform sampler2D uBfly; uniform int uStep; uniform int uN;
+out vec4 outColor;
+vec2 cmul(vec2 a, vec2 b){ return vec2(a.x*b.x - a.y*b.y, a.x*b.y + a.y*b.x); }
+void main(){
+  int x = int(gl_FragCoord.x); int y = int(gl_FragCoord.y);
+  vec4 data = texelFetch(uBfly, ivec2(x, uStep), 0);
+  vec2 tw = vec2(data.x, -data.y);
+  int aIdx = int(data.z); int bIdx = int(data.w);
+  vec2 A = texelFetch(uSrc, ivec2(aIdx, y), 0).xy;
+  vec2 B = texelFetch(uSrc, ivec2(bIdx, y), 0).xy;
+  outColor = vec4(A + cmul(tw, B), 0.0, 0.0);
+}`;
+
+const FSVSTEP = `precision highp float;
+in vec2 vUv;
+uniform sampler2D uSrc; uniform sampler2D uBfly; uniform int uStep; uniform int uN;
+out vec4 outColor;
+vec2 cmul(vec2 a, vec2 b){ return vec2(a.x*b.x - a.y*b.y, a.x*b.y + a.y*b.x); }
+void main(){
+  int x = int(gl_FragCoord.x); int y = int(gl_FragCoord.y);
+  vec4 data = texelFetch(uBfly, ivec2(y, uStep), 0);
+  vec2 tw = vec2(data.x, -data.y);
+  int aIdx = int(data.z); int bIdx = int(data.w);
+  vec2 A = texelFetch(uSrc, ivec2(x, aIdx), 0).xy;
+  vec2 B = texelFetch(uSrc, ivec2(x, bIdx), 0).xy;
+  outColor = vec4(A + cmul(tw, B), 0.0, 0.0);
+}`;
+
+const FSPERMUTE = `precision highp float;
+in vec2 vUv;
+uniform sampler2D uSrc; uniform int uN;
+out vec4 outColor;
+void main(){
+  int x = int(gl_FragCoord.x); int y = int(gl_FragCoord.y);
+  float sign = ((x + y) % 2 == 0) ? 1.0 : -1.0;
+  vec2 v = texelFetch(uSrc, ivec2(x, y), 0).xy * sign;
+  outColor = vec4(v, 0.0, 0.0);
+}`;
+
+class FFT {
+  constructor(N) {
+    this.N = N;
+    this.logN = Math.log2(N);
+    const arr = makeButterfly(N);
+    this.bflyTex = new THREE.DataTexture(arr, N, this.logN, THREE.RGBAFormat, THREE.FloatType);
+    this.bflyTex.magFilter = this.bflyTex.minFilter = THREE.NearestFilter;
+    this.bflyTex.wrapS = this.bflyTex.wrapT = THREE.ClampToEdgeWrapping;
+    this.bflyTex.needsUpdate = true;
+    this.matH = new THREE.RawShaderMaterial({ glslVersion: THREE.GLSL3, vertexShader: VS, fragmentShader: FSHSTEP, depthTest: false, depthWrite: false, uniforms: { uSrc: { value: null }, uBfly: { value: this.bflyTex }, uStep: { value: 0 }, uN: { value: N } } });
+    this.matV = new THREE.RawShaderMaterial({ glslVersion: THREE.GLSL3, vertexShader: VS, fragmentShader: FSVSTEP, depthTest: false, depthWrite: false, uniforms: { uSrc: { value: null }, uBfly: { value: this.bflyTex }, uStep: { value: 0 }, uN: { value: N } } });
+    this.matPerm = new THREE.RawShaderMaterial({ glslVersion: THREE.GLSL3, vertexShader: VS, fragmentShader: FSPERMUTE, depthTest: false, depthWrite: false, uniforms: { uSrc: { value: null }, uN: { value: N } } });
+  }
+  // Full 2D inverse: logN horizontal, then logN vertical, then permute.
+  // src -> pingA/pingB alternating -> permuted. src may be a Texture or a render target.
+  run(srcTex, pingA, pingB, permuted) {
+    let cur = srcTex;
+    const tex = (t) => (t && t.isTexture ? t : t.texture);
+    for (let s = 0; s < this.logN; s++) {
+      this.matH.uniforms.uSrc.value = tex(cur);
+      this.matH.uniforms.uStep.value = s;
+      quadMesh.material = this.matH;
+      const dst = (s % 2 === 0) ? pingA : pingB;
+      renderer.setRenderTarget(dst);
+      renderer.render(quadScene, quadCam);
+      cur = dst;
+    }
+    for (let s = 0; s < this.logN; s++) {
+      this.matV.uniforms.uSrc.value = tex(cur);
+      this.matV.uniforms.uStep.value = s;
+      quadMesh.material = this.matV;
+      const dst = (s % 2 === 0) ? pingA : pingB;
+      renderer.setRenderTarget(dst);
+      renderer.render(quadScene, quadCam);
+      cur = dst;
+    }
+    this.matPerm.uniforms.uSrc.value = tex(cur);
+    quadMesh.material = this.matPerm;
+    renderer.setRenderTarget(permuted);
+    renderer.render(quadScene, quadCam);
+  }
+}
+
+/* ════════════════════════════════════════════════════════════════════════
+   UTILS
+   ════════════════════════════════════════════════════════════════════════ */
+function gaussianNoise(N) {
+  const data = new Float32Array(N * N * 2);
+  for (let i = 0; i < N * N; i++) {
+    const u1 = Math.max(Math.random(), 1e-7);
+    const u2 = Math.random();
+    const r = Math.sqrt(-2.0 * Math.log(u1));
+    data[i * 2 + 0] = r * Math.cos(2.0 * Math.PI * u2);
+    data[i * 2 + 1] = r * Math.sin(2.0 * Math.PI * u2);
+  }
+  return data;
+}
+
+function mkRT(N, opts) { return new THREE.WebGLRenderTarget(N, N, opts); }
+
+const RTT_NEAR = { type: THREE.HalfFloatType, format: THREE.RGBAFormat, minFilter: THREE.NearestFilter, magFilter: THREE.NearestFilter, wrapS: THREE.RepeatWrapping, wrapT: THREE.RepeatWrapping, depthBuffer: false, stencilBuffer: false };
+const RTT_MIP = { type: THREE.HalfFloatType, format: THREE.RGBAFormat, minFilter: THREE.LinearMipmapLinearFilter, magFilter: THREE.LinearFilter, wrapS: THREE.RepeatWrapping, wrapT: THREE.RepeatWrapping, depthBuffer: false, stencilBuffer: false, generateMipmaps: true };
+const RTT_RED = { type: THREE.HalfFloatType, format: THREE.RedFormat, minFilter: THREE.NearestFilter, magFilter: THREE.NearestFilter, wrapS: THREE.RepeatWrapping, wrapT: THREE.RepeatWrapping, depthBuffer: false, stencilBuffer: false };
+
+/* ════════════════════════════════════════════════════════════════════════
+   SHADERS — spectrum (A/B/C), assemble, surface, sky
+   ════════════════════════════════════════════════════════════════════════ */
+
+// Pass A — initial spectrum h0k + wavesData (2 outputs)
+const FS_INIT = `precision highp float;
+in vec2 vUv;
+uniform sampler2D uNoise;
+uniform vec2 uDeltaK; uniform float uCutoffLow; uniform float uCutoffHigh; uniform int uN;
+uniform float uG; uniform float uDepth;
+uniform float uLScale; uniform float uLAngle; uniform float uLSpread; uniform float uLSwell;
+uniform float uLAlpha; uniform float uLPeakOmega; uniform float uLGamma; uniform float uLFade;
+uniform float uSScale; uniform float uSAngle; uniform float uSSpread; uniform float uSSwell;
+uniform float uSAlpha; uniform float uSPeakOmega; uniform float uSGamma; uniform float uSFade;
+layout(location=0) out vec4 outH0k; layout(location=1) out vec4 outWaves;
+#define PI 3.141592653589793
+float frequency(float k, float g, float depth){ return sqrt(g * k * tanh(min(k * depth, 20.0))); }
+float frequencyDerivative(float k, float g, float depth){
+  float th = tanh(min(k * depth, 20.0));
+  float ch = cosh(k * depth);
+  float f = frequency(k, g, depth);
+  return g * (depth * k / (ch * ch) + th) / f / 2.0;
+}
+float normalisationFactor(float s){
+  float s2 = s*s, s3 = s2*s, s4 = s3*s;
+  float a = s4*-0.000564 + s3*0.00776 + s2*-0.044 + s*0.192 + 0.163;
+  float b = s4*-4.8e-8 + s3*1.07e-5 + s2*-9.53e-4 + s*5.9e-2 + 3.93e-1;
+  return mix(a, b, step(5.0, s));
+}
+float cosine2s(float theta, float s){ return normalisationFactor(s) * pow(abs(cos(theta*0.5)), s*2.0); }
+float spreadPower(float omega, float peakOmega){
+  float r = omega / peakOmega;
+  float hi = pow(abs(r), -2.5) * 9.77;
+  float lo = pow(abs(r), 5.0) * 6.97;
+  return mix(lo, hi, step(peakOmega, omega));
+}
+float directionSpectrum(float theta, float omega, float spreadBlend, float swell, float peakOmega){
+  float s = spreadPower(omega, peakOmega) + tanh(min(omega/peakOmega, 20.0)) * 16.0 * swell * swell;
+  float base = cos(theta)*cos(theta)*2.0/PI;
+  return mix(base, cosine2s(theta, s), spreadBlend);
+}
+float tmaCorrection(float omega, float g, float depth){
+  float omegaH = omega * sqrt(depth/g);
+  float c1 = omegaH*omegaH*0.5;
+  float tw = 2.0 - omegaH;
+  float c2 = 1.0 - tw*tw*0.5;
+  return mix(c1, mix(c2, 1.0, step(2.0, omegaH)), step(1.0, omegaH));
+}
+float jonswap(float omega, float g, float depth, float scale, float alpha, float peakOmega, float gamma){
+  float sigma = mix(0.07, 0.09, step(peakOmega, omega));
+  float dw = omega - peakOmega;
+  float r = exp(dw*dw * -1.0 / (sigma*sigma*peakOmega*peakOmega*2.0));
+  float oo = 1.0/omega; float oo2 = oo*oo; float oo5 = oo2*oo2*oo;
+  float po = peakOmega/omega; float po2 = po*po; float po4 = po2*po2;
+  return scale * tmaCorrection(omega, g, depth) * alpha * g * g * oo5 * exp(po4 * -1.25) * pow(gamma, r);
+}
+float shortWavesFade(float kLen, float fade){ return exp(fade*fade*kLen*kLen * -1.0); }
+void main(){
+  int N = uN;
+  int x = int(gl_FragCoord.x); int y = int(gl_FragCoord.y);
+  float nx = float(x - N/2); float nz = float(y - N/2);
+  vec2 k = vec2(nx, nz) * uDeltaK;
+  float kLen = length(k);
+  float kSafe = max(kLen, uCutoffLow);
+  float angle = atan(k.y, k.x + 1e-9);
+  float omega = frequency(kSafe, uG, uDepth);
+  float dOmega = frequencyDerivative(kSafe, uG, uDepth);
+  float specL = jonswap(omega, uG, uDepth, uLScale, uLAlpha, uLPeakOmega, uLGamma)
+    * directionSpectrum(angle - uLAngle, omega, uLSpread, uLSwell, uLPeakOmega)
+    * shortWavesFade(kSafe, uLFade);
+  float specS = jonswap(omega, uG, uDepth, uSScale, uSAlpha, uSPeakOmega, uSGamma)
+    * directionSpectrum(angle - uSAngle, omega, uSSpread, uSSwell, uSPeakOmega)
+    * shortWavesFade(kSafe, uSFade);
+  float spectrum = specL + specS;
+  float inBand = step(uCutoffLow, kLen) * step(kLen, uCutoffHigh);
+  float amplitude = sqrt(spectrum * 2.0 * abs(dOmega) / kSafe * uDeltaK.x * uDeltaK.y);
+  vec2 noise = texelFetch(uNoise, ivec2(x, y), 0).xy;
+  outH0k = vec4(noise * amplitude * inBand, 0.0, 0.0);
+  outWaves = vec4(k.x, 1.0/kSafe, k.y, omega);
+}`;
+
+// Pass B — conjugate pack h0 = (h0(k).xy, conj(h0(-k)).xy)
+const FS_CONJ = `precision highp float;
+in vec2 vUv;
+uniform sampler2D uH0k; uniform int uN;
+out vec4 outColor;
+void main(){
+  int N = uN;
+  int x = int(gl_FragCoord.x); int y = int(gl_FragCoord.y);
+  int xm = (N - x) % N; int ym = (N - y) % N;
+  vec2 a = texelFetch(uH0k, ivec2(x, y), 0).xy;
+  vec2 b = texelFetch(uH0k, ivec2(xm, ym), 0).xy;
+  outColor = vec4(a.x, a.y, b.x, -b.y);
+}`;
+
+// Pass C — time-dependent spectra: 4 packed complex fields (MRT 4 outputs).
+// Each output packs A + i*B so 8 real fields ride on 4 IFFTs.
+const FS_TIME = `precision highp float;
+in vec2 vUv;
+uniform sampler2D uH0; uniform sampler2D uWaves; uniform float uTime; uniform int uN;
+layout(location=0) out vec4 outDxDz;
+layout(location=1) out vec4 outDyDxz;
+layout(location=2) out vec4 outDyxDyz;
+layout(location=3) out vec4 outDxxDzz;
+vec2 cmul(vec2 a, vec2 b){ return vec2(a.x*b.x - a.y*b.y, a.x*b.y + a.y*b.x); }
+void main(){
+  int x = int(gl_FragCoord.x); int y = int(gl_FragCoord.y);
+  vec4 wave = texelFetch(uWaves, ivec2(x, y), 0);
+  float phase = wave.w * uTime;
+  vec2 ex = vec2(cos(phase), sin(phase));
+  vec4 h0v = texelFetch(uH0, ivec2(x, y), 0);
+  vec2 h = cmul(h0v.xy, ex) + cmul(h0v.zw, vec2(ex.x, -ex.y));
+  vec2 ih = vec2(-h.y, h.x);
+  vec2 dispX   = ih * (wave.x * wave.y);
+  vec2 dispY   = h;
+  vec2 dispZ   = ih * (wave.z * wave.y);
+  vec2 dispXdx = -h * (wave.x * wave.x * wave.y);
+  vec2 dispYdx = ih * wave.x;
+  vec2 dispZdx = -h * (wave.x * wave.z * wave.y);
+  vec2 dispYdz = ih * wave.z;
+  vec2 dispZdz = -h * (wave.z * wave.z * wave.y);
+  outDxDz   = vec4(dispX.x - dispZ.y,     dispX.y + dispZ.x,     0.0, 0.0);
+  outDyDxz  = vec4(dispY.x - dispZdx.y,   dispY.y + dispZdx.x,   0.0, 0.0);
+  outDyxDyz = vec4(dispYdx.x - dispYdz.y, dispYdx.y + dispYdz.x, 0.0, 0.0);
+  outDxxDzz = vec4(dispXdx.x - dispZdz.y, dispXdx.y + dispZdz.x, 0.0, 0.0);
+}`;
+
+// Assemble A — displacement map (+ turbulence ride in .w)
+const FS_ASM_DISP = `precision highp float;
+in vec2 vUv;
+uniform sampler2D uDxDz; uniform sampler2D uDyDxz; uniform sampler2D uDyxDyz; uniform sampler2D uDxxDzz;
+uniform sampler2D uTurbPrev; uniform float uLambda; uniform float uDt; uniform float uFoamDecay; uniform int uN;
+out vec4 outColor;
+void main(){
+  int x = int(gl_FragCoord.x); int y = int(gl_FragCoord.y);
+  vec2 DxDz   = texelFetch(uDxDz, ivec2(x, y), 0).xy;
+  vec2 DyDxz  = texelFetch(uDyDxz, ivec2(x, y), 0).xy;
+  vec2 DxxDzz = texelFetch(uDxxDzz, ivec2(x, y), 0).xy;
+  float jxx = 1.0 + uLambda * DxxDzz.x;
+  float jzz = 1.0 + uLambda * DxxDzz.y;
+  float jxz = uLambda * DyDxz.y;
+  float J = jxx * jzz - jxz * jxz;
+  float prev = texelFetch(uTurbPrev, ivec2(x, y), 0).r;
+  float turb = min(J, prev + uDt * uFoamDecay / max(J, 0.5));
+  outColor = vec4(uLambda * DxDz.x, DyDxz.x, uLambda * DxDz.y, turb);
+}`;
+
+// Assemble B — derivatives map
+const FS_ASM_DERIV = `precision highp float;
+in vec2 vUv;
+uniform sampler2D uDyxDyz; uniform sampler2D uDxxDzz; uniform float uLambda; uniform int uN;
+out vec4 outColor;
+void main(){
+  int x = int(gl_FragCoord.x); int y = int(gl_FragCoord.y);
+  vec2 DyxDyz = texelFetch(uDyxDyz, ivec2(x, y), 0).xy;
+  vec2 DxxDzz = texelFetch(uDxxDzz, ivec2(x, y), 0).xy;
+  outColor = vec4(DyxDyz.x, DyxDyz.y, uLambda * DxxDzz.x, uLambda * DxxDzz.y);
+}`;
+
+// copy turbulence channel
+const FS_TURB = `precision highp float;
+in vec2 vUv;
+uniform sampler2D uSrc; uniform int uN;
+out vec4 outColor;
+void main(){
+  int x = int(gl_FragCoord.x); int y = int(gl_FragCoord.y);
+  outColor = vec4(texelFetch(uSrc, ivec2(x, y), 0).w);
+}`;
+
+// plain copy (for waves data)
+const FS_COPY = `precision highp float;
+in vec2 vUv;
+uniform sampler2D uSrc; uniform int uN;
+out vec4 outColor;
+void main(){
+  int x = int(gl_FragCoord.x); int y = int(gl_FragCoord.y);
+  outColor = texelFetch(uSrc, ivec2(x, y), 0);
+}`;
+
+/* detail / fbm noise texture (RG = normal, B = low-freq, A = high-freq) */
+function makeDetailTexture(size = 512, octaves = 3) {
+  const rand = new Float32Array(size * size);
+  let seed = 1234567;
+  const rng = () => { seed = (seed * 1103515245 + 12345) & 0x7fffffff; return seed / 0x7fffffff; };
+  for (let i = 0; i < size * size; i++) rand[i] = rng();
+  const smooth = (t) => t * t * (3 - 2 * t);
+  const octave = (u, v, f) => {
+    const x = u * f, y = v * f;
+    const xi = Math.floor(x), yi = Math.floor(y);
+    const uu = smooth(x - xi), vv = smooth(y - yi);
+    const A = (X, Y) => rand[((((Y % f) + f) % f) * size) + (((X % f) + f) % f)];
+    const a = A(xi, yi), b = A(xi + 1, yi), c = A(xi, yi + 1), d = A(xi + 1, yi + 1);
+    return a * (1 - uu) * (1 - vv) + b * uu * (1 - vv) + c * (1 - uu) * vv + d * uu * vv;
+  };
+  const fbm = (u, v) => { let s = 0, amp = 0.5, f = 4; for (let o = 0; o < octaves; o++) { s += amp * octave(u, v, f); amp *= 0.5; f *= 2; } return s; };
+  const clamp255 = (x) => Math.max(0, Math.min(255, Math.round(x)));
+  const data = new Uint8Array(size * size * 4);
+  const eps = 1 / size;
+  for (let y = 0; y < size; y++) {
+    for (let x = 0; x < size; x++) {
+      const u = x / size, v = y / size;
+      const h = fbm(u, v);
+      const hx = fbm(u + eps, v) - fbm(u - eps, v);
+      const hy = fbm(u, v + eps) - fbm(u, v - eps);
+      const i = (y * size + x) * 4;
+      data[i] = clamp255((-hx * 3 * 0.5 + 0.5) * 255);
+      data[i + 1] = clamp255((-hy * 3 * 0.5 + 0.5) * 255);
+      data[i + 2] = clamp255(h * 255);
+      data[i + 3] = clamp255(fbm(u * 2, v * 2) * 255);
+    }
+  }
+  const tex = new THREE.DataTexture(data, size, size, THREE.RGBAFormat, THREE.UnsignedByteType);
+  tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+  tex.magFilter = THREE.LinearFilter;
+  tex.minFilter = THREE.LinearMipmapLinearFilter;
+  tex.generateMipmaps = true;
+  tex.needsUpdate = true;
+  return tex;
+}
+
+/* ════════════════════════════════════════════════════════════════════════
+   OCEAN — cascades, maps, surface material, sky
+   ════════════════════════════════════════════════════════════════════════ */
+class Ocean {
+  constructor() {
+    this.N = params.N;
+    this.fft = new FFT(this.N);
+
+    const noiseData = gaussianNoise(this.N);
+    this.noiseTex = new THREE.DataTexture(noiseData, this.N, this.N, THREE.RGFormat, THREE.FloatType);
+    this.noiseTex.magFilter = this.noiseTex.minFilter = THREE.NearestFilter;
+    this.noiseTex.wrapS = this.noiseTex.wrapT = THREE.ClampToEdgeWrapping;
+    this.noiseTex.needsUpdate = true;
+
+    this.initMat = new THREE.RawShaderMaterial({ glslVersion: THREE.GLSL3, vertexShader: VS, fragmentShader: FS_INIT, depthTest: false, depthWrite: false, uniforms: {
+      uNoise: { value: this.noiseTex }, uDeltaK: { value: new THREE.Vector2() },
+      uCutoffLow: { value: 0 }, uCutoffHigh: { value: 0 }, uN: { value: this.N },
+      uG: { value: params.g }, uDepth: { value: params.depth },
+      uLScale: { value: 0 }, uLAngle: { value: 0 }, uLSpread: { value: 0 }, uLSwell: { value: 0 },
+      uLAlpha: { value: 0 }, uLPeakOmega: { value: 0 }, uLGamma: { value: 0 }, uLFade: { value: 0 },
+      uSScale: { value: 0 }, uSAngle: { value: 0 }, uSSpread: { value: 0 }, uSSwell: { value: 0 },
+      uSAlpha: { value: 0 }, uSPeakOmega: { value: 0 }, uSGamma: { value: 0 }, uSFade: { value: 0 },
+    } });
+    this.conjMat = new THREE.RawShaderMaterial({ glslVersion: THREE.GLSL3, vertexShader: VS, fragmentShader: FS_CONJ, depthTest: false, depthWrite: false, uniforms: { uH0k: { value: null }, uN: { value: this.N } } });
+    this.timeMat = new THREE.RawShaderMaterial({ glslVersion: THREE.GLSL3, vertexShader: VS, fragmentShader: FS_TIME, depthTest: false, depthWrite: false, uniforms: { uH0: { value: null }, uWaves: { value: null }, uTime: { value: 0 }, uN: { value: this.N } } });
+    this.asmDispMat = new THREE.RawShaderMaterial({ glslVersion: THREE.GLSL3, vertexShader: VS, fragmentShader: FS_ASM_DISP, depthTest: false, depthWrite: false, uniforms: { uDxDz: { value: null }, uDyDxz: { value: null }, uDyxDyz: { value: null }, uDxxDzz: { value: null }, uTurbPrev: { value: null }, uLambda: { value: params.lambda }, uDt: { value: 1 / 60 }, uFoamDecay: { value: params.foamDecay }, uN: { value: this.N } } });
+    this.asmDerivMat = new THREE.RawShaderMaterial({ glslVersion: THREE.GLSL3, vertexShader: VS, fragmentShader: FS_ASM_DERIV, depthTest: false, depthWrite: false, uniforms: { uDyxDyz: { value: null }, uDxxDzz: { value: null }, uLambda: { value: params.lambda }, uN: { value: this.N } } });
+    this.turbMat = new THREE.RawShaderMaterial({ glslVersion: THREE.GLSL3, vertexShader: VS, fragmentShader: FS_TURB, depthTest: false, depthWrite: false, uniforms: { uSrc: { value: null }, uN: { value: this.N } } });
+    this.copyMat = new THREE.RawShaderMaterial({ glslVersion: THREE.GLSL3, vertexShader: VS, fragmentShader: FS_COPY, depthTest: false, depthWrite: false, uniforms: { uSrc: { value: null }, uN: { value: this.N } } });
+
+    // shared scratch for the transient spectrum MRTs (r180: count option on WebGLRenderTarget)
+    this.initMRT = new THREE.WebGLRenderTarget(this.N, this.N, { ...RTT_NEAR, count: 2 });
+    this.timeMRT = new THREE.WebGLRenderTarget(this.N, this.N, { ...RTT_NEAR, count: 4 });
+    this.h0kTex = this.initMRT.textures[0];
+    this.wavesTex = this.initMRT.textures[1];
+    this.timeTexs = this.timeMRT.textures;
+    this.h0RT = mkRT(this.N, RTT_NEAR);
+    this.pingA = mkRT(this.N, RTT_NEAR);
+    this.pingB = mkRT(this.N, RTT_NEAR);
+    this.perms = [mkRT(this.N, RTT_NEAR), mkRT(this.N, RTT_NEAR), mkRT(this.N, RTT_NEAR), mkRT(this.N, RTT_NEAR)];
+
+    // per-cascade persistent state
+    this.cascades = [];
+    const count = Math.min(params.cascades, params.lengthScales.length);
+    for (let i = 0; i < count; i++) {
+      const L = params.lengthScales[i];
+      const boundary = (j) => ((2 * Math.PI) / params.lengthScales[j]) * params.boundaryFactor;
+      this.cascades.push({
+        L, deltaK: (2 * Math.PI) / L,
+        cutoffLow: i === 0 ? 1e-4 : boundary(i),
+        cutoffHigh: i === count - 1 ? 9999 : boundary(i + 1),
+        h0: mkRT(this.N, RTT_NEAR),
+        waves: mkRT(this.N, RTT_NEAR),
+        disp: mkRT(this.N, RTT_MIP),
+        deriv: mkRT(this.N, RTT_MIP),
+        turb: [mkRT(this.N, RTT_RED), mkRT(this.N, RTT_RED)],
+      });
+    }
+
+    this._initSpectrum();
+
+    // surface + sky
+    this.detailTex = makeDetailTexture();
+    this.oceanMaterial = this._makeSurfaceMaterial();
+    this.skyMaterial = this._makeSkyMaterial();
+    const skyMesh = new THREE.Mesh(new THREE.SphereGeometry(12000, 32, 16), this.skyMaterial);
+    skyMesh.frustumCulled = false;
+    this.sky = skyMesh;
+
+    const patch = 3000, segs = 1024;
+    this.oceanGeo = new THREE.PlaneGeometry(patch, patch, segs, segs);
+    this.oceanMesh = new THREE.Mesh(this.oceanGeo, this.oceanMaterial);
+    this.oceanMesh.frustumCulled = false;
+  }
+
+  _fillSpectrumUniforms(mat, p, g) {
+    const u = mat.uniforms;
+    const fill = (d, prefix) => {
+      u[prefix + 'Scale'].value = d.scale;
+      u[prefix + 'Angle'].value = (d.windDirection * Math.PI) / 180;
+      u[prefix + 'Spread'].value = d.spreadBlend;
+      u[prefix + 'Swell'].value = Math.min(Math.max(d.swell, 0.01), 1);
+      u[prefix + 'Alpha'].value = 0.076 * Math.pow((g * d.fetch) / (d.windSpeed * d.windSpeed), -0.22);
+      u[prefix + 'PeakOmega'].value = 22 * Math.pow((d.windSpeed * d.fetch) / (g * g), -0.33);
+      u[prefix + 'Gamma'].value = d.peakEnhancement;
+      u[prefix + 'Fade'].value = d.shortWavesFade;
+    };
+    fill(p.local, 'uL');
+    fill(p.swell, 'uS');
+  }
+
+  _initSpectrum() {
+    const N = this.N;
+    this._fillSpectrumUniforms(this.initMat, params, params.g);
+    this.initMat.uniforms.uDepth.value = params.depth;
+    this.conjMat.uniforms.uH0k.value = this.h0kTex;
+    for (const c of this.cascades) {
+      this.initMat.uniforms.uCutoffLow.value = c.cutoffLow;
+      this.initMat.uniforms.uCutoffHigh.value = c.cutoffHigh;
+      this.initMat.uniforms.uDeltaK.value.set(c.deltaK, c.deltaK);
+      quadMesh.material = this.initMat;
+      renderer.setRenderTarget(this.initMRT);
+      renderer.render(quadScene, quadCam);
+      // copy waves into per-cascade persistent target
+      this.copyMat.uniforms.uSrc.value = this.wavesTex;
+      quadMesh.material = this.copyMat;
+      renderer.setRenderTarget(c.waves);
+      renderer.render(quadScene, quadCam);
+      // conj -> h0
+      quadMesh.material = this.conjMat;
+      renderer.setRenderTarget(c.h0);
+      renderer.render(quadScene, quadCam);
+    }
+  }
+
+  _makeSurfaceMaterial() {
+    const n = this.cascades.length;
+    const samplers = [], uvScale = [], dispRead = [], derivRead = [], foamRead = [];
+    for (let i = 0; i < 3; i++) {
+      const use = i < n;
+      samplers.push(`uniform sampler2D uDisp${i}${use ? '' : ';'}`);
+    }
+    let decl = '';
+    for (let i = 0; i < 3; i++) {
+      decl += i < n ? `uniform sampler2D uDisp${i};\nuniform sampler2D uDeriv${i};\nuniform float uLS${i};\n` : '';
+    }
+    const vert = `precision highp float;
+uniform mat4 modelMatrix; uniform mat4 modelViewMatrix; uniform mat4 projectionMatrix;
+in vec3 position; in vec2 uv; in vec3 normal;
+${decl}
+uniform float uAmp; uniform int uCascadeCount;
+out vec2 vWorldXZ; out vec3 vWorldPos;
+void main(){
+  vec2 wxz = position.xy;
+  vec3 disp = vec3(0.0);
+  disp += textureLod(uDisp0, wxz / uLS0, 0.0).xyz;
+  if (uCascadeCount >= 2) disp += textureLod(uDisp1, wxz / uLS1, 0.0).xyz;
+  if (uCascadeCount >= 3) disp += textureLod(uDisp2, wxz / uLS2, 0.0).xyz;
+  disp *= uAmp;
+  vec3 newPos = vec3(position.x + disp.x, disp.y, position.y + disp.z);
+  vWorldXZ = wxz;
+  vWorldPos = (modelMatrix * vec4(newPos, 1.0)).xyz;
+  gl_Position = projectionMatrix * modelViewMatrix * vec4(newPos, 1.0);
+}`;
+    const frag = `precision highp float;
+precision highp int;
+uniform mat4 modelMatrix; uniform mat4 viewMatrix; uniform mat3 normalMatrix;
+uniform vec3 cameraPosition;
+${decl}
+uniform sampler2D uDetail;
+uniform float uTime; uniform float uSSSStrength; uniform float uDetailStrength;
+uniform vec3 uDeepColor; uniform vec3 uScatterColor; uniform vec3 uFoamColor; uniform vec3 uSunColor;
+uniform vec3 uSkyHorizon; uniform vec3 uSkyZenith;
+uniform vec3 uSunDir;
+uniform float uFoamThreshold; uniform float uFoamScale;
+uniform int uCascadeCount;
+in vec2 vWorldXZ; in vec3 vWorldPos;
+out vec4 outColor;
+float sat(float x){ return clamp(x, 0.0, 1.0); }
+vec3 skyColor(vec3 dir, vec3 sunDir, vec3 horizon, vec3 zenith, vec3 sunColor){
+  float t = smoothstep(-0.05, 0.4, dir.y);
+  vec3 grad = mix(horizon, zenith, t);
+  float sd = max(dot(dir, sunDir), 0.0);
+  vec3 disc = pow(sd, 1200.0) * sunColor * 8.0;
+  vec3 halo = pow(sd, 7.0) * sunColor * 0.35;
+  return grad + disc + halo;
+}
+void main(){
+  float t = uTime;
+  vec4 d = vec4(0.0);
+  d += texture(uDeriv0, vWorldXZ / uLS0);
+  if (uCascadeCount >= 2) d += texture(uDeriv1, vWorldXZ / uLS1);
+  if (uCascadeCount >= 3) d += texture(uDeriv2, vWorldXZ / uLS2);
+  float slopeX = d.x / (1.0 + d.z);
+  float slopeZ = d.y / (1.0 + d.w);
+  vec3 N = normalize(vec3(-slopeX, 1.0, -slopeZ));
+  vec2 det1 = texture(uDetail, vWorldXZ * 0.06 + vec2(t*0.012, t*0.008)).xy * 2.0 - 1.0;
+  vec2 det2 = texture(uDetail, vWorldXZ * 0.17 + vec2(t*-0.02, t*0.015)).xy * 2.0 - 1.0;
+  vec2 detail = (det1 + det2 * 0.5) * uDetailStrength;
+  N = normalize(N + vec3(detail.x, 0.0, detail.y));
+  vec3 V = normalize(cameraPosition - vWorldPos);
+  float fresnel = 0.02 + 0.98 * pow(1.0 - max(dot(N, V), 0.0), 5.0);
+  vec3 R = reflect(-V, N);
+  vec3 reflection = skyColor(normalize(vec3(R.x, max(abs(R.y), 0.02), R.z)), uSunDir, uSkyHorizon, uSkyZenith, uSunColor);
+  float heightFactor = sat(vWorldPos.y * 0.5 + 0.4);
+  vec3 H = normalize(-N + uSunDir);
+  float sss = pow(sat(dot(V, -H)), 4.0) * uSSSStrength * heightFactor;
+  vec3 body = mix(uDeepColor, uScatterColor, sat(0.12 + sss));
+  vec3 water = mix(body, reflection, fresnel);
+  float foamRaw = 0.0;
+  foamRaw += sat(uFoamThreshold - texture(uDisp0, vWorldXZ / uLS0).w) * uFoamScale;
+  if (uCascadeCount >= 2) foamRaw += sat(uFoamThreshold - texture(uDisp1, vWorldXZ / uLS1).w) * uFoamScale;
+  float coverage = smoothstep(0.2, 0.9, foamRaw);
+  float fb1 = texture(uDetail, vWorldXZ * 0.45 + vec2(t*0.03, t*0.02)).b;
+  float fb2 = texture(uDetail, vWorldXZ * 1.6 + vec2(t*-0.05, t*0.04)).a;
+  float bubbles = sat(fb1 * 0.7 + fb2 * 0.5 + 0.2);
+  float foamLight = 0.55 + sat(dot(N, uSunDir)) * 0.6;
+  vec3 foamShaded = uFoamColor * foamLight * bubbles;
+  vec3 color = mix(water, foamShaded, coverage);
+  outColor = vec4(color, 1.0);
+}`;
+    const mat = new THREE.RawShaderMaterial({ glslVersion: THREE.GLSL3, vertexShader: vert, fragmentShader: frag, side: THREE.DoubleSide, uniforms: {
+      uDisp0: { value: null }, uDisp1: { value: null }, uDisp2: { value: null },
+      uDeriv0: { value: null }, uDeriv1: { value: null }, uDeriv2: { value: null },
+      uLS0: { value: this.cascades[0].L }, uLS1: { value: this.cascades.length > 1 ? this.cascades[1].L : 0 }, uLS2: { value: this.cascades.length > 2 ? this.cascades[2].L : 0 },
+      uAmp: { value: params.amplitude }, uCascadeCount: { value: this.cascades.length },
+      uDetail: { value: this.detailTex }, uTime: { value: 0 },
+      uSSSStrength: { value: params.sssStrength }, uDetailStrength: { value: params.detailStrength },
+      uDeepColor: { value: C0(params.colors.deep) }, uScatterColor: { value: C0(params.colors.scatter) },
+      uFoamColor: { value: C0(params.colors.foam) }, uSunColor: { value: C0(params.colors.sun) },
+      uSkyHorizon: { value: C0(params.colors.skyHorizon) }, uSkyZenith: { value: C0(params.colors.skyZenith) },
+      uSunDir: { value: new THREE.Vector3() }, uFoamThreshold: { value: params.foamThreshold }, uFoamScale: { value: params.foamScale },
+    } });
+    this._bindCascadeMaps(mat);
+    return mat;
+  }
+
+  _bindCascadeMaps(mat) {
+    const n = this.cascades.length;
+    mat.uniforms.uDisp0.value = this.cascades[0].disp.texture;
+    if (n > 1) mat.uniforms.uDisp1.value = this.cascades[1].disp.texture;
+    if (n > 2) mat.uniforms.uDisp2.value = this.cascades[2].disp.texture;
+    mat.uniforms.uDeriv0.value = this.cascades[0].deriv.texture;
+    if (n > 1) mat.uniforms.uDeriv1.value = this.cascades[1].deriv.texture;
+    if (n > 2) mat.uniforms.uDeriv2.value = this.cascades[2].deriv.texture;
+  }
+
+  _makeSkyMaterial() {
+    const vert = `precision highp float;
+uniform mat4 modelMatrix; uniform mat4 modelViewMatrix; uniform mat4 projectionMatrix;
+in vec3 position;
+out vec3 vDir;
+void main(){
+  vDir = position;
+  vec4 mv = modelViewMatrix * vec4(position, 1.0);
+  gl_Position = projectionMatrix * mv;
+  gl_Position.z = gl_Position.w;
+}`;
+    const frag = `precision highp float;
+uniform vec3 uSunDir; uniform vec3 uHorizon; uniform vec3 uZenith; uniform vec3 uSunColor;
+in vec3 vDir;
+out vec4 outColor;
+void main(){
+  vec3 dir = normalize(vDir);
+  float t = smoothstep(-0.05, 0.4, dir.y);
+  vec3 grad = mix(uHorizon, uZenith, t);
+  float sd = max(dot(dir, uSunDir), 0.0);
+  vec3 disc = pow(sd, 1200.0) * uSunColor * 8.0;
+  vec3 halo = pow(sd, 7.0) * uSunColor * 0.35;
+  outColor = vec4(grad + disc + halo, 1.0);
+}`;
+    const mat = new THREE.RawShaderMaterial({ glslVersion: THREE.GLSL3, vertexShader: vert, fragmentShader: frag, side: THREE.BackSide, depthWrite: false, uniforms: {
+      uSunDir: { value: new THREE.Vector3() }, uHorizon: { value: C0(params.colors.skyHorizon) }, uZenith: { value: C0(params.colors.skyZenith) }, uSunColor: { value: C0(params.colors.sun) },
+    } });
+    return mat;
+  }
+
+  _sunDir() {
+    const el = params.sunElevation * Math.PI / 180;
+    const az = params.sunAzimuth * Math.PI / 180;
+    return new THREE.Vector3(Math.cos(az) * Math.cos(el), Math.sin(el), Math.sin(az) * Math.cos(el)).normalize();
+  }
+
+  // Per-frame update: evolve all cascades to time t, then rebuild maps.
+  evolve(t, dt = 1 / 60) {
+    const N = this.N;
+    const tm = this.timeMat;
+    tm.uniforms.uTime.value = t;
+    this.asmDispMat.uniforms.uDt.value = dt;
+    quadMesh.material = tm;
+    for (const c of this.cascades) {
+      // Pass C -> 4 packed fields
+      tm.uniforms.uH0.value = c.h0.texture;
+      tm.uniforms.uWaves.value = c.waves.texture;
+      renderer.setRenderTarget(this.timeMRT);
+      renderer.render(quadScene, quadCam);
+
+      // IFFT each field
+      for (let i = 0; i < 4; i++) this.fft.run(this.timeTexs[i], this.pingA, this.pingB, this.perms[i]);
+
+      // assemble displacement (+turbulence) & derivatives
+      const ad = this.asmDispMat;
+      ad.uniforms.uDxDz.value = this.perms[0].texture;
+      ad.uniforms.uDyDxz.value = this.perms[1].texture;
+      ad.uniforms.uDyxDyz.value = this.perms[2].texture;
+      ad.uniforms.uDxxDzz.value = this.perms[3].texture;
+      ad.uniforms.uTurbPrev.value = c.turb[this._turbCur].texture;
+      quadMesh.material = ad;
+      renderer.setRenderTarget(c.disp);
+      renderer.render(quadScene, quadCam);
+
+      const av = this.asmDerivMat;
+      av.uniforms.uDyxDyz.value = this.perms[2].texture;
+      av.uniforms.uDxxDzz.value = this.perms[3].texture;
+      quadMesh.material = av;
+      renderer.setRenderTarget(c.deriv);
+      renderer.render(quadScene, quadCam);
+
+      // turbulence copy
+      this.turbMat.uniforms.uSrc.value = c.disp.texture;
+      quadMesh.material = this.turbMat;
+      this._turbCur = (this._turbCur + 1) % 2;
+      renderer.setRenderTarget(c.turb[this._turbCur]);
+      renderer.render(quadScene, quadCam);
+    }
+  }
+}
+Ocean.prototype._turbCur = 0;
+
+/* ── main scene ── */
+const ocean = new Ocean();
+
+/* ════════════════════════════════════════════════════════════════════════
+   ISLAND + BEACH — procedural heightfield (CPU), mesh + half-float lookup
+   ════════════════════════════════════════════════════════════════════════ */
+const TERRAIN_SIZE = 2400.0;
+const TERRAIN_RES = 512;
+
+function h2i(x, y) {
+  let h = Math.imul(x, 374761393) + Math.imul(y, 668265263);
+  h = Math.imul(h ^ (h >>> 13), 1274126177);
+  return ((h ^ (h >>> 16)) >>> 0) / 4294967295;
+}
+function vn(x, y) {
+  const xi = Math.floor(x), yi = Math.floor(y), xf = x - xi, yf = y - yi;
+  const u = xf * xf * (3 - 2 * xf), v = yf * yf * (3 - 2 * yf);
+  return h2i(xi, yi) * (1 - u) * (1 - v) + h2i(xi + 1, yi) * u * (1 - v)
+       + h2i(xi, yi + 1) * (1 - u) * v + h2i(xi + 1, yi + 1) * u * v;
+}
+function fbmJs(x, y, oct) {
+  let s = 0, a = 0.5, f = 1;
+  for (let i = 0; i < oct; i++) { s += a * (vn(x * f, y * f) * 2 - 1); f *= 2.03; a *= 0.5; }
+  return s;
+}
+function sstep(a, b, x) { const t = Math.min(1, Math.max(0, (x - a) / (b - a))); return t * t * (3 - 2 * t); }
+
+function terrainH(x, z) {
+  const d = Math.hypot(x, z);
+  let h = -4.0 - sstep(230, 560, d) * 8.5 - sstep(520, 1010, d) * 64.0;
+  h += Math.exp(-Math.pow(d / 195.0, 2.4)) * 46.0;
+  h += fbmJs(x * 0.0035, z * 0.0035, 5) * 23.0 * Math.exp(-Math.pow(d / 250.0, 3.0));
+  h += Math.exp(-Math.pow((d - 425.0) / 92.0, 2.0)) * (4.2 + fbmJs(x * 0.006, z * 0.006, 3) * 3.6);
+  h += fbmJs(x * 0.02, z * 0.02, 4) * 1.5;
+  h += fbmJs(x * 0.09, z * 0.09, 3) * 0.34;
+  return h;
+}
+
+const TR = TERRAIN_RES;
+const heights = new Float32Array((TR + 1) * (TR + 1));
+{
+  const stepW = TERRAIN_SIZE / TR, half = TERRAIN_SIZE * 0.5;
+  for (let j = 0; j <= TR; j++) {
+    const z = -half + j * stepW;
+    for (let i = 0; i <= TR; i++) heights[j * (TR + 1) + i] = terrainH(-half + i * stepW, z);
+  }
+}
+function sampleH(i, j) {
+  i = Math.min(TR, Math.max(0, i)); j = Math.min(TR, Math.max(0, j));
+  return heights[j * (TR + 1) + i];
+}
+
+const terrainTexData = new Uint16Array((TR + 1) * (TR + 1) * 4);
+for (let j = 0; j <= TR; j++) for (let i = 0; i <= TR; i++) {
+  const o = (j * (TR + 1) + i) * 4, h = heights[j * (TR + 1) + i];
+  const v = THREE.DataUtils.toHalfFloat(h);
+  terrainTexData[o] = v; terrainTexData[o + 1] = v; terrainTexData[o + 2] = v;
+  terrainTexData[o + 3] = THREE.DataUtils.toHalfFloat(1.0);
+}
+const terrainTex = new THREE.DataTexture(terrainTexData, TR + 1, TR + 1, THREE.RGBAFormat, THREE.HalfFloatType);
+terrainTex.minFilter = terrainTex.magFilter = THREE.LinearFilter;
+terrainTex.wrapS = terrainTex.wrapT = THREE.ClampToEdgeWrapping;
+terrainTex.needsUpdate = true;
+
+const terrainGeo = new THREE.BufferGeometry();
+{
+  const stepW = TERRAIN_SIZE / TR, half = TERRAIN_SIZE * 0.5;
+  const nv = (TR + 1) * (TR + 1);
+  const pos = new Float32Array(nv * 3), nor = new Float32Array(nv * 3);
+  for (let j = 0; j <= TR; j++) {
+    for (let i = 0; i <= TR; i++) {
+      const o = (j * (TR + 1) + i) * 3;
+      pos[o] = -half + i * stepW; pos[o + 1] = heights[j * (TR + 1) + i]; pos[o + 2] = -half + j * stepW;
+      const hl = sampleH(i - 1, j), hr = sampleH(i + 1, j), hd = sampleH(i, j - 1), hu = sampleH(i, j + 1);
+      const nx = (hl - hr), ny = 2.0 * stepW, nz = (hd - hu);
+      const inv = 1.0 / Math.hypot(nx, ny, nz);
+      nor[o] = nx * inv; nor[o + 1] = ny * inv; nor[o + 2] = nz * inv;
+    }
+  }
+  const idx = new Uint32Array(TR * TR * 6);
+  let p = 0;
+  for (let j = 0; j < TR; j++) for (let i = 0; i < TR; i++) {
+    const a = j * (TR + 1) + i, b = a + 1, c = a + (TR + 1), d = c + 1;
+    idx[p++] = a; idx[p++] = c; idx[p++] = b;
+    idx[p++] = b; idx[p++] = c; idx[p++] = d;
+  }
+  terrainGeo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+  terrainGeo.setAttribute('normal', new THREE.BufferAttribute(nor, 3));
+  terrainGeo.setIndex(new THREE.BufferAttribute(idx, 1));
+  terrainGeo.computeBoundingSphere();
+}
+
+const GL_NOISE = `
+float vhash(vec2 p){
+  p = fract(p * vec2(123.34, 456.21));
+  p += dot(p, p + 45.32);
+  return fract(p.x * p.y);
+}
+float vnoise(vec2 p){
+  vec2 i = floor(p), f = fract(p);
+  vec2 u = f * f * (3.0 - 2.0 * f);
+  return mix(mix(vhash(i), vhash(i + vec2(1, 0)), u.x),
+             mix(vhash(i + vec2(0, 1)), vhash(i + vec2(1, 1)), u.x), u.y);
+}
+float fbm(vec2 p, int oct){
+  float s = 0.0, a = 0.5;
+  for (int i = 0; i < 6; i++){ if (i >= oct) break; s += a * vnoise(p); p = p * 2.03 + 17.1; a *= 0.5; }
+  return s;
+}
+`;
+
+// shared gradient-sky helper (matches the surface shader)
+const SKY_FN = `
+vec3 skyColor(vec3 dir, vec3 sunDir, vec3 horizon, vec3 zenith, vec3 sunColor){
+  float t = smoothstep(-0.05, 0.4, dir.y);
+  vec3 grad = mix(horizon, zenith, t);
+  float sd = max(dot(dir, sunDir), 0.0);
+  vec3 disc = pow(sd, 1200.0) * sunColor * 8.0;
+  vec3 halo = pow(sd, 7.0) * sunColor * 0.35;
+  return grad + disc + halo;
+}
+`;
+
+const TERRAIN_VS = `precision highp float;
+uniform mat4 modelMatrix; uniform mat4 modelViewMatrix; uniform mat4 projectionMatrix;
+in vec3 position; in vec3 normal;
+out vec3 vW; out vec3 vN;
+void main(){
+  vW = (modelMatrix * vec4(position, 1.0)).xyz;
+  vN = normalize(mat3(modelMatrix) * normal);
+  gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+}`;
+
+const TERRAIN_FS = `precision highp float;
+precision highp int;
+uniform mat4 modelMatrix; uniform mat4 viewMatrix; uniform mat3 normalMatrix;
+uniform vec3 cameraPosition;
+uniform vec3 uSunDir; uniform vec3 uSunColor;
+uniform vec3 uSkyHorizon; uniform vec3 uSkyZenith;
+uniform sampler2D uDeriv1; uniform sampler2D uDeriv2;
+uniform float uL1; uniform float uL2; uniform float uCaustics; uniform float uTime; uniform float uFogDensity;
+uniform float uTerrainSize;
+${SKY_FN}
+${GL_NOISE}
+in vec3 vW; in vec3 vN;
+out vec4 outColor;
+float sat(float x){ return clamp(x, 0.0, 1.0); }
+vec2 slopeAt(vec2 p){ return texture(uDeriv1, p / uL1).xy + texture(uDeriv2, p / uL2).xy; }
+float causticTerm(vec3 wp){
+  float depth = max(-wp.y, 0.0);
+  vec3 sd = uSunDir;
+  vec2 p = wp.xz + sd.xz / max(sd.y, 0.18) * depth;
+  float e = 0.4;
+  vec2 s0 = slopeAt(p);
+  vec2 sx = slopeAt(p + vec2(e, 0.0));
+  vec2 sz = slopeAt(p + vec2(0.0, e));
+  float axx = (sx.x - s0.x) / e, azz = (sz.y - s0.y) / e;
+  float axz = (sz.x - s0.x) / e, azx = (sx.y - s0.y) / e;
+  float d = min(depth, 26.0) * 0.25;
+  float J = (1.0 + d * axx) * (1.0 + d * azz) - d * d * axz * azx;
+  return 1.0 / max(abs(J), 0.05);
+}
+void main(){
+  vec3 N = normalize(vN);
+  float dn = fbm(vW.xz * 0.55, 4) - fbm(vW.xz * 0.55 + vec2(0.7), 4);
+  N = normalize(N + vec3(dn, 0.0, -dn) * 0.28);
+  float slope = 1.0 - sat(N.y);
+  float wet = 1.0 - smoothstep(-0.4, 2.2, vW.y);
+  vec3 sand = vec3(0.78, 0.70, 0.55) * (0.85 + 0.30 * fbm(vW.xz * 0.11, 4));
+  vec3 wetSand = vec3(0.40, 0.35, 0.28);
+  vec3 rock = vec3(0.30, 0.29, 0.28) * (0.7 + 0.6 * fbm(vW.xz * 0.06, 4));
+  vec3 grass = vec3(0.20, 0.27, 0.14) * (0.7 + 0.6 * fbm(vW.xz * 0.09, 3));
+  vec3 alb = mix(sand, wetSand, wet * 0.75);
+  alb = mix(alb, rock, smoothstep(0.22, 0.52, slope));
+  alb = mix(alb, grass, smoothstep(9.0, 17.0, vW.y) * (1.0 - smoothstep(0.30, 0.62, slope)));
+  float ndl = sat(dot(N, uSunDir));
+  vec3 amb = skyColor(vec3(0.0, 1.0, 0.0), uSunDir, uSkyHorizon, uSkyZenith, uSunColor) * 0.9
+           + skyColor(normalize(N + vec3(0.0, 0.6, 0.0)), uSunDir, uSkyHorizon, uSkyZenith, uSunColor) * 0.4;
+  vec3 col = alb * (uSunColor * ndl + amb * (0.45 + 0.55 * sat(N.y)));
+  if (vW.y < 0.0) {
+    float depth = -vW.y;
+    float c = causticTerm(vW);
+    float shape = pow(smoothstep(0.85, 2.5, c), 1.35);
+    float atten = exp(-depth * 0.055) * sat(uSunDir.y * 3.0);
+    col += alb * uSunColor * shape * uCaustics * atten * 2.4;
+    col *= mix(1.0, 0.55, sat(depth / 45.0));
+  }
+  vec3 v = vW - cameraPosition;
+  float dist = length(v);
+  float f = 1.0 - exp(-dist * dist * uFogDensity * uFogDensity);
+  col = mix(col, skyColor(normalize(v), uSunDir, uSkyHorizon, uSkyZenith, uSunColor), sat(f) * step(0.0, vW.y + 0.5));
+  outColor = vec4(min(col, vec3(900.0)), 1.0);
+}`;
+
+const terrainMat = new THREE.RawShaderMaterial({
+  glslVersion: THREE.GLSL3, side: THREE.FrontSide,
+  uniforms: {
+    uSunDir: { value: new THREE.Vector3() }, uSunColor: { value: C0(params.colors.sun) },
+    uSkyHorizon: { value: C0(params.colors.skyHorizon) }, uSkyZenith: { value: C0(params.colors.skyZenith) },
+    uDeriv1: { value: null }, uDeriv2: { value: null },
+    uL1: { value: 0 }, uL2: { value: 0 },
+    uCaustics: { value: 1.0 }, uTime: { value: 0 }, uFogDensity: { value: 0.000085 },
+    uTerrainSize: { value: TERRAIN_SIZE },
+  },
+  vertexShader: TERRAIN_VS, fragmentShader: TERRAIN_FS,
+});
+if (ocean.cascades.length > 1) terrainMat.uniforms.uDeriv1.value = ocean.cascades[1].deriv.texture;
+if (ocean.cascades.length > 2) terrainMat.uniforms.uDeriv2.value = ocean.cascades[2].deriv.texture;
+terrainMat.uniforms.uL1.value = ocean.cascades.length > 1 ? ocean.cascades[1].L : 1;
+terrainMat.uniforms.uL2.value = ocean.cascades.length > 2 ? ocean.cascades[2].L : 1;
+const terrainMesh = new THREE.Mesh(terrainGeo, terrainMat);
+terrainMesh.frustumCulled = false;
+
+/* ════════════════════════════════════════════════════════════════════════
+   GRASS — instanced wind-swept blades on the island slopes
+   ════════════════════════════════════════════════════════════════════════ */
+const GRASS_COUNT = 3500;
+const bladeGeo = new THREE.BufferGeometry();
+{
+  const w = 0.07, h = 1.0;
+  const pos = new Float32Array([
+    -w / 2, 0, 0,    w / 2, 0, 0,
+    -w / 2, h * 0.6, w * 0.35,   w / 2, h * 0.6, w * 0.35,
+    -w * 0.25, h, w * 0.6,    w * 0.25, h, w * 0.6
+  ]);
+  const idx = [0, 1, 2, 1, 3, 2, 2, 3, 4, 3, 5, 4];
+  const nor = new Float32Array(pos.length);
+  for (let i = 0; i < pos.length; i += 3) nor[i + 1] = 1.0;
+  bladeGeo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+  bladeGeo.setAttribute('normal', new THREE.BufferAttribute(nor, 3));
+  bladeGeo.setIndex(idx);
+}
+
+const GRASS_FS = `precision highp float;
+precision highp int;
+uniform vec3 cameraPosition;
+uniform vec3 uSunDir; uniform vec3 uSunColor;
+uniform vec3 uSkyHorizon; uniform vec3 uSkyZenith;
+${SKY_FN}
+in vec3 vW; in vec3 vN; in vec3 vC;
+out vec4 outColor;
+float sat(float x){ return clamp(x, 0.0, 1.0); }
+void main(){
+  vec3 N = normalize(vN);
+  float ndl = sat(dot(N, uSunDir));
+  vec3 amb = skyColor(normalize(N * 0.6 + vec3(0.0, 1.0, 0.0)), uSunDir, uSkyHorizon, uSkyZenith, uSunColor) * 1.1;
+  vec3 col = vC * (uSunColor * ndl * 0.9 + amb * 0.75);
+  outColor = vec4(min(col, vec3(900.0)), 1.0);
+}`;
+const GRASS_VS = `precision highp float;
+uniform mat4 projectionMatrix; uniform mat4 viewMatrix;
+uniform float uTime;
+in vec3 position; in vec3 normal; in mat4 instanceMatrix; in vec3 instanceColor;
+out vec3 vW; out vec3 vN; out vec3 vC;
+void main(){
+  vec3 inst = (instanceMatrix * vec4(0, 0, 0, 1)).xyz;
+  vec3 p = position;
+  float bend = smoothstep(0.0, 1.0, position.y);
+  float wind = sin(uTime * 1.8 + inst.x * 0.35 + inst.z * 0.28) * 0.22
+             + cos(uTime * 1.3 + inst.z * 0.22) * 0.12;
+  p.x += wind * bend * 0.30;
+  p.z += wind * bend * 0.16;
+  vec4 wp = instanceMatrix * vec4(p, 1.0);
+  vW = wp.xyz;
+  vN = normalize(mat3(instanceMatrix) * normal);
+  vC = instanceColor;
+  gl_Position = projectionMatrix * viewMatrix * wp;
+}`;
+
+const grassMat = new THREE.RawShaderMaterial({
+  glslVersion: THREE.GLSL3, side: THREE.DoubleSide,
+  uniforms: {
+    uSunDir: { value: new THREE.Vector3() }, uSunColor: { value: C0(params.colors.sun) },
+    uSkyHorizon: { value: C0(params.colors.skyHorizon) }, uSkyZenith: { value: C0(params.colors.skyZenith) },
+    uTime: { value: 0 },
+  },
+  vertexShader: GRASS_VS, fragmentShader: GRASS_FS,
+});
+const grassMesh = new THREE.InstancedMesh(bladeGeo, grassMat, GRASS_COUNT);
+grassMesh.frustumCulled = false;
+{
+  const dummy = new THREE.Object3D();
+  const c = new THREE.Color();
+  let placed = 0, guard = 0;
+  while (placed < GRASS_COUNT && guard++ < GRASS_COUNT * 60) {
+    const a = Math.random() * Math.PI * 2;
+    const r = 150 + Math.random() * 250;
+    const x = Math.cos(a) * r, z = Math.sin(a) * r;
+    const h = terrainH(x, z);
+    if (h < 8.0 || h > 17.5) continue;
+    const e = 3.0;
+    const sx = terrainH(x + e, z) - terrainH(x - e, z);
+    const sz = terrainH(x, z + e) - terrainH(x, z - e);
+    if (sx * sx + sz * sz > 0.9) continue;
+    dummy.position.set(x, h + 0.05, z);
+    dummy.rotation.set(0, Math.random() * Math.PI * 2, 0);
+    const s = 0.7 + Math.random() * 1.3;
+    dummy.scale.set(s, s * 0.85, s);
+    dummy.updateMatrix();
+    grassMesh.setMatrixAt(placed, dummy.matrix);
+    c.setHSL(0.27 + Math.random() * 0.07, 0.55 + Math.random() * 0.25, 0.30 + Math.random() * 0.20);
+    grassMesh.setColorAt(placed, c);
+    placed++;
+  }
+  grassMesh.count = placed;
+}
+
+/* ════════════════════════════════════════════════════════════════════════
+   SPRAY — ballistic droplets kicked off the animated shoreline foam
+   ════════════════════════════════════════════════════════════════════════ */
+const SPRAY_MAX = 4000;
+const spray = {
+  pos: new Float32Array(SPRAY_MAX * 3),
+  vel: new Float32Array(SPRAY_MAX * 3),
+  life: new Float32Array(SPRAY_MAX),
+  mlife: new Float32Array(SPRAY_MAX),
+  next: 0,
+  gravity: -9.81,
+  wind: new THREE.Vector3(0.45, 0, 0.35)
+};
+for (let i = 0; i < SPRAY_MAX; i++) spray.pos[i * 3 + 1] = -9999;
+function spawnSpray(x, y, z, nx, ny, nz, vel) {
+  const i = spray.next; spray.next = (spray.next + 1) % SPRAY_MAX;
+  spray.pos[i * 3] = x; spray.pos[i * 3 + 1] = y; spray.pos[i * 3 + 2] = z;
+  const v = vel * (0.4 + Math.random() * 0.8);
+  spray.vel[i * 3] = nx * v + spray.wind.x * (0.3 + Math.random() * 0.3);
+  spray.vel[i * 3 + 1] = ny * v + Math.random() * 0.6;
+  spray.vel[i * 3 + 2] = nz * v + spray.wind.z * (0.3 + Math.random() * 0.3);
+  spray.life[i] = 1; spray.mlife[i] = 0.5 + Math.random() * 0.9;
+}
+function spawnSprayFromShore(t, dt) {
+  const n = Math.min(8, Math.ceil(dt * 140));
+  for (let k = 0; k < n; k++) {
+    const ang = Math.random() * Math.PI * 2;
+    const rad = 150 + Math.random() * 160;
+    const x = Math.cos(ang) * rad, z = Math.sin(ang) * rad;
+    const bed = terrainH(x, z);
+    const wd = Math.max(0.0, -bed);
+    const shore = 1.0 - sstep(0.0, 2.6, wd);
+    const anim = 0.5 + 0.5 * Math.sin(wd * 2.7 - t * 1.7 + fbmJs(x * 0.22, z * 0.22, 3) * 7.0);
+    const st = shore * anim;
+    if (st > 0.5 && Math.random() < st * 0.6) {
+      const nx = (Math.random() - 0.5) * 0.3, nz = (Math.random() - 0.5) * 0.3;
+      for (let d = 0; d < 3; d++)
+        spawnSpray(x + (Math.random() - 0.5) * 3.0, 0.3 + Math.random() * 2.5, z + (Math.random() - 0.5) * 3.0,
+                   nx, 1.0, nz, 6.0 + Math.random() * 5.0);
+    }
+  }
+}
+const sprayGeoPos = new Float32Array(SPRAY_MAX * 3);
+const sprayGeoCol = new Float32Array(SPRAY_MAX * 3);
+for (let i = 0; i < SPRAY_MAX; i++) { sprayGeoPos[i * 3 + 1] = -9999; sprayGeoCol[i * 3] = 1; sprayGeoCol[i * 3 + 1] = 1; sprayGeoCol[i * 3 + 2] = 1; }
+const sprayGeo = new THREE.BufferGeometry();
+sprayGeo.setAttribute('position', new THREE.BufferAttribute(sprayGeoPos, 3));
+sprayGeo.setAttribute('color', new THREE.BufferAttribute(sprayGeoCol, 3));
+const sprayMat = new THREE.PointsMaterial({
+  size: 0.85, vertexColors: true, transparent: true, opacity: 0.85,
+  depthWrite: false, blending: THREE.AdditiveBlending
+});
+const sprayMesh = new THREE.Points(sprayGeo, sprayMat);
+sprayMesh.frustumCulled = false;
+
+function updateSpray(dt) {
+  const p = spray.pos, v = spray.vel, L = spray.life, M = spray.mlife;
+  const g = spray.gravity;
+  for (let i = 0; i < SPRAY_MAX; i++) {
+    if (L[i] <= 0) continue;
+    L[i] -= dt;
+    v[i * 3 + 1] += g * dt;
+    v[i * 3] += (spray.wind.x - v[i * 3]) * 0.3 * dt;
+    v[i * 3 + 2] += (spray.wind.z - v[i * 3 + 2]) * 0.3 * dt;
+    p[i * 3] += v[i * 3] * dt; p[i * 3 + 1] += v[i * 3 + 1] * dt; p[i * 3 + 2] += v[i * 3 + 2] * dt;
+    if (p[i * 3 + 1] < 0.05 && v[i * 3 + 1] < 0) {
+      v[i * 3 + 1] *= -0.25; v[i * 3] *= 0.6; v[i * 3 + 2] *= 0.6;
+    }
+    sprayGeoPos[i * 3] = p[i * 3]; sprayGeoPos[i * 3 + 1] = p[i * 3 + 1]; sprayGeoPos[i * 3 + 2] = p[i * 3 + 2];
+    const a = Math.max(0, L[i] / M[i]);
+    sprayGeoCol[i * 3] = a; sprayGeoCol[i * 3 + 1] = a; sprayGeoCol[i * 3 + 2] = a;
+  }
+  sprayGeo.attributes.position.needsUpdate = true;
+  sprayGeo.attributes.color.needsUpdate = true;
+}
+
+const scene = new THREE.Scene();
+scene.add(ocean.sky);
+scene.add(ocean.oceanMesh);
+scene.add(terrainMesh);
+scene.add(grassMesh);
+scene.add(sprayMesh);
+
+const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 50000);
+camera.position.set(0, 55, -820);
+const controls = new OrbitControls(camera, canvas);
+controls.target.set(0, 0, 0);
+controls.enableDamping = true;
+controls.maxPolarAngle = Math.PI * 0.495;
+
+window.addEventListener('resize', () => {
+  camera.aspect = window.innerWidth / window.innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(window.innerWidth, window.innerHeight);
+});
+
+/* GUI */
+const bind = (id, outId, fn, val, step, skipInit) => {
+  const el = document.getElementById(id);
+  const out = document.getElementById(outId);
+  const set = () => { const v = parseFloat(el.value); out.textContent = step >= 1 ? String(v) : v.toFixed(2); fn(v); };
+  el.value = val;
+  el.step = step;
+  el.addEventListener('input', set);
+  if (!skipInit) set();
+};
+const rebuild = () => { ocean._buildCascades && ocean._buildCascades(); };
+// We use closures over params; recompute initial spectrum + materials when needed.
+const reseed = () => { ocean._initSpectrum(); };
+const resetView = () => { camera.position.set(0, 55, -820); controls.target.set(0, 0, 0); };
+
+bind('pLambda', 'pLambdav', v => { params.lambda = v; ocean.asmDispMat.uniforms.uLambda.value = v; }, 1.3, 0.05);
+bind('pTS', 'pTSv', v => params.timeScale = v, 1.0, 0.1);
+bind('pWS', 'pWSv', v => { params.local.windSpeed = v; ocean._initSpectrum(); }, 16, 0.5);
+bind('pWD', 'pWDv', v => { params.local.windDirection = v; ocean._initSpectrum(); }, 45, 1);
+bind('pFetch', 'pFetchv', v => { params.local.fetch = v * 1000; ocean._initSpectrum(); }, 100, 1);
+bind('pSwell', 'pSwellv', v => { params.local.swell = v; ocean._initSpectrum(); }, 0.2, 0.01);
+bind('pDepth', 'pDepthv', v => { params.depth = v; ocean.initMat.uniforms.uDepth.value = v; ocean._initSpectrum(); }, 500, 10);
+bind('pSunEl', 'pSunElv', v => { params.sunElevation = v; }, 28, 1);
+bind('pSunAz', 'pSunAzv', v => { params.sunAzimuth = v; }, 135, 1);
+bind('pSSS', 'pSSSv', v => { params.sssStrength = v; ocean.oceanMaterial.uniforms.uSSSStrength.value = v; }, 1.0, 0.05);
+bind('pDetail', 'pDetailv', v => { params.detailStrength = v; ocean.oceanMaterial.uniforms.uDetailStrength.value = v; }, 0.1, 0.01);
+bind('pAmp', 'pAmpv', v => { params.amplitude = v; ocean.oceanMaterial.uniforms.uAmp.value = v; }, 1.0, 0.05);
+bind('pFoamT', 'pFoamTv', v => { params.foamThreshold = v; ocean.oceanMaterial.uniforms.uFoamThreshold.value = v; }, 0.4, 0.01);
+bind('pFoamS', 'pFoamSv', v => { params.foamScale = v; ocean.oceanMaterial.uniforms.uFoamScale.value = v; }, 2.5, 0.1);
+bind('pFoamD', 'pFoamDv', v => { params.foamDecay = v; ocean.asmDispMat.uniforms.uFoamDecay.value = v; }, 0.4, 0.05);
+bind('pCasc', 'pCascv', v => { params.cascades = v; location.reload(); }, 3, 1, true);
+
+document.getElementById('btnReseed').addEventListener('click', reseed);
+document.getElementById('btnReset').addEventListener('click', resetView);
+
+/* animate */
+const clock = new THREE.Clock();
+let t = 0;
+let frame = 0;
+function animate() {
+  requestAnimationFrame(animate);
+  const dt = Math.min(clock.getDelta(), 0.05);
+  t += dt * params.timeScale;
+  const sunDir = ocean._sunDir();
+  ocean.oceanMaterial.uniforms.uSunDir.value.copy(sunDir);
+  ocean.oceanMaterial.uniforms.uTime.value = t;
+  ocean.skyMaterial.uniforms.uSunDir.value.copy(sunDir);
+  terrainMat.uniforms.uSunDir.value.copy(sunDir);
+  terrainMat.uniforms.uTime.value = t;
+  grassMat.uniforms.uSunDir.value.copy(sunDir);
+  grassMat.uniforms.uTime.value = t;
+
+  spawnSprayFromShore(t, dt);
+  updateSpray(dt);
+  ocean.evolve(t, dt);
+  controls.update();
+  renderer.clear();
+  renderer.setRenderTarget(null);
+  renderer.render(scene, camera);
+  frame++;
+  if (frame % 30 === 0) {
+    hud.textContent = `poseidon webgl2 · running
+t=${t.toFixed(1)}s  cascades=${ocean.cascades.length}  N=${ocean.N}
+fps=${Math.round(1 / dt)}`;
+  }
+}
+animate();
+
+setTimeout(() => {
+  hud.textContent = 'poseidon webgl2 — compiling…';
+}, 50);
+</script>
+</body>
+</html>
