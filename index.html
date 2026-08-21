@@ -264,6 +264,12 @@
     .planet-card { --accent: #8affcf; color: #e6fff4; background: radial-gradient(circle at 50% 38%, #123326 0, #0b1a14 44%, #060a08 86%); }
     .planet-card .card-side { color: #8fffd2; }
     .planet-preview { background: radial-gradient(circle at 50% 45%, rgba(64,210,150,.3), transparent 34%), linear-gradient(180deg, #0b1f16 0, #060d0a 70%); }
+    .wetpaint-preview { background: radial-gradient(ellipse at 45% 55%, rgba(180,140,90,.45), transparent 38%), linear-gradient(135deg, #1a1510 0, #0d0a07 68%); }
+    .wetpaint-preview::before { content: ''; position: absolute; top: 18%; left: 15%; width: 50%; height: 3px; background: linear-gradient(90deg, transparent, rgba(200,160,80,.6), rgba(180,100,60,.4), transparent); border-radius: 2px; transform: rotate(-8deg); }
+    .wetpaint-preview::after { content: ''; position: absolute; top: 38%; left: 22%; width: 40%; height: 2px; background: linear-gradient(90deg, transparent, rgba(120,180,140,.5), rgba(80,140,100,.3), transparent); border-radius: 2px; transform: rotate(5deg); }
+    .wetpaint-brush { position: absolute; width: 60%; height: 2px; top: 28%; left: 10%; background: linear-gradient(90deg, transparent 5%, rgba(220,180,100,.55) 20%, rgba(160,90,50,.4) 80%, transparent 95%); border-radius: 1px; transform: rotate(-3deg); }
+    .wetpaint-brush.two { top: 48%; left: 18%; width: 45%; background: linear-gradient(90deg, transparent 8%, rgba(100,160,120,.5) 25%, rgba(60,120,80,.35) 75%, transparent 92%); transform: rotate(4deg); }
+    .wetpaint-label { position: absolute; bottom: 14%; right: 10%; font-size: 8px; letter-spacing: .12em; color: rgba(200,180,140,.45); }
     .planet-sphere { position: absolute; top: 50%; left: 50%; width: 46%; aspect-ratio: 1; transform: translate(-50%, -50%); border-radius: 50%; background: radial-gradient(circle at 34% 30%, #b7ffe0 0 4%, #2f9e70 28%, #10543c 62%, #071f15 100%); box-shadow: inset -12px -14px 30px rgba(0,0,0,.55), 0 0 30px rgba(90,255,190,.28); animation: corePulse 4.4s ease-in-out infinite; }
     .planet-sphere::before { content: ''; position: absolute; inset: 0; border-radius: 50%; background: radial-gradient(circle, transparent 46%, rgba(140,255,210,.5) 47.5%, transparent 50%), radial-gradient(circle, transparent 30%, rgba(140,255,210,.35) 31.5%, transparent 33%); opacity: .7; }
     .planet-halo { position: absolute; top: 50%; left: 50%; width: 62%; aspect-ratio: 1; transform: translate(-50%, -50%); border-radius: 50%; border: 1px solid rgba(140,255,210,.3); box-shadow: 0 0 26px rgba(120,255,200,.18); animation: spin 22s linear infinite; }
@@ -301,7 +307,7 @@
       <p class="eyebrow">Experimental visual studies / 2026</p>
       <h1>Visual Gallery</h1>
       <p class="subtitle">WebGL과 쉐이더로 구현한 움직이는 장면들입니다.<br>각 작품의 고유한 리듬을 프리뷰에서 먼저 경험해 보세요.</p>
-      <div class="hero-meta"><span>05 visual systems</span><span>Scroll to explore</span></div>
+      <div class="hero-meta"><span>06 visual systems</span><span>Scroll to explore</span></div>
     </div>
     <div class="scroll-indicator" aria-hidden="true"></div>
   </header>
@@ -316,7 +322,7 @@
       <a href="ocean.html" class="card ocean-card" aria-label="Island Ocean — 섬과 해변 열기">
         <div class="card-side left" aria-hidden="true"><span class="side-label">Tide / 03</span><span class="side-rule"></span><span class="side-dot"></span></div>
         <div class="card-side right" aria-hidden="true"><span class="side-dot"></span><span class="side-rule"></span><span class="side-label">38° N</span></div>
-        <div class="card-top"><span class="tag">WebGL2 / FFT</span><span class="index-no">01 / 05</span></div>
+        <div class="card-top"><span class="tag">WebGL2 / FFT</span><span class="index-no">01 / 06</span></div>
         <div class="art-preview ocean-preview" aria-hidden="true">
           <div class="buoy"></div><span class="coordinate">SPECTRAL · 0.82</span>
           <svg class="wave-svg" viewBox="0 0 1000 520" preserveAspectRatio="none">
@@ -332,7 +338,7 @@
       <a href="particles.html" class="card particle-card" aria-label="Nebula Particle System 열기">
         <div class="card-side left" aria-hidden="true"><span class="side-label">Ion / Flux</span><span class="side-rule"></span><span class="side-dot"></span></div>
         <div class="card-side right" aria-hidden="true"><span class="side-dot"></span><span class="side-rule"></span><span class="side-label">0.031 C</span></div>
-        <div class="card-top"><span class="tag">GPU particles</span><span class="index-no">02 / 05</span></div>
+        <div class="card-top"><span class="tag">GPU particles</span><span class="index-no">02 / 06</span></div>
         <div class="art-preview particle-preview" aria-hidden="true"><div class="dust"></div><div class="dust two"></div><div class="core"></div><div class="particle-scale"></div></div>
         <div class="card-info"><span class="category">Cosmic dust</span><h2>Nebula Particle<br>System</h2><span class="arrow" aria-hidden="true">↗</span></div>
       </a>
@@ -340,7 +346,7 @@
       <a href="product.html" class="card product-card" aria-label="High-End Product Viewer 열기">
         <div class="card-side left" aria-hidden="true"><span class="side-label">PBR / 0.05</span><span class="side-rule"></span><span class="side-dot"></span></div>
         <div class="card-side right" aria-hidden="true"><span class="side-dot"></span><span class="side-rule"></span><span class="side-label">Zenith</span></div>
-        <div class="card-top"><span class="tag">PBR material</span><span class="index-no">03 / 05</span></div>
+        <div class="card-top"><span class="tag">PBR material</span><span class="index-no">03 / 06</span></div>
         <div class="art-preview product-preview" aria-hidden="true"><span class="spec-line"></span><span class="spec-mark">REFLECTANCE / 98.4%</span></div>
         <div class="card-info"><span class="category">Luxury chrome</span><h2>High-End Product<br>Viewer</h2><span class="arrow" aria-hidden="true">↗</span></div>
       </a>
@@ -348,7 +354,7 @@
       <a href="fluid/index.html" class="card fluid-card" aria-label="Fluid Simulation — 100K SPH 유체 시뮬레이션 열기">
         <div class="card-side left" aria-hidden="true"><span class="side-label">SPH / 100K</span><span class="side-rule"></span><span class="side-dot"></span></div>
         <div class="card-side right" aria-hidden="true"><span class="side-dot"></span><span class="side-rule"></span><span class="side-label">FLIP</span></div>
-        <div class="card-top"><span class="tag">WebGPU fluid</span><span class="index-no">04 / 05</span></div>
+        <div class="card-top"><span class="tag">WebGPU fluid</span><span class="index-no">04 / 06</span></div>
         <div class="art-preview fluid-preview" aria-hidden="true"><div class="fluid-drops"></div><div class="fluid-splash"></div><span class="fluid-count">PARTICLES / 100,000</span></div>
         <div class="card-info"><span class="category">GPU fluid solver</span><h2>Fluid Simulation —<br>100K SPH</h2><span class="arrow" aria-hidden="true">↗</span></div>
       </a>
@@ -356,9 +362,21 @@
       <a href="planet/index.html" class="card planet-card" aria-label="Procedural Planet — 판구조론 행성 생성기 열기">
         <div class="card-side left" aria-hidden="true"><span class="side-label">Tectonics / LOD</span><span class="side-rule"></span><span class="side-dot"></span></div>
         <div class="card-side right" aria-hidden="true"><span class="side-dot"></span><span class="side-rule"></span><span class="side-label">Seed 7</span></div>
-        <div class="card-top"><span class="tag">WebGPU planet</span><span class="index-no">05 / 05</span></div>
+        <div class="card-top"><span class="tag">WebGPU planet</span><span class="index-no">05 / 06</span></div>
         <div class="art-preview planet-preview" aria-hidden="true"><div class="planet-halo"></div><div class="planet-sphere"></div><span class="planet-mark">EROSION / BAKED</span></div>
         <div class="card-info"><span class="category">Procedural planet</span><h2>Planet Generator —<br>판구조 행성</h2><span class="arrow" aria-hidden="true">↗</span></div>
+      </a>
+
+      <a href="wet-paint-flow/" class="card wetpaint-card" aria-label="Wet Paint Flow — 습윤 유화 페인팅 열기">
+        <div class="card-side left" aria-hidden="true"><span class="side-label">Flow / 06</span><span class="side-rule"></span><span class="side-dot"></span></div>
+        <div class="card-side right" aria-hidden="true"><span class="side-dot"></span><span class="side-rule"></span><span class="side-label">14K</span></div>
+        <div class="card-top"><span class="tag">Three.js flow field</span><span class="index-no">06 / 06</span></div>
+        <div class="art-preview wetpaint-preview" aria-hidden="true">
+          <div class="wetpaint-brush"></div>
+          <div class="wetpaint-brush two"></div>
+          <span class="wetpaint-label">STROKES / 14,000</span>
+        </div>
+        <div class="card-info"><span class="category">Flow-field painting</span><h2>Wet Paint Flow —<br>습윤 유화 페인팅</h2><span class="arrow" aria-hidden="true">↗</span></div>
       </a>
     </section>
   </main>
