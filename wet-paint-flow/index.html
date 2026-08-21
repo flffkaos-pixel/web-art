@@ -18,13 +18,27 @@
     <meta name="twitter:title" content="Wet Paint Flow" />
     <meta name="twitter:description" content="Real-time flow-field painting in the browser." />
     <meta name="twitter:image" content="https://wet-paint-flow.simonxxoo.chatgpt.site/og.png" />
-    <title>Wet Paint Flow · 실시간 유화 브러시 생성기</title>
+    <title>Wet Paint Flow · 실시간 유화 브러시 생성기</title>
+
     <script type="module" crossorigin src="/assets/index-DqXtSUlG.js"></script>
     <link rel="stylesheet" crossorigin href="/assets/index-CzDU-wAD.css">
+    <style>
+      /* Hide unnecessary panels, keep only essentials */
+      #model-light-control { display: none !important; }
+      #panel-resizer { display: none !important; }
+      #source-controls .default-geometry-picker { display: none !important; }
+      #source-controls .model-source-controls { display: none !important; }
+      #source-controls .source-actions { display: none !important; }
+      #display-controls .brush-layer-switches { display: none !important; }
+      #stroke-controls .quality-row { display: none !important; }
+      #stroke-controls .slider-row:nth-child(n+4) { display: none !important; }
+      .panel { width: 100% !important; max-width: 380px !important; }
+      .runtime-probes { display: none !important; }
+    </style>
   </head>
   <body>
     <main id="app">
-      <section class="stage" aria-label="방향場 실시간 브러시 실험">
+      <section class="stage" aria-label="방향장 실시간 브러시 실험">
         <div id="canvas-mount" title="마우스 휠로 확대/축소 · 더블클릭으로 초기화"></div>
         <div id="model-light-control" class="model-light-control" hidden>
           <label for="model-light-angle">
@@ -93,7 +107,7 @@
           </div>
           <input id="source-upload" class="visually-hidden" type="file" accept="image/png,image/jpeg,image/webp,image/gif,image/*,.glb,model/gltf-binary,model/gltf+binary" />
           <label id="upload-drop" class="upload-drop" for="source-upload">
-            <span class="upload-icon" aria-hidden="true">＋</span>
+            <span class="upload-icon" aria-hidden="true">+</span>
             <span class="upload-copy">
               <strong data-i18n="importSource">이미지 또는 GLB 가져오기</strong>
               <small data-i18n="localProcessing">JPG / PNG / WebP / GLB · 로컬 처리</small>
@@ -125,7 +139,7 @@
                 <button type="button" data-model-color="#3e4148" aria-label="차콜 블랙" title="차콜 블랙"></button>
                 <label class="model-color-custom" for="model-color-custom" title="사용자 지정 색상">
                   <input id="model-color-custom" type="color" value="#526d9d" aria-label="사용자 지정 모델 색상" />
-                  <span aria-hidden="true">＋</span>
+                  <span aria-hidden="true">+</span>
                 </label>
               </div>
             </div>
@@ -155,7 +169,7 @@
               <span data-i18n="strokeMorph">작품 간 브러시 변형</span>
               <button id="scene-tour-toggle" type="button" aria-pressed="false" data-i18n="startTour">자동 순회</button>
             </div>
-            <div id="scene-grid" class="scene-grid" role="list" aria-label="내장 방향場 장면">
+            <div id="scene-grid" class="scene-grid" role="list" aria-label="내장 방향장 장면">
               <span class="scene-loading" data-i18n="loadingScenes">장면 불러오는 중…</span>
             </div>
           </details>
@@ -190,7 +204,7 @@
               <input type="radio" name="layer-mode" value="0" />
               <span class="layer-choice blend-choice">
                 <i aria-hidden="true"></i>
-                <strong data-i18n="brushAndOriginal">브러시＋원본</strong>
+                <strong data-i18n="brushAndOriginal">브러시+원본</strong>
                 <small data-i18n="blendedView">혼합 표시</small>
               </span>
             </label>
@@ -319,6 +333,7 @@
       };
       window.addEventListener('error', (event) => reportFlowError(event.message || event.error));
       window.addEventListener('unhandledrejection', (event) => reportFlowError(event.reason));
-    </script>
+    </script>
+
   </body>
 </html>
