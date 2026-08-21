@@ -275,6 +275,16 @@
     .planet-halo { position: absolute; top: 50%; left: 50%; width: 62%; aspect-ratio: 1; transform: translate(-50%, -50%); border-radius: 50%; border: 1px solid rgba(140,255,210,.3); box-shadow: 0 0 26px rgba(120,255,200,.18); animation: spin 22s linear infinite; }
     .planet-mark { position: absolute; right: 15%; bottom: 14%; font-size: 8px; letter-spacing: .13em; color: rgba(180,255,222,.66); }
 
+    /* On-demand audio is intentionally user-triggered so browsing remains quiet by default. */
+    .sound-control { position: absolute; z-index: 5; right: 25px; bottom: 95px; display: inline-flex; align-items: center; gap: 7px; min-height: 28px; padding: 6px 9px; border: 1px solid rgba(255,255,255,.18); border-radius: 100px; color: rgba(247,255,255,.72); background: rgba(6,9,10,.38); backdrop-filter: blur(10px); font-size: 8px; letter-spacing: .13em; text-transform: uppercase; cursor: pointer; transition: background .25s, color .25s, border-color .25s; }
+    .sound-control::before { content: '◖'; font-size: 14px; line-height: .5; transform: rotate(180deg); }
+    .sound-control::after { content: 'off'; opacity: .62; }
+    .sound-control:hover, .sound-control:focus-visible { outline: none; color: white; border-color: currentColor; background: rgba(255,255,255,.12); }
+    .sound-control.is-playing { color: var(--accent); border-color: currentColor; background: rgba(255,255,255,.11); }
+    .sound-control.is-playing::after { content: 'on'; opacity: 1; }
+    .sound-control.is-playing::before { animation: soundPulse 1.2s ease-in-out infinite; }
+    @keyframes soundPulse { 50% { transform: rotate(180deg) scale(1.26); } }
+
     @keyframes rise { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: none; } }
     @keyframes scrollMove { from { transform: translateY(-100%); } to { transform: translateY(100%); } }
     @keyframes waveDrift { from { transform: translateX(-2%) translateY(0); } to { transform: translateX(3%) translateY(7px); } }
@@ -295,6 +305,7 @@
       .card-side.left { left: 13px; }.card-side.right { right: 13px; }
       .side-rule { height: 37px; }
       .card-info { right: 20px; bottom: 20px; left: 20px; }
+      .sound-control { right: 19px; bottom: 88px; }
       .hero-meta { gap: 11px; font-size: .55rem; }
       .hero-meta span + span::before { margin-right: 11px; }
     }
@@ -332,6 +343,7 @@
             <path class="wave two" fill="#62d0d0" opacity=".78" d="M0 359 C118 319 241 378 369 355 S590 316 704 370 S896 402 1000 364 V520 H0Z"/>
           </svg>
         </div>
+        <span class="sound-control" role="button" tabindex="0" data-ambient-toggle="ocean-audio" aria-pressed="false" aria-label="Island Ocean 사운드 재생"><span data-ambient-label>ambient</span></span>
         <div class="card-info"><span class="category">Island beach</span><h2>Island Ocean —<br>섬과 해변</h2><span class="arrow" aria-hidden="true">↗</span></div>
       </a>
 
@@ -340,6 +352,7 @@
         <div class="card-side right" aria-hidden="true"><span class="side-dot"></span><span class="side-rule"></span><span class="side-label">0.031 C</span></div>
         <div class="card-top"><span class="tag">GPU particles</span><span class="index-no">02 / 06</span></div>
         <div class="art-preview particle-preview" aria-hidden="true"><div class="dust"></div><div class="dust two"></div><div class="core"></div><div class="particle-scale"></div></div>
+        <span class="sound-control" role="button" tabindex="0" data-ambient-toggle="particle-audio" aria-pressed="false" aria-label="Nebula Particle System 사운드 재생"><span data-ambient-label>ambient</span></span>
         <div class="card-info"><span class="category">Cosmic dust</span><h2>Nebula Particle<br>System</h2><span class="arrow" aria-hidden="true">↗</span></div>
       </a>
 
@@ -348,6 +361,7 @@
         <div class="card-side right" aria-hidden="true"><span class="side-dot"></span><span class="side-rule"></span><span class="side-label">Zenith</span></div>
         <div class="card-top"><span class="tag">PBR material</span><span class="index-no">03 / 06</span></div>
         <div class="art-preview product-preview" aria-hidden="true"><span class="spec-line"></span><span class="spec-mark">REFLECTANCE / 98.4%</span></div>
+        <span class="sound-control" role="button" tabindex="0" data-ambient-toggle="product-audio" aria-pressed="false" aria-label="High-End Product Viewer 사운드 재생"><span data-ambient-label>ambient</span></span>
         <div class="card-info"><span class="category">Luxury chrome</span><h2>High-End Product<br>Viewer</h2><span class="arrow" aria-hidden="true">↗</span></div>
       </a>
 
@@ -356,6 +370,7 @@
         <div class="card-side right" aria-hidden="true"><span class="side-dot"></span><span class="side-rule"></span><span class="side-label">FLIP</span></div>
         <div class="card-top"><span class="tag">WebGPU fluid</span><span class="index-no">04 / 06</span></div>
         <div class="art-preview fluid-preview" aria-hidden="true"><div class="fluid-drops"></div><div class="fluid-splash"></div><span class="fluid-count">PARTICLES / 100,000</span></div>
+        <span class="sound-control" role="button" tabindex="0" data-ambient-toggle="fluid-audio" aria-pressed="false" aria-label="Fluid Simulation 사운드 재생"><span data-ambient-label>ambient</span></span>
         <div class="card-info"><span class="category">GPU fluid solver</span><h2>Fluid Simulation —<br>100K SPH</h2><span class="arrow" aria-hidden="true">↗</span></div>
       </a>
 
@@ -364,6 +379,7 @@
         <div class="card-side right" aria-hidden="true"><span class="side-dot"></span><span class="side-rule"></span><span class="side-label">Seed 7</span></div>
         <div class="card-top"><span class="tag">WebGPU planet</span><span class="index-no">05 / 06</span></div>
         <div class="art-preview planet-preview" aria-hidden="true"><div class="planet-halo"></div><div class="planet-sphere"></div><span class="planet-mark">EROSION / BAKED</span></div>
+        <span class="sound-control" role="button" tabindex="0" data-ambient-toggle="planet-audio" aria-pressed="false" aria-label="Planet Generator 사운드 재생"><span data-ambient-label>ambient</span></span>
         <div class="card-info"><span class="category">Procedural planet</span><h2>Planet Generator —<br>판구조 행성</h2><span class="arrow" aria-hidden="true">↗</span></div>
       </a>
 
@@ -380,5 +396,12 @@
       </a>
     </section>
   </main>
+
+  <audio id="ocean-audio" data-ambient preload="metadata" src="assets/audio/island-ocean.mp3"></audio>
+  <audio id="particle-audio" data-ambient preload="metadata" src="assets/audio/nebula-particles.mp3"></audio>
+  <audio id="product-audio" data-ambient preload="metadata" src="assets/audio/zenith-chrome.mp3"></audio>
+  <audio id="fluid-audio" data-ambient preload="metadata" src="assets/audio/fluid-simulation.mp3"></audio>
+  <audio id="planet-audio" data-ambient preload="metadata" src="assets/audio/planet-generator.mp3"></audio>
+  <script src="assets/ambient-player.js"></script>
 </body>
 </html>
