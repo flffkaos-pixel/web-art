@@ -285,6 +285,31 @@
     .sound-control.is-playing::before { animation: soundPulse 1.2s ease-in-out infinite; }
     @keyframes soundPulse { 50% { transform: rotate(180deg) scale(1.26); } }
 
+    /* Persistent user controls stay out of the cards to keep each visual study unobstructed. */
+    .audio-dock, .display-dock { position: fixed; z-index: 30; display: flex; align-items: center; border: 1px solid rgba(221,238,241,.20); background: rgba(6,10,12,.69); backdrop-filter: blur(16px); box-shadow: 0 14px 34px rgba(0,0,0,.25); color: rgba(239,251,251,.82); }
+    .audio-dock { left: 22px; bottom: 22px; gap: 12px; min-height: 45px; padding: 7px 10px 7px 8px; border-radius: 14px; }
+    .display-dock { right: 22px; bottom: 22px; border-radius: 14px; }
+    .dock-button { display: inline-flex; align-items: center; justify-content: center; min-height: 30px; border: 1px solid transparent; border-radius: 9px; color: inherit; background: rgba(255,255,255,.06); font: 9px/1 Inter,sans-serif; letter-spacing: .13em; text-transform: uppercase; cursor: pointer; transition: background .2s, color .2s, border-color .2s; }
+    .dock-button:hover, .dock-button:focus-visible { outline: none; border-color: rgba(225,255,255,.42); background: rgba(255,255,255,.14); }
+    #mute-toggle { gap: 6px; min-width: 72px; padding: 0 10px; }
+    #mute-toggle::before { content: '◖'; font-size: 15px; transform: rotate(180deg); }
+    #mute-toggle.is-muted { color: rgba(220,230,230,.50); }
+    #mute-toggle.is-muted::before { content: '×'; transform: none; font-size: 16px; }
+    .volume-wrap { display: grid; grid-template-columns: auto minmax(75px, 126px) 31px; align-items: center; gap: 8px; font-size: 8px; letter-spacing: .13em; text-transform: uppercase; }
+    .volume-wrap label { color: rgba(221,239,240,.55); }
+    .volume-wrap output { color: rgba(231,251,251,.83); text-align: right; font-variant-numeric: tabular-nums; }
+    #global-volume { width: 100%; height: 15px; appearance: none; cursor: pointer; background: transparent; }
+    #global-volume::-webkit-slider-runnable-track { height: 2px; border-radius: 999px; background: linear-gradient(90deg, #79d7db, rgba(180,215,218,.35)); }
+    #global-volume::-webkit-slider-thumb { width: 11px; height: 11px; margin-top: -4px; border: 1px solid #0b1415; border-radius: 50%; appearance: none; background: #d7ffff; box-shadow: 0 0 10px rgba(137,235,236,.68); }
+    #global-volume::-moz-range-track { height: 2px; border-radius: 999px; background: linear-gradient(90deg, #79d7db, rgba(180,215,218,.35)); }
+    #global-volume::-moz-range-thumb { width: 11px; height: 11px; border: 1px solid #0b1415; border-radius: 50%; background: #d7ffff; box-shadow: 0 0 10px rgba(137,235,236,.68); }
+    #ui-toggle { gap: 7px; min-width: 102px; padding: 0 12px; }
+    #ui-toggle::before { content: '⌘'; font-size: 14px; }
+    #ui-toggle.is-active { color: #a9f2f3; border-color: rgba(133,227,229,.45); }
+    body.art-only .hero > div:not(.scroll-indicator), body.art-only .gallery-heading, body.art-only .card-side, body.art-only .card-top, body.art-only .card-info, body.art-only .sound-control, body.art-only .audio-dock { opacity: 0; pointer-events: none; }
+    body.art-only .hero > div:not(.scroll-indicator), body.art-only .gallery-heading, body.art-only .card-side, body.art-only .card-top, body.art-only .card-info, body.art-only .sound-control { transition: opacity .28s ease; }
+    body.art-only .card { border-color: rgba(221,238,241,.07); }
+
     @keyframes rise { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: none; } }
     @keyframes scrollMove { from { transform: translateY(-100%); } to { transform: translateY(100%); } }
     @keyframes waveDrift { from { transform: translateX(-2%) translateY(0); } to { transform: translateX(3%) translateY(7px); } }
@@ -306,6 +331,12 @@
       .side-rule { height: 37px; }
       .card-info { right: 20px; bottom: 20px; left: 20px; }
       .sound-control { right: 19px; bottom: 88px; }
+      .audio-dock { left: 12px; bottom: 12px; gap: 8px; max-width: calc(100vw - 148px); padding: 7px; }
+      .display-dock { right: 12px; bottom: 12px; }
+      .volume-wrap { grid-template-columns: minmax(54px, 80px) 28px; gap: 6px; }
+      .volume-wrap label { display: none; }
+      #mute-toggle { min-width: 34px; width: 34px; padding: 0; font-size: 0; }
+      #ui-toggle { min-width: 34px; width: 34px; padding: 0; font-size: 0; }
       .hero-meta { gap: 11px; font-size: .55rem; }
       .hero-meta span + span::before { margin-right: 11px; }
     }
@@ -396,6 +427,18 @@
       </a>
     </section>
   </main>
+
+  <aside class="audio-dock" aria-label="사운드 설정">
+    <button id="mute-toggle" class="dock-button" type="button" aria-pressed="false" aria-label="전체 음소거"><span data-mute-label>mute</span></button>
+    <div class="volume-wrap">
+      <label for="global-volume">volume</label>
+      <input id="global-volume" type="range" min="0" max="100" value="44" step="1" aria-label="전체 볼륨">
+      <output id="volume-value" for="global-volume">44%</output>
+    </div>
+  </aside>
+  <aside class="display-dock" aria-label="화면 설정">
+    <button id="ui-toggle" class="dock-button" type="button" aria-pressed="false" aria-label="UI 숨기기"><span data-ui-label>hide UI</span></button>
+  </aside>
 
   <audio id="ocean-audio" data-ambient preload="metadata" src="assets/audio/island-ocean.mp3"></audio>
   <audio id="particle-audio" data-ambient preload="metadata" src="assets/audio/nebula-particles.mp3"></audio>
