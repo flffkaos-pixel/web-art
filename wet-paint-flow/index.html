@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="zh-CN">
+<html lang="ko">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -18,17 +18,17 @@
     <meta name="twitter:title" content="Wet Paint Flow" />
     <meta name="twitter:description" content="Real-time flow-field painting in the browser." />
     <meta name="twitter:image" content="https://wet-paint-flow.simonxxoo.chatgpt.site/og.png" />
-    <title>Wet Paint Flow · 实时油画笔触生成器</title>
+    <title>Wet Paint Flow · 실시간 유화 브러시 생성기</title>
     <script type="module" crossorigin src="/assets/index-DqXtSUlG.js"></script>
     <link rel="stylesheet" crossorigin href="/assets/index-CzDU-wAD.css">
   </head>
   <body>
     <main id="app">
-      <section class="stage" aria-label="梵高方向场实时笔触实验">
-        <div id="canvas-mount" title="滚轮缩放画布 · 双击恢复"></div>
+      <section class="stage" aria-label="방향場 실시간 브러시 실험">
+        <div id="canvas-mount" title="마우스 휠로 확대/축소 · 더블클릭으로 초기화"></div>
         <div id="model-light-control" class="model-light-control" hidden>
           <label for="model-light-angle">
-            <span data-i18n="lightAngle">环境光角度</span>
+            <span data-i18n="lightAngle">환경광 각도</span>
             <output id="model-light-angle-output">-52°</output>
           </label>
           <input id="model-light-angle" type="range" min="-180" max="180" step="1" value="-52" />
@@ -47,31 +47,31 @@
         data-i18n-aria-label="resizePanel"
       ></div>
 
-      <aside id="control-panel" class="panel" aria-label="笔触生成属性页">
+      <aside id="control-panel" class="panel" aria-label="브러시 생성 속성">
         <header class="panel-head">
           <div class="panel-title">
             <span class="panel-kicker">Wet Paint Flow</span>
           </div>
-          <button id="language-toggle" class="language-toggle" type="button" aria-label="Switch to English">
-            <span>中</span><span>EN</span>
+          <button id="language-toggle" class="language-toggle" type="button" aria-label="한국어로 전환">
+            <span>한</span><span>EN</span>
           </button>
         </header>
 
         <section id="growth-controls" class="panel-section growth-section">
           <div class="growth-section-head">
             <div>
-              <strong data-i18n="growthControl">生长控制</strong>
-              <span id="growth-progress">等待生成</span>
+              <strong data-i18n="growthControl">생성 제어</strong>
+              <span id="growth-progress">생성 대기 중</span>
             </div>
-            <button id="replay-growth-button" class="accent compact-action" type="button" data-i18n="restartGrowth">重新生成</button>
+            <button id="replay-growth-button" class="accent compact-action" type="button" data-i18n="restartGrowth">다시 생성</button>
           </div>
           <div class="growth-scrubber">
             <div class="growth-scrubber-head">
-              <span data-i18n="growthTimeline">生长时间轴</span>
+              <span data-i18n="growthTimeline">생성 타임라인</span>
               <output id="growth-time-label" for="growth-timeline">00:00.0 / 00:05.0</output>
             </div>
             <div class="growth-scrubber-row">
-              <button id="pause-button" class="timeline-toggle" type="button" aria-pressed="false" data-i18n="pause">暂停</button>
+              <button id="pause-button" class="timeline-toggle" type="button" aria-pressed="false" data-i18n="pause">일시정지</button>
               <input
                 id="growth-timeline"
                 type="range"
@@ -79,7 +79,7 @@
                 max="5"
                 step="0.01"
                 value="0"
-                aria-label="生长动画时间轴"
+                aria-label="생성 애니메이션 타임라인"
                 data-i18n-aria-label="growthTimelineAria"
               />
             </div>
@@ -88,43 +88,43 @@
 
         <section id="source-controls" class="panel-section source-control">
           <div class="section-heading">
-            <div><strong data-i18n="source">素材</strong></div>
-            <output id="source-mode" class="visually-hidden">内置场景</output>
+            <div><strong data-i18n="source">소스</strong></div>
+            <output id="source-mode" class="visually-hidden">내장 장면</output>
           </div>
           <input id="source-upload" class="visually-hidden" type="file" accept="image/png,image/jpeg,image/webp,image/gif,image/*,.glb,model/gltf-binary,model/gltf+binary" />
           <label id="upload-drop" class="upload-drop" for="source-upload">
             <span class="upload-icon" aria-hidden="true">＋</span>
             <span class="upload-copy">
-              <strong data-i18n="importSource">导入图片或 GLB</strong>
-              <small data-i18n="localProcessing">JPG / PNG / WebP / GLB · 本地处理</small>
+              <strong data-i18n="importSource">이미지 또는 GLB 가져오기</strong>
+              <small data-i18n="localProcessing">JPG / PNG / WebP / GLB · 로컬 처리</small>
             </span>
           </label>
-          <div class="default-geometry-picker" aria-label="默认几何体">
+          <div class="default-geometry-picker" aria-label="기본 기하학">
             <div class="default-geometry-heading">
-              <strong data-i18n="defaultGeometry">默认几何体</strong>
+              <strong data-i18n="defaultGeometry">기본 기하학</strong>
               <label class="model-analysis-toggle" for="live-model-analysis">
-                <span data-i18n="liveStrokeFollow">实时笔触跟随</span>
+                <span data-i18n="liveStrokeFollow">실시간 브러시 추적</span>
                 <input id="live-model-analysis" type="checkbox" />
                 <i aria-hidden="true"></i>
               </label>
             </div>
             <div class="default-geometry-grid">
-              <button type="button" data-default-geometry="sphere" aria-pressed="false"><i aria-hidden="true">●</i><span data-i18n="sphere">球体</span></button>
-              <button type="button" data-default-geometry="cube" aria-pressed="false"><i aria-hidden="true">■</i><span data-i18n="cube">立方体</span></button>
-              <button type="button" data-default-geometry="torus" aria-pressed="false"><i aria-hidden="true">◎</i><span data-i18n="torus">圆环</span></button>
-              <button type="button" data-default-geometry="knot" aria-pressed="false"><i aria-hidden="true">∞</i><span data-i18n="knot">扭结</span></button>
+              <button type="button" data-default-geometry="sphere" aria-pressed="false"><i aria-hidden="true">●</i><span data-i18n="sphere">구체</span></button>
+              <button type="button" data-default-geometry="cube" aria-pressed="false"><i aria-hidden="true">■</i><span data-i18n="cube">정육면체</span></button>
+              <button type="button" data-default-geometry="torus" aria-pressed="false"><i aria-hidden="true">◎</i><span data-i18n="torus">토러스</span></button>
+              <button type="button" data-default-geometry="knot" aria-pressed="false"><i aria-hidden="true">∞</i><span data-i18n="knot">매듭</span></button>
             </div>
-            <div class="model-color-row" aria-label="模型颜色">
-              <span data-i18n="modelColor">模型颜色</span>
+            <div class="model-color-row" aria-label="모델 색상">
+              <span data-i18n="modelColor">모델 색상</span>
               <div class="model-color-palette">
-                <button type="button" data-model-color="#b9783e" aria-label="赭石" title="赭石"></button>
-                <button type="button" data-model-color="#526d9d" aria-label="群青" title="群青"></button>
-                <button type="button" data-model-color="#66856c" aria-label="鼠尾草绿" title="鼠尾草绿"></button>
-                <button type="button" data-model-color="#9f5d58" aria-label="陶土红" title="陶土红"></button>
-                <button type="button" data-model-color="#c8bda7" aria-label="石膏白" title="石膏白"></button>
-                <button type="button" data-model-color="#3e4148" aria-label="炭黑" title="炭黑"></button>
-                <label class="model-color-custom" for="model-color-custom" title="自定义颜色">
-                  <input id="model-color-custom" type="color" value="#526d9d" aria-label="自定义模型颜色" />
+                <button type="button" data-model-color="#b9783e" aria-label="오커" title="오커"></button>
+                <button type="button" data-model-color="#526d9d" aria-label="울트라마린" title="울트라마린"></button>
+                <button type="button" data-model-color="#66856c" aria-label="세이지 그린" title="세이지 그린"></button>
+                <button type="button" data-model-color="#9f5d58" aria-label="테라코타" title="테라코타"></button>
+                <button type="button" data-model-color="#c8bda7" aria-label="석고 화이트" title="석고 화이트"></button>
+                <button type="button" data-model-color="#3e4148" aria-label="차콜 블랙" title="차콜 블랙"></button>
+                <label class="model-color-custom" for="model-color-custom" title="사용자 지정 색상">
+                  <input id="model-color-custom" type="color" value="#526d9d" aria-label="사용자 지정 모델 색상" />
                   <span aria-hidden="true">＋</span>
                 </label>
               </div>
@@ -132,102 +132,102 @@
           </div>
           <div id="model-source-controls" class="model-source-controls" hidden>
             <div class="model-source-summary">
-              <strong id="model-source-name">模型</strong>
+              <strong id="model-source-name">모델</strong>
               <small id="model-source-meta">—</small>
             </div>
-            <div class="model-view-actions" aria-label="模型显示">
-              <button id="model-preview-button" type="button" aria-pressed="false" data-i18n="preview3d">3D 预览</button>
-              <button id="model-paint-button" type="button" aria-pressed="false" data-i18n="strokeResult">笔触结果</button>
+            <div class="model-view-actions" aria-label="모델 표시">
+              <button id="model-preview-button" type="button" aria-pressed="false" data-i18n="preview3d">3D 미리보기</button>
+              <button id="model-paint-button" type="button" aria-pressed="false" data-i18n="strokeResult">브러시 결과</button>
             </div>
           </div>
           <details id="scene-library" class="scene-library">
             <summary>
               <span class="scene-picker-copy">
-                <strong data-i18n="builtInWorks">内置原作</strong>
-                <small data-i18n="elevenWorks">11 幅</small>
+                <strong data-i18n="builtInWorks">내장 원작</strong>
+                <small data-i18n="elevenWorks">11점</small>
               </span>
               <span class="scene-picker-current">
-                <b id="scene-picker-label">正在读取…</b>
+                <b id="scene-picker-label">불러오는 중…</b>
                 <i aria-hidden="true"></i>
               </span>
             </summary>
             <div class="scene-tour-bar">
-              <span data-i18n="strokeMorph">作品间笔触变形</span>
-              <button id="scene-tour-toggle" type="button" aria-pressed="false" data-i18n="startTour">自动巡展</button>
+              <span data-i18n="strokeMorph">작품 간 브러시 변형</span>
+              <button id="scene-tour-toggle" type="button" aria-pressed="false" data-i18n="startTour">자동 순회</button>
             </div>
-            <div id="scene-grid" class="scene-grid" role="list" aria-label="内置梵高场景">
-              <span class="scene-loading" data-i18n="loadingScenes">正在读取场景…</span>
+            <div id="scene-grid" class="scene-grid" role="list" aria-label="내장 방향場 장면">
+              <span class="scene-loading" data-i18n="loadingScenes">장면 불러오는 중…</span>
             </div>
           </details>
           <div class="source-actions">
-            <span id="source-meta" class="visually-hidden">正在使用内置场景</span>
-            <button id="restore-scene-button" class="text-button" type="button" disabled data-i18n="restoreScene">恢复内置场景</button>
+            <span id="source-meta" class="visually-hidden">내장 장면 사용 중</span>
+            <button id="restore-scene-button" class="text-button" type="button" disabled data-i18n="restoreScene">내장 장면 복원</button>
           </div>
         </section>
 
         <section id="display-controls" class="panel-section layer-section">
           <div class="section-heading">
-            <div><strong data-i18n="display">画面显示</strong></div>
+            <div><strong data-i18n="display">화면 표시</strong></div>
           </div>
-          <div class="layer-tabs" role="radiogroup" aria-label="画面显示">
+          <div class="layer-tabs" role="radiogroup" aria-label="화면 표시">
             <label>
               <input type="radio" name="layer-mode" value="5" checked />
               <span class="layer-choice brush-choice">
                 <i aria-hidden="true"></i>
-                <strong data-i18n="brushOnly">纯笔触</strong>
-                <small data-i18n="beigeCanvas">米色画布</small>
+                <strong data-i18n="brushOnly">브러시만</strong>
+                <small data-i18n="beigeCanvas">베이지 캔버스</small>
               </span>
             </label>
             <label>
               <input type="radio" name="layer-mode" value="3" />
               <span class="layer-choice original-choice">
                 <i aria-hidden="true"></i>
-                <strong id="source-preview-label" data-i18n="original">原图</strong>
-                <small id="source-preview-hint" data-i18n="noStrokes">不加笔触</small>
+                <strong id="source-preview-label" data-i18n="original">원본</strong>
+                <small id="source-preview-hint" data-i18n="noStrokes">브러시 없음</small>
               </span>
             </label>
             <label>
               <input type="radio" name="layer-mode" value="0" />
               <span class="layer-choice blend-choice">
                 <i aria-hidden="true"></i>
-                <strong data-i18n="brushAndOriginal">笔触＋原图</strong>
-                <small data-i18n="blendedView">融合显示</small>
+                <strong data-i18n="brushAndOriginal">브러시＋원본</strong>
+                <small data-i18n="blendedView">혼합 표시</small>
               </span>
             </label>
             <label>
               <input type="radio" name="layer-mode" value="1" />
               <span class="layer-choice flow-choice">
                 <i aria-hidden="true"></i>
-                <strong data-i18n="flowSketch">流场手稿</strong>
-                <small data-i18n="pencilFlow">铅笔方向线</small>
+                <strong data-i18n="flowSketch">흐름도 초안</strong>
+                <small data-i18n="pencilFlow">연필 방향선</small>
               </span>
             </label>
           </div>
           <fieldset class="brush-layer-switches">
-            <legend data-i18n="brushLayers">笔刷图层</legend>
+            <legend data-i18n="brushLayers">브러시 레이어</legend>
             <div class="brush-layer-switch-grid">
               <label>
                 <input type="checkbox" data-brush-layer="0" checked />
                 <span class="brush-layer-toggle coarse-layer">
                   <i aria-hidden="true"></i>
-                  <b data-i18n="coarse">粗层</b>
-                  <small data-i18n="structure">结构</small>
+                  <b data-i18n="coarse">굵은 층</b>
+                  <small data-i18n="structure">구조</small>
                 </span>
               </label>
               <label>
                 <input type="checkbox" data-brush-layer="1" checked />
                 <span class="brush-layer-toggle medium-layer">
                   <i aria-hidden="true"></i>
-                  <b data-i18n="medium">中层</b>
-                  <small data-i18n="shaping">塑形</small>
+                  <b data-i18n="medium">보통 층</b>
+                  <small data-i18n="shaping">성형</small>
                 </span>
               </label>
               <label>
                 <input type="checkbox" data-brush-layer="2" checked />
                 <span class="brush-layer-toggle fine-layer">
                   <i aria-hidden="true"></i>
-                  <b data-i18n="fine">细层</b>
-                  <small data-i18n="texture">纹理</small>
+                  <b data-i18n="fine">얇은 층</b>
+                  <small data-i18n="texture">질감</small>
                 </span>
               </label>
             </div>
@@ -236,55 +236,55 @@
 
         <section id="stroke-controls" class="panel-section effect-section">
           <div class="section-heading">
-            <div><strong data-i18n="strokeEffects">笔触效果</strong></div>
+            <div><strong data-i18n="strokeEffects">브러시 효과</strong></div>
             <output id="stroke-count" class="visually-hidden">—</output>
           </div>
           <label class="quality-row quality-row-primary" for="quality-mode">
-            <span data-i18n="previewQuality">预览清晰度</span>
+            <span data-i18n="previewQuality">미리보기 선명도</span>
             <select id="quality-mode">
-              <option value="balanced" data-i18n="qualityBalanced">流畅</option>
-              <option value="high" selected data-i18n="qualityHigh">高清</option>
-              <option value="ultra" data-i18n="qualityUltra">极致</option>
+              <option value="balanced" data-i18n="qualityBalanced">부드러움</option>
+              <option value="high" selected data-i18n="qualityHigh">고해상도</option>
+              <option value="ultra" data-i18n="qualityUltra">극한</option>
             </select>
           </label>
           <label class="slider-row">
-            <span data-i18n="strokeSize">笔触大小</span><output data-output="strokeSize">1.00</output>
+            <span data-i18n="strokeSize">브러시 크기</span><output data-output="strokeSize">1.00</output>
             <input data-param="strokeSize" type="range" min="0.35" max="3.2" step="0.01" value="1" />
           </label>
           <label class="slider-row">
-            <span data-i18n="strokeLength">笔触长度</span><output data-output="length">1.48</output>
+            <span data-i18n="strokeLength">브러시 길이</span><output data-output="length">1.48</output>
             <input data-param="length" type="range" min="0.55" max="6" step="0.01" value="1.48" />
           </label>
           <label class="slider-row">
-            <span data-i18n="strokeCount">笔触数量</span><output data-output="strokeCountK">14,000</output>
+            <span data-i18n="strokeCount">브러시 수</span><output data-output="strokeCountK">14,000</output>
             <input data-param="strokeCountK" type="range" min="3" max="24" step="1" value="14" />
           </label>
           <label class="slider-row">
-            <span data-i18n="paintThickness">颜料厚度</span><output data-output="impasto">0.04</output>
+            <span data-i18n="paintThickness">안료 두께</span><output data-output="impasto">0.04</output>
             <input data-param="impasto" type="range" min="0" max="1.5" step="0.01" value="0.04" />
           </label>
           <label class="slider-row">
-            <span data-i18n="paintDryness">颜料干燥度</span><output data-output="dryness">0.69</output>
+            <span data-i18n="paintDryness">안료 건조도</span><output data-output="dryness">0.69</output>
             <input data-param="dryness" type="range" min="0" max="1" step="0.01" value="0.69" />
           </label>
           <label class="slider-row">
-            <span data-i18n="paintViscosity">颜料黏度</span><output data-output="viscosity">0.58</output>
+            <span data-i18n="paintViscosity">안료 점도</span><output data-output="viscosity">0.58</output>
             <input data-param="viscosity" type="range" min="0" max="1" step="0.01" value="0.58" />
           </label>
         </section>
 
         <section id="output-controls" class="panel-section create-section">
           <div class="section-heading">
-            <div><strong data-i18n="generateExport">生成与导出</strong></div>
+            <div><strong data-i18n="generateExport">생성 및 내보내기</strong></div>
             <span class="fps-badge visually-hidden"><b id="fps">—</b></span>
           </div>
           <div class="actions">
             <div class="export-actions">
               <div class="export-action">
-                <button id="export-button" class="export-button export-action-button" type="button" data-i18n="exportPng">导出 4K PNG</button>
+                <button id="export-button" class="export-button export-action-button" type="button" data-i18n="exportPng">4K PNG 내보내기</button>
               </div>
               <div class="export-action">
-                <button id="video-export-button" class="export-button export-action-button" type="button" data-i18n="exportVideo">导出生长视频</button>
+                <button id="video-export-button" class="export-button export-action-button" type="button" data-i18n="exportVideo">생성 영상 내보내기</button>
               </div>
             </div>
           </div>
@@ -300,7 +300,7 @@
         </footer>
 
         <div class="runtime-probes" aria-hidden="true">
-          <span id="runtime-status">正在准备画布…</span>
+          <span id="runtime-status">캔버스 준비 중…</span>
           <span id="gbuffer-size">—</span>
           <span id="seed-churn">0.0%</span>
           <span id="field-time">—</span>
