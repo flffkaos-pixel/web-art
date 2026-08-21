@@ -276,19 +276,16 @@
     .planet-mark { position: absolute; right: 15%; bottom: 14%; font-size: 8px; letter-spacing: .13em; color: rgba(180,255,222,.66); }
 
     /* On-demand audio is intentionally user-triggered so browsing remains quiet by default. */
-    .sound-control { position: absolute; z-index: 5; right: 25px; bottom: 95px; display: inline-flex; align-items: center; gap: 7px; min-height: 28px; padding: 6px 9px; border: 1px solid rgba(255,255,255,.18); border-radius: 100px; color: rgba(247,255,255,.72); background: rgba(6,9,10,.38); backdrop-filter: blur(10px); font-size: 8px; letter-spacing: .13em; text-transform: uppercase; cursor: pointer; transition: background .25s, color .25s, border-color .25s; }
+    .sound-control { position: absolute; z-index: 5; right: 25px; bottom: 95px; display: inline-flex; align-items: center; gap: 7px; min-height: 32px; padding: 7px 10px; border: 1px solid rgba(255,255,255,.18); border-radius: 100px; color: rgba(247,255,255,.72); background: rgba(6,9,10,.48); backdrop-filter: blur(10px); font-size: 8px; letter-spacing: .13em; text-transform: uppercase; cursor: pointer; touch-action: manipulation; transition: background .25s, color .25s, border-color .25s, transform .25s; }
     .sound-control::before { content: '◖'; font-size: 14px; line-height: .5; transform: rotate(180deg); }
-    .sound-control::after { content: 'off'; opacity: .62; }
     .sound-control:hover, .sound-control:focus-visible { outline: none; color: white; border-color: currentColor; background: rgba(255,255,255,.12); }
+    .sound-control:active { transform: scale(.96); }
     .sound-control.is-playing { color: var(--accent); border-color: currentColor; background: rgba(255,255,255,.11); }
-    .sound-control.is-playing::after { content: 'on'; opacity: 1; }
     .sound-control.is-playing::before { animation: soundPulse 1.2s ease-in-out infinite; }
     @keyframes soundPulse { 50% { transform: rotate(180deg) scale(1.26); } }
 
     /* Persistent user controls stay out of the cards to keep each visual study unobstructed. */
-    .audio-dock, .display-dock { position: fixed; z-index: 30; display: flex; align-items: center; border: 1px solid rgba(221,238,241,.20); background: rgba(6,10,12,.69); backdrop-filter: blur(16px); box-shadow: 0 14px 34px rgba(0,0,0,.25); color: rgba(239,251,251,.82); }
-    .audio-dock { left: 22px; bottom: 22px; gap: 12px; min-height: 45px; padding: 7px 10px 7px 8px; border-radius: 14px; }
-    .display-dock { right: 22px; bottom: 22px; border-radius: 14px; }
+    .audio-dock { position: fixed; z-index: 30; display: flex; align-items: center; left: 22px; bottom: 22px; gap: 12px; min-height: 45px; padding: 7px 10px 7px 8px; border: 1px solid rgba(221,238,241,.20); border-radius: 14px; background: rgba(6,10,12,.69); backdrop-filter: blur(16px); box-shadow: 0 14px 34px rgba(0,0,0,.25); color: rgba(239,251,251,.82); }
     .dock-button { display: inline-flex; align-items: center; justify-content: center; min-height: 30px; border: 1px solid transparent; border-radius: 9px; color: inherit; background: rgba(255,255,255,.06); font: 9px/1 Inter,sans-serif; letter-spacing: .13em; text-transform: uppercase; cursor: pointer; transition: background .2s, color .2s, border-color .2s; }
     .dock-button:hover, .dock-button:focus-visible { outline: none; border-color: rgba(225,255,255,.42); background: rgba(255,255,255,.14); }
     #mute-toggle { gap: 6px; min-width: 72px; padding: 0 10px; }
@@ -303,13 +300,6 @@
     #global-volume::-webkit-slider-thumb { width: 11px; height: 11px; margin-top: -4px; border: 1px solid #0b1415; border-radius: 50%; appearance: none; background: #d7ffff; box-shadow: 0 0 10px rgba(137,235,236,.68); }
     #global-volume::-moz-range-track { height: 2px; border-radius: 999px; background: linear-gradient(90deg, #79d7db, rgba(180,215,218,.35)); }
     #global-volume::-moz-range-thumb { width: 11px; height: 11px; border: 1px solid #0b1415; border-radius: 50%; background: #d7ffff; box-shadow: 0 0 10px rgba(137,235,236,.68); }
-    #ui-toggle { gap: 7px; min-width: 102px; padding: 0 12px; }
-    #ui-toggle::before { content: '⌘'; font-size: 14px; }
-    #ui-toggle.is-active { color: #a9f2f3; border-color: rgba(133,227,229,.45); }
-    body.art-only .hero > div:not(.scroll-indicator), body.art-only .gallery-heading, body.art-only .card-side, body.art-only .card-top, body.art-only .card-info, body.art-only .sound-control, body.art-only .audio-dock { opacity: 0; pointer-events: none; }
-    body.art-only .hero > div:not(.scroll-indicator), body.art-only .gallery-heading, body.art-only .card-side, body.art-only .card-top, body.art-only .card-info, body.art-only .sound-control { transition: opacity .28s ease; }
-    body.art-only .card { border-color: rgba(221,238,241,.07); }
-
     @keyframes rise { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: none; } }
     @keyframes scrollMove { from { transform: translateY(-100%); } to { transform: translateY(100%); } }
     @keyframes waveDrift { from { transform: translateX(-2%) translateY(0); } to { transform: translateX(3%) translateY(7px); } }
@@ -330,13 +320,14 @@
       .card-side.left { left: 13px; }.card-side.right { right: 13px; }
       .side-rule { height: 37px; }
       .card-info { right: 20px; bottom: 20px; left: 20px; }
-      .sound-control { right: 19px; bottom: 88px; }
-      .audio-dock { left: 12px; bottom: 12px; gap: 8px; max-width: calc(100vw - 148px); padding: 7px; }
-      .display-dock { right: 12px; bottom: 12px; }
-      .volume-wrap { grid-template-columns: minmax(54px, 80px) 28px; gap: 6px; }
+      .sound-control { right: 16px; bottom: 88px; min-height: 38px; padding: 9px 12px; font-size: 8px; }
+      .audio-dock { left: max(10px, env(safe-area-inset-left)); right: max(10px, env(safe-area-inset-right)); bottom: max(10px, env(safe-area-inset-bottom)); gap: 9px; width: auto; max-width: none; min-height: 50px; padding: 7px; border-radius: 15px; }
+      .volume-wrap { flex: 1; grid-template-columns: minmax(72px, 1fr) 30px; gap: 7px; }
       .volume-wrap label { display: none; }
-      #mute-toggle { min-width: 34px; width: 34px; padding: 0; font-size: 0; }
-      #ui-toggle { min-width: 34px; width: 34px; padding: 0; font-size: 0; }
+      #global-volume { height: 30px; }
+      #global-volume::-webkit-slider-thumb { width: 18px; height: 18px; margin-top: -8px; }
+      #global-volume::-moz-range-thumb { width: 18px; height: 18px; }
+      #mute-toggle { min-width: 42px; width: 42px; min-height: 36px; padding: 0; font-size: 0; }
       .hero-meta { gap: 11px; font-size: .55rem; }
       .hero-meta span + span::before { margin-right: 11px; }
     }
@@ -374,7 +365,7 @@
             <path class="wave two" fill="#62d0d0" opacity=".78" d="M0 359 C118 319 241 378 369 355 S590 316 704 370 S896 402 1000 364 V520 H0Z"/>
           </svg>
         </div>
-        <span class="sound-control" role="button" tabindex="0" data-ambient-toggle="ocean-audio" aria-pressed="false" aria-label="Island Ocean 사운드 재생"><span data-ambient-label>ambient</span></span>
+        <span class="sound-control" role="button" tabindex="0" data-track-name="Island Ocean" data-ambient-toggle="ocean-audio" aria-pressed="false" aria-label="Island Ocean 사운드 켜기"><span data-ambient-label>sound off</span></span>
         <div class="card-info"><span class="category">Island beach</span><h2>Island Ocean —<br>섬과 해변</h2><span class="arrow" aria-hidden="true">↗</span></div>
       </a>
 
@@ -383,7 +374,7 @@
         <div class="card-side right" aria-hidden="true"><span class="side-dot"></span><span class="side-rule"></span><span class="side-label">0.031 C</span></div>
         <div class="card-top"><span class="tag">GPU particles</span><span class="index-no">02 / 06</span></div>
         <div class="art-preview particle-preview" aria-hidden="true"><div class="dust"></div><div class="dust two"></div><div class="core"></div><div class="particle-scale"></div></div>
-        <span class="sound-control" role="button" tabindex="0" data-ambient-toggle="particle-audio" aria-pressed="false" aria-label="Nebula Particle System 사운드 재생"><span data-ambient-label>ambient</span></span>
+        <span class="sound-control" role="button" tabindex="0" data-track-name="Nebula Particle System" data-ambient-toggle="particle-audio" aria-pressed="false" aria-label="Nebula Particle System 사운드 켜기"><span data-ambient-label>sound off</span></span>
         <div class="card-info"><span class="category">Cosmic dust</span><h2>Nebula Particle<br>System</h2><span class="arrow" aria-hidden="true">↗</span></div>
       </a>
 
@@ -392,7 +383,7 @@
         <div class="card-side right" aria-hidden="true"><span class="side-dot"></span><span class="side-rule"></span><span class="side-label">Zenith</span></div>
         <div class="card-top"><span class="tag">PBR material</span><span class="index-no">03 / 06</span></div>
         <div class="art-preview product-preview" aria-hidden="true"><span class="spec-line"></span><span class="spec-mark">REFLECTANCE / 98.4%</span></div>
-        <span class="sound-control" role="button" tabindex="0" data-ambient-toggle="product-audio" aria-pressed="false" aria-label="High-End Product Viewer 사운드 재생"><span data-ambient-label>ambient</span></span>
+        <span class="sound-control" role="button" tabindex="0" data-track-name="High-End Product Viewer" data-ambient-toggle="product-audio" aria-pressed="false" aria-label="High-End Product Viewer 사운드 켜기"><span data-ambient-label>sound off</span></span>
         <div class="card-info"><span class="category">Luxury chrome</span><h2>High-End Product<br>Viewer</h2><span class="arrow" aria-hidden="true">↗</span></div>
       </a>
 
@@ -401,7 +392,7 @@
         <div class="card-side right" aria-hidden="true"><span class="side-dot"></span><span class="side-rule"></span><span class="side-label">FLIP</span></div>
         <div class="card-top"><span class="tag">WebGPU fluid</span><span class="index-no">04 / 06</span></div>
         <div class="art-preview fluid-preview" aria-hidden="true"><div class="fluid-drops"></div><div class="fluid-splash"></div><span class="fluid-count">PARTICLES / 100,000</span></div>
-        <span class="sound-control" role="button" tabindex="0" data-ambient-toggle="fluid-audio" aria-pressed="false" aria-label="Fluid Simulation 사운드 재생"><span data-ambient-label>ambient</span></span>
+        <span class="sound-control" role="button" tabindex="0" data-track-name="Fluid Simulation" data-ambient-toggle="fluid-audio" aria-pressed="false" aria-label="Fluid Simulation 사운드 켜기"><span data-ambient-label>sound off</span></span>
         <div class="card-info"><span class="category">GPU fluid solver</span><h2>Fluid Simulation —<br>100K SPH</h2><span class="arrow" aria-hidden="true">↗</span></div>
       </a>
 
@@ -410,7 +401,7 @@
         <div class="card-side right" aria-hidden="true"><span class="side-dot"></span><span class="side-rule"></span><span class="side-label">Seed 7</span></div>
         <div class="card-top"><span class="tag">WebGPU planet</span><span class="index-no">05 / 06</span></div>
         <div class="art-preview planet-preview" aria-hidden="true"><div class="planet-halo"></div><div class="planet-sphere"></div><span class="planet-mark">EROSION / BAKED</span></div>
-        <span class="sound-control" role="button" tabindex="0" data-ambient-toggle="planet-audio" aria-pressed="false" aria-label="Planet Generator 사운드 재생"><span data-ambient-label>ambient</span></span>
+        <span class="sound-control" role="button" tabindex="0" data-track-name="Planet Generator" data-ambient-toggle="planet-audio" aria-pressed="false" aria-label="Planet Generator 사운드 켜기"><span data-ambient-label>sound off</span></span>
         <div class="card-info"><span class="category">Procedural planet</span><h2>Planet Generator —<br>판구조 행성</h2><span class="arrow" aria-hidden="true">↗</span></div>
       </a>
 
@@ -436,10 +427,6 @@
       <output id="volume-value" for="global-volume">44%</output>
     </div>
   </aside>
-  <aside class="display-dock" aria-label="화면 설정">
-    <button id="ui-toggle" class="dock-button" type="button" aria-pressed="false" aria-label="UI 숨기기"><span data-ui-label>hide UI</span></button>
-  </aside>
-
   <audio id="ocean-audio" data-ambient preload="metadata" src="assets/audio/island-ocean.mp3"></audio>
   <audio id="particle-audio" data-ambient preload="metadata" src="assets/audio/nebula-particles.mp3"></audio>
   <audio id="product-audio" data-ambient preload="metadata" src="assets/audio/zenith-chrome.mp3"></audio>
