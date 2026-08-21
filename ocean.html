@@ -168,6 +168,7 @@
   }
   #hud.hidden, #pads.hidden { display:none !important; }
 </style>
+<link rel="stylesheet" href="assets/detail-audio.css">
 </head>
 <body>
 <canvas id="c"></canvas>
@@ -216,6 +217,14 @@
 
 <div id="boot"><div class="t">ABYSSAL</div><div class="s" id="bootmsg">initialising…</div></div>
 <div id="err"></div>
+
+<aside class="detail-audio-dock" aria-label="바다 사운드 제어">
+  <button class="detail-sound-control" type="button" data-track-name="Island Ocean" data-ambient-toggle="ocean-detail-audio" aria-pressed="false" aria-label="Island Ocean 사운드 켜기"><span data-ambient-label>sound off</span></button>
+  <button id="mute-toggle" class="detail-mute-control" type="button" aria-pressed="false" aria-label="전체 음소거"><span data-mute-label>mute</span></button>
+  <label class="detail-volume-wrap" aria-label="전체 볼륨"><input id="global-volume" type="range" min="0" max="100" value="44" step="1"><output id="volume-value" for="global-volume">44%</output></label>
+</aside>
+<audio id="ocean-detail-audio" data-ambient preload="metadata" src="assets/audio/island-ocean.mp3"></audio>
+<script src="assets/ambient-player.js"></script>
 
 <script type="importmap">
 { "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js" } }

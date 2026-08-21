@@ -6,7 +6,15 @@
     <title>Fluid Simulation</title>
     <script type="module" crossorigin src="assets/index-B2a40WaT.js"></script>
     <link rel="stylesheet" crossorigin href="assets/index-DRMLJBnx.css">
+    <link rel="stylesheet" href="../assets/detail-audio.css">
   </head>
-  <body>
+  <body>
+    <aside class="detail-audio-dock" aria-label="유체 사운드 제어">
+      <button class="detail-sound-control" type="button" data-track-name="Fluid Simulation" data-ambient-toggle="fluid-detail-audio" aria-pressed="false" aria-label="Fluid Simulation 사운드 켜기"><span data-ambient-label>sound off</span></button>
+      <button id="mute-toggle" class="detail-mute-control" type="button" aria-pressed="false" aria-label="전체 음소거"><span data-mute-label>mute</span></button>
+      <label class="detail-volume-wrap" aria-label="전체 볼륨"><input id="global-volume" type="range" min="0" max="100" value="44" step="1"><output id="volume-value" for="global-volume">44%</output></label>
+    </aside>
+    <audio id="fluid-detail-audio" data-ambient preload="metadata" src="../assets/audio/fluid-simulation.mp3"></audio>
+    <script src="../assets/ambient-player.js"></script>
   </body>
 </html>
