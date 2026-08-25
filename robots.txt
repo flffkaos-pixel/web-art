@@ -1,7 +1,7 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://web-art-alpha.vercel.app/sitemap.xml
+Sitemap: https://flffkaos-pixel.github.io/web-art/sitemap.xml
 
 # --- AI / answer-engine crawlers (SEO/GEO/AEO) ---
 User-agent: GPTBot
