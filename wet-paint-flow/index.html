@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="theme-color" content="#ede5d5" />
+    <meta name="theme-color" content="#05080c" />
     <link rel="icon" href="./favicon.svg" type="image/svg+xml" />
     <meta name="description" content="Turn images and GLB scenes into real-time flow-field paintings with layered Bézier strokes and wet impasto shading." />
     <link rel="canonical" href="https://wet-paint-flow.simonxxoo.chatgpt.site/" />
@@ -23,6 +23,18 @@
     <script type="module" crossorigin src="./assets/index-DqXtSUlG.js"></script>
     <link rel="stylesheet" crossorigin href="./assets/index-CzDU-wAD.css">
     <style>
+      @import url('https://fonts.googleapis.com/css2?family=Inter:wght@200;300;400;500;600&display=swap');
+      :root {
+        --bg: #050607;
+        --panel-bg: #0a0d0f;
+        --line: rgba(221, 238, 241, .14);
+        --text: #ecf5f4;
+        --dim: rgba(222, 235, 235, .52);
+        --ink: #ecf5f4;
+        --canvas: #050607;
+        --umber-deep: #8e5134;
+      }
+      html, body { background: var(--bg) !important; color: var(--text) !important; font-family: 'Inter', system-ui, sans-serif !important; }
       #model-light-control, .runtime-probes { display: none !important; }
       #source-controls .default-geometry-picker,
       #source-controls .model-source-controls,
@@ -34,22 +46,65 @@
         flex-direction: column !important;
         grid-template-columns: none !important;
         grid-template-rows: none !important;
+        background: var(--bg) !important;
       }
-      .stage {
-        flex: 1 !important;
-        min-height: 50vh !important;
-      }
+      .stage { flex: 1 !important; min-height: 50vh !important; }
       .panel {
         width: 100% !important;
         max-width: none !important;
         min-width: 0 !important;
+        background: var(--panel-bg) !important;
         border-top: 1px solid var(--line) !important;
-        box-shadow: 0 -4px 20px rgba(0,0,0,0.08) !important;
+        box-shadow: 0 -4px 20px rgba(0,0,0,0.3) !important;
         border-left: none !important;
         max-height: 45vh !important;
         overflow-y: auto !important;
+        color: var(--text) !important;
+        scrollbar-color: #67402d57 transparent;
       }
-      .panel-resizer { display: none !important; }
+      .panel-head { border-bottom-color: var(--line) !important; }
+      .panel-kicker { color: var(--dim) !important; }
+      .panel-section { border-bottom-color: var(--line) !important; }
+      .section-heading strong { color: var(--text) !important; }
+      .growth-section-head strong { color: var(--text) !important; }
+      .layer-tabs label { color: var(--dim) !important; }
+      .layer-tabs input:checked + span { color: var(--text) !important; }
+      .brush-layer-toggle { color: var(--dim) !important; }
+      .brush-layer-toggle b { color: var(--text) !important; }
+      .slider-row span { color: var(--dim) !important; }
+      .slider-row output { color: var(--text) !important; }
+      .quality-row span { color: var(--dim) !important; }
+      .quality-row select { color: var(--text) !important; background: var(--panel-bg) !important; border-color: var(--line) !important; }
+      .export-button { background: rgba(142, 81, 52, .15) !important; color: var(--text) !important; border: 1px solid var(--line) !important; }
+      .export-button:hover { background: rgba(142, 81, 52, .3) !important; }
+      .accent { background: var(--umber-deep) !important; color: #fff !important; }
+      .accent:hover { background: #a05e3e !important; }
+      .scene-card { background: rgba(255,255,255,.04) !important; border-color: var(--line) !important; }
+      .scene-card span { color: var(--dim) !important; }
+      .scene-card.is-selected { border-color: var(--umber-deep) !important; }
+      .scene-card:hover { border-color: var(--umber-deep) !important; background: rgba(142, 81, 52, .12) !important; }
+      .scene-tour-bar { background: rgba(255,255,255,.03) !important; border-top: 1px solid var(--line) !important; }
+      .scene-tour-bar span { color: var(--dim) !important; }
+      .upload-drop { border-color: var(--line) !important; background: rgba(255,255,255,.03) !important; }
+      .upload-drop:hover { border-color: var(--umber-deep) !important; background: rgba(142, 81, 52, .08) !important; }
+      .upload-icon { color: var(--dim) !important; }
+      .upload-copy strong { color: var(--text) !important; }
+      .upload-copy small { color: var(--dim) !important; }
+      .language-toggle { color: var(--dim) !important; border-color: var(--line) !important; }
+      .language-toggle:hover { color: var(--text) !important; border-color: var(--umber-deep) !important; }
+      .timeline-toggle { color: var(--dim) !important; border-color: var(--line) !important; }
+      .timeline-toggle[aria-pressed="true"] { color: var(--text) !important; border-color: var(--umber-deep) !important; background: rgba(142, 81, 52, .15) !important; }
+      .growth-scrubber-head span { color: var(--dim) !important; }
+      .growth-scrubber-head output { color: var(--text) !important; }
+      .text-button { color: var(--dim) !important; }
+      .text-button:hover { color: var(--text) !important; }
+      input[type="range"] { accent-color: var(--umber-deep) !important; }
+      .signature-credit { border-top-color: var(--line) !important; }
+      .signature-creators a { color: var(--dim) !important; }
+      .signature-creators a:hover { color: var(--text) !important; }
+      .repository-link { color: var(--dim) !important; }
+      .repository-link:hover { color: var(--text) !important; }
+      .scene-picker-current b { color: var(--text) !important; }
     </style>
   </head>
   <body>
