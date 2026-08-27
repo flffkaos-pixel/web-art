@@ -31,6 +31,9 @@
       #stroke-controls .quality-row,
       #stroke-controls .slider-row:nth-child(n+4) { display: none !important; }
       .panel { width: 100% !important; max-width: 380px !important; }
+      .scene-library { display: block !important; }
+      .scene-library[open] summary { margin-bottom: 8px; }
+      .upload-drop { display: flex !important; }
     </style>
   </head>
   <body>
@@ -151,7 +154,7 @@
               <button id="model-paint-button" type="button" aria-pressed="false" data-i18n="strokeResult">브러시 결과</button>
             </div>
           </div>
-          <details id="scene-library" class="scene-library">
+          <details id="scene-library" class="scene-library" open>
             <summary>
               <span class="scene-picker-copy">
                 <strong data-i18n="builtInWorks">내장 원작</strong>
@@ -182,7 +185,7 @@
           </div>
           <div class="layer-tabs" role="radiogroup" aria-label="화면 표시">
             <label>
-              <input type="radio" name="layer-mode" value="5" checked />
+              <input type="radio" name="layer-mode" value="5" />
               <span class="layer-choice brush-choice">
                 <i aria-hidden="true"></i>
                 <strong data-i18n="brushOnly">브러시만</strong>
@@ -190,7 +193,7 @@
               </span>
             </label>
             <label>
-              <input type="radio" name="layer-mode" value="3" />
+              <input type="radio" name="layer-mode" value="3" checked />
               <span class="layer-choice original-choice">
                 <i aria-hidden="true"></i>
                 <strong id="source-preview-label" data-i18n="original">원본</strong>
