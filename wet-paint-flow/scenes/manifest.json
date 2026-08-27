@@ -1,7 +1,7 @@
 [
   {
     "id": "sunflowers",
-    "title": "向日葵（1887）",
+    "title": "해바라기 (1887)",
     "titleEn": "Sunflowers (1887)",
     "src": "./scenes/full/sunflowers.webp",
     "thumb": "./scenes/thumb/sunflowers.webp",
@@ -13,7 +13,7 @@
   },
   {
     "id": "roses",
-    "title": "玫瑰",
+    "title": "장미",
     "titleEn": "Roses",
     "src": "./scenes/full/roses.webp",
     "thumb": "./scenes/thumb/roses.webp",
@@ -25,7 +25,7 @@
   },
   {
     "id": "auvers-church",
-    "title": "奥维尔教堂景色",
+    "title": "오베르의 교회",
     "titleEn": "View of Auvers with Church",
     "src": "./scenes/full/auvers-church.webp",
     "thumb": "./scenes/thumb/auvers-church.webp",
@@ -37,7 +37,7 @@
   },
   {
     "id": "vineyards-auvers",
-    "title": "奥维尔的葡萄园",
+    "title": "오베르의 포도밭",
     "titleEn": "Vineyards at Auvers",
     "src": "./scenes/full/vineyards-auvers.webp",
     "thumb": "./scenes/thumb/vineyards-auvers.webp",
@@ -49,7 +49,7 @@
   },
   {
     "id": "olive-trees-blue-sky",
-    "title": "橄榄树（大都会版）",
+    "title": "올리브 나무 (메트로폴리탄)",
     "titleEn": "Olive Trees (The Met)",
     "src": "./scenes/full/olive-trees-blue-sky.webp",
     "thumb": "./scenes/thumb/olive-trees-blue-sky.webp",
@@ -61,7 +61,7 @@
   },
   {
     "id": "cypresses",
-    "title": "丝柏树",
+    "title": "사이프레스",
     "titleEn": "Cypresses",
     "src": "./scenes/full/cypresses.webp",
     "thumb": "./scenes/thumb/cypresses.webp",
@@ -73,7 +73,7 @@
   },
   {
     "id": "wheat-field-cypresses",
-    "title": "有丝柏的麦田",
+    "title": "사이프레스가 있는 밀밭",
     "titleEn": "Wheat Field with Cypresses",
     "src": "./scenes/full/wheat-field-cypresses.webp",
     "thumb": "./scenes/thumb/wheat-field-cypresses.webp",
@@ -85,7 +85,7 @@
   },
   {
     "id": "olive-trees-yellow-sky",
-    "title": "橄榄树与黄天和太阳",
+    "title": "노란 하늘과 태양이 있는 올리브 나무",
     "titleEn": "Olive Trees with Yellow Sky and Sun",
     "src": "./scenes/full/olive-trees-yellow-sky.webp",
     "thumb": "./scenes/thumb/olive-trees-yellow-sky.webp",
@@ -97,7 +97,7 @@
   },
   {
     "id": "seascape-saintes-maries",
-    "title": "圣玛丽海景",
+    "title": "생트 마리의 해안",
     "titleEn": "Seascape at Saintes-Maries",
     "src": "./scenes/full/seascape-saintes-maries.webp",
     "thumb": "./scenes/thumb/seascape-saintes-maries.webp",
@@ -109,7 +109,7 @@
   },
   {
     "id": "yellow-house",
-    "title": "黄房子",
+    "title": "노란 집",
     "titleEn": "The Yellow House",
     "src": "./scenes/full/yellow-house.webp",
     "thumb": "./scenes/thumb/yellow-house.webp",
@@ -121,7 +121,7 @@
   },
   {
     "id": "starry-night",
-    "title": "星夜",
+    "title": "별이 빛나는 밤",
     "titleEn": "The Starry Night",
     "src": "./scenes/full/starry-night.webp",
     "thumb": "./scenes/thumb/starry-night.webp",
