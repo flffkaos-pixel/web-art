@@ -1,5 +1,5 @@
 (() => {
-  const STORAGE = { volume: 'visual-gallery-volume', muted: 'visual-gallery-muted', artOnly: 'visual-gallery-art-only' };
+  const STORAGE = { volume: 'visual-gallery-volume', muted: 'visual-gallery-muted' };
 
   const readNumber = (key, fallback) => {
     const value = Number.parseFloat(localStorage.getItem(key));
@@ -12,14 +12,16 @@
     const volumeSlider = document.getElementById('global-volume');
     const volumeValue = document.getElementById('volume-value');
     const muteButton = document.getElementById('mute-toggle');
-    const uiButton = document.getElementById('ui-toggle');
     let volume = readNumber(STORAGE.volume, 0.44);
     let muted = localStorage.getItem(STORAGE.muted) === 'true';
 
     const setPlayState = (button, playing) => {
+      const trackName = button.dataset.trackName || '작품';
       button.classList.toggle('is-playing', playing);
       button.setAttribute('aria-pressed', String(playing));
-      button.setAttribute('aria-label', playing ? '사운드 정지' : '사운드 재생');
+      button.setAttribute('aria-label', `${trackName} 사운드 ${playing ? '끄기' : '켜기'}`);
+      const label = button.querySelector('[data-ambient-label]');
+      if (label) label.textContent = playing ? 'sound on' : 'sound off';
     };
 
     const applyVolume = () => {
@@ -47,12 +49,15 @@
     tracks.forEach(({ button, audio }) => {
       audio.loop = true;
       audio.preload = 'metadata';
+      setPlayState(button, false);
       button.addEventListener('click', (event) => {
         event.preventDefault();
         event.stopPropagation();
         if (audio.paused) {
           stopOtherTracks(button);
-          audio.play().then(() => setPlayState(button, true)).catch(() => setPlayState(button, false));
+          setPlayState(button, true);
+          const playback = audio.play();
+          if (playback) playback.catch(() => setPlayState(button, false));
         } else {
           audio.pause();
           audio.currentTime = 0;
@@ -80,20 +85,6 @@
         applyVolume();
       });
     }
-    if (uiButton) {
-      const setArtOnly = (enabled) => {
-        document.body.classList.toggle('art-only', enabled);
-        uiButton.classList.toggle('is-active', enabled);
-        uiButton.setAttribute('aria-pressed', String(enabled));
-        uiButton.setAttribute('aria-label', enabled ? 'UI 다시 표시' : 'UI 숨기기');
-        const label = uiButton.querySelector('[data-ui-label]');
-        if (label) label.textContent = enabled ? 'show UI' : 'hide UI';
-        localStorage.setItem(STORAGE.artOnly, String(enabled));
-      };
-      setArtOnly(localStorage.getItem(STORAGE.artOnly) === 'true');
-      uiButton.addEventListener('click', () => setArtOnly(!document.body.classList.contains('art-only')));
-    }
-
     document.addEventListener('visibilitychange', () => {
       if (document.hidden) tracks.forEach(({ button, audio }) => { if (!audio.paused) { audio.pause(); setPlayState(button, false); } });
     });

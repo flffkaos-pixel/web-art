@@ -19,6 +19,7 @@
         #side-spec .spec-code { font-size: 8px; color: rgba(232,199,161,.58); writing-mode: vertical-rl; }
         @media (max-width: 640px) { #ui { top: 24px; left: 24px; } .controls-hint { bottom: 22px; width: 100%; text-align: center; } #side-spec { right: 17px; min-height: 158px; font-size: 7px; } #side-spec::before { top: 25px; bottom: 25px; } }
     </style>
+    <link rel="stylesheet" href="assets/detail-audio.css">
 </head>
 <body>
     <div id="ui">
@@ -33,6 +34,13 @@
         <span class="spec-code">R 0.05 / M 1.00</span>
     </aside>
     <div id="error"></div>
+    <aside class="detail-audio-dock" aria-label="크롬 사운드 제어">
+      <button class="detail-sound-control" type="button" data-track-name="High-End Product Viewer" data-ambient-toggle="product-detail-audio" aria-pressed="false" aria-label="High-End Product Viewer 사운드 켜기"><span data-ambient-label>sound off</span></button>
+      <button id="mute-toggle" class="detail-mute-control" type="button" aria-pressed="false" aria-label="전체 음소거"><span data-mute-label>mute</span></button>
+      <label class="detail-volume-wrap" aria-label="전체 볼륨"><input id="global-volume" type="range" min="0" max="100" value="44" step="1"><output id="volume-value" for="global-volume">44%</output></label>
+    </aside>
+    <audio id="product-detail-audio" data-ambient preload="metadata" src="assets/audio/zenith-chrome.mp3"></audio>
+    <script src="assets/ambient-player.js"></script>
     <script type="importmap">
         {
             "imports": {

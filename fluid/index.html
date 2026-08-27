@@ -6,7 +6,29 @@
     <title>Fluid Simulation</title>
     <script type="module" crossorigin src="assets/index-B2a40WaT.js"></script>
     <link rel="stylesheet" crossorigin href="assets/index-DRMLJBnx.css">
-  </head>
-  <body>
+    <link rel="stylesheet" href="../assets/detail-audio.css">
+  
+  <!-- SEO/GEO/AEO -->
+  <link rel="canonical" href="https://flffkaos-pixel.github.io/web-art/fluid/">
+  <meta name="description" content="Fluid Simulation">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="Fluid Simulation">
+  <meta property="og:title" content="Fluid Simulation">
+  <meta property="og:description" content="Fluid Simulation">
+  <meta property="og:url" content="https://flffkaos-pixel.github.io/web-art/fluid/">
+  <meta property="og:locale" content="en_US">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="Fluid Simulation">
+  <meta name="twitter:description" content="Fluid Simulation">
+  <script type="application/ld+json">{"name":"Fluid Simulation","inLanguage":"en","@context":"https://schema.org","description":"Fluid Simulation","@type":"WebPage","url":"https://flffkaos-pixel.github.io/web-art/fluid/"}</script>
+</head>
+  <body>
+    <aside class="detail-audio-dock" aria-label="유체 사운드 제어">
+      <button class="detail-sound-control" type="button" data-track-name="Fluid Simulation" data-ambient-toggle="fluid-detail-audio" aria-pressed="false" aria-label="Fluid Simulation 사운드 켜기"><span data-ambient-label>sound off</span></button>
+      <button id="mute-toggle" class="detail-mute-control" type="button" aria-pressed="false" aria-label="전체 음소거"><span data-mute-label>mute</span></button>
+      <label class="detail-volume-wrap" aria-label="전체 볼륨"><input id="global-volume" type="range" min="0" max="100" value="44" step="1"><output id="volume-value" for="global-volume">44%</output></label>
+    </aside>
+    <audio id="fluid-detail-audio" data-ambient preload="metadata" src="../assets/audio/fluid-simulation.mp3"></audio>
+    <script src="../assets/ambient-player.js"></script>
   </body>
 </html>

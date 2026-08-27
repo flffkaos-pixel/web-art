@@ -20,8 +20,8 @@
     <meta name="twitter:image" content="https://wet-paint-flow.simonxxoo.chatgpt.site/og.png" />
     <title>Wet Paint Flow · 실시간 유화 브러시 생성기</title>
 
-    <script type="module" crossorigin src="/assets/index-DqXtSUlG.js"></script>
-    <link rel="stylesheet" crossorigin href="/assets/index-CzDU-wAD.css">
+    <script type="module" crossorigin src="./assets/index-DqXtSUlG.js"></script>
+    <link rel="stylesheet" crossorigin href="./assets/index-CzDU-wAD.css">
     <style>
       #model-light-control, #panel-resizer, .runtime-probes { display: none !important; }
       #source-controls .default-geometry-picker,
@@ -30,10 +30,23 @@
       #display-controls .brush-layer-switches,
       #stroke-controls .quality-row,
       #stroke-controls .slider-row:nth-child(n+4) { display: none !important; }
-      .panel { width: 100% !important; max-width: 380px !important; }
-      .scene-library { display: block !important; }
-      .scene-library[open] summary { margin-bottom: 8px; }
-      .upload-drop { display: flex !important; }
+      .panel { width: 100% !important; max-width: 420px !important; }
+      /* Keep the examples discoverable without overwhelming the painter canvas. */
+      #scene-library { margin-top: 12px; border: 1px solid rgba(87, 53, 37, .22); border-radius: 14px; background: rgba(255, 252, 246, .74); overflow: hidden; }
+      #scene-library > summary { min-height: 54px; padding: 12px 14px; background: linear-gradient(135deg, rgba(255, 250, 241, .96), rgba(244, 232, 211, .90)); }
+      #scene-library[open] > summary { border-bottom: 1px solid rgba(87, 53, 37, .16); }
+      #scene-library .scene-picker-current b { color: #4d281b; font-size: 13px; }
+      #scene-library .scene-tour-bar { padding: 9px 12px; background: rgba(247, 237, 220, .72); }
+      #scene-grid { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; gap: 10px !important; max-height: min(44dvh, 430px) !important; padding: 12px !important; }
+      #scene-grid .scene-card { min-height: 126px; border-radius: 11px; border: 1px solid rgba(81, 46, 30, .18); box-shadow: 0 3px 10px rgba(64, 35, 20, .07); transition: transform .18s ease, border-color .18s ease, box-shadow .18s ease; }
+      #scene-grid .scene-card:hover, #scene-grid .scene-card:focus-visible { z-index: 1; transform: translateY(-2px); border-color: #8e5134; box-shadow: 0 8px 18px rgba(79, 37, 22, .18); outline: none; }
+      #scene-grid .scene-card[aria-pressed="true"] { border: 2px solid #8e5134; box-shadow: 0 0 0 3px rgba(193, 128, 77, .20), 0 9px 18px rgba(79, 37, 22, .18); }
+      @media (max-width: 1400px) {
+        #app { display: grid !important; grid-template-columns: minmax(0, 1fr) !important; grid-template-rows: minmax(56svh, 560px) auto !important; height: auto !important; min-height: 100% !important; overflow: auto !important; }
+        .stage { grid-column: 1 !important; grid-row: 1 !important; }
+        .panel { grid-column: 1 !important; grid-row: 2 !important; width: 100% !important; max-width: none !important; min-width: 0 !important; }
+      }
+      @media (max-width: 680px) { .panel { max-width: none !important; } #scene-grid { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; max-height: min(38dvh, 340px) !important; } #scene-grid .scene-card { min-height: 112px; } }
     </style>
   </head>
   <body>

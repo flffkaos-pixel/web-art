@@ -93,9 +93,25 @@
         background: linear-gradient(90deg, #4a7bff, #7fd0ff);
         transition: width 0.3s ease;
       }
-    </style>
+        </style>
+    <link rel="stylesheet" href="../assets/detail-audio.css">
     <script type="module" crossorigin src="assets/index-PUxZW-nS.js"></script>
-  </head>
+
+  
+  <!-- SEO/GEO/AEO -->
+  <link rel="canonical" href="https://flffkaos-pixel.github.io/web-art/planet/">
+  <meta name="description" content="demiurge">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="demiurge">
+  <meta property="og:title" content="demiurge">
+  <meta property="og:description" content="demiurge">
+  <meta property="og:url" content="https://flffkaos-pixel.github.io/web-art/planet/">
+  <meta property="og:locale" content="en_US">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="demiurge">
+  <meta name="twitter:description" content="demiurge">
+  <script type="application/ld+json">{"name":"demiurge","inLanguage":"en","@context":"https://schema.org","description":"demiurge","@type":"WebPage","url":"https://flffkaos-pixel.github.io/web-art/planet/"}</script>
+</head>
   <body>
     <div id="app"></div>
     <div id="hud"></div>
@@ -105,6 +121,13 @@
         <div id="loading-text">Generating planet…</div>
         <div class="loading-track"><div id="loading-bar"></div></div>
       </div>
-    </div>
+    </div>
+    <aside class="detail-audio-dock" aria-label="행성 사운드 제어">
+      <button class="detail-sound-control" type="button" data-track-name="Planet Generator" data-ambient-toggle="planet-detail-audio" aria-pressed="false" aria-label="Planet Generator 사운드 켜기"><span data-ambient-label>sound off</span></button>
+      <button id="mute-toggle" class="detail-mute-control" type="button" aria-pressed="false" aria-label="전체 음소거"><span data-mute-label>mute</span></button>
+      <label class="detail-volume-wrap" aria-label="전체 볼륨"><input id="global-volume" type="range" min="0" max="100" value="44" step="1"><output id="volume-value" for="global-volume">44%</output></label>
+    </aside>
+    <audio id="planet-detail-audio" data-ambient preload="metadata" src="../assets/audio/planet-generator.mp3"></audio>
+    <script src="../assets/ambient-player.js"></script>
   </body>
 </html>
