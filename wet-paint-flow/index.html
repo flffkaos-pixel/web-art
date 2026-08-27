@@ -29,7 +29,27 @@
       #source-controls .source-actions,
       #display-controls .brush-layer-switches { display: none !important; }
       #panel-resizer { display: none !important; }
-      #app { --panel-width: 420px !important; }
+      #app {
+        display: flex !important;
+        flex-direction: column !important;
+        grid-template-columns: none !important;
+        grid-template-rows: none !important;
+      }
+      .stage {
+        flex: 1 !important;
+        min-height: 50vh !important;
+      }
+      .panel {
+        width: 100% !important;
+        max-width: none !important;
+        min-width: 0 !important;
+        border-top: 1px solid var(--line) !important;
+        box-shadow: 0 -4px 20px rgba(0,0,0,0.08) !important;
+        border-left: none !important;
+        max-height: 45vh !important;
+        overflow-y: auto !important;
+      }
+      .panel-resizer { display: none !important; }
     </style>
   </head>
   <body>
