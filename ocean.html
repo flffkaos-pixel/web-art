@@ -1481,7 +1481,7 @@ void main(){
   /* ---- reflection: sky + screen-space ray march ---------------------- */
   vec3 R = reflect(-V, N);
   if (R.y < 0.0) R = normalize(vec3(R.x, -R.y*0.5, R.z));
-  vec3 refl = mix(skyRough(R, rough), nightSky(R, 0.0, 0.30)*1.1, uNight);   // night: milky way + moon glow
+  vec3 refl = mix(skyRough(R, rough), nightSky(R, 0.0, 0.30)*0.85, uNight);   // night: milky way + moon glow
 
   if (uSSR > 0.5 && facing > 0.0){
     vec3 pos = vW + N*0.06;
@@ -1519,7 +1519,7 @@ void main(){
   float am2 = max(rough, 0.10);
   float Dm = am2*am2/(PI*pow(nhm*nhm*(am2*am2 - 1.0) + 1.0, 2.0));
   float Gm = (nv/(nv*(1.0-kk)+kk))*(nlm/(nlm*(1.0-kk)+kk));
-  vec3  mspec = vec3(0.85, 0.92, 1.05)*(Dm*Gm*0.5/(4.0*nv))*uNight;
+  vec3  mspec = vec3(0.85, 0.92, 1.05)*(Dm*Gm*0.22/(4.0*nv))*uNight;
 
   /* ---- composite ----------------------------------------------------- */
   float ct = sat(nv);
@@ -1987,34 +1987,51 @@ function initAudio(){
   noiseBuf = actx.createBuffer(1, len, actx.sampleRate);
   const d = noiseBuf.getChannelData(0); let l = 0;
   for (let i = 0; i < len; i++){ const w = Math.random()*2 - 1; l = (l + 0.02*w)/1.02; d[i] = l*3.5; }
+  // distant ocean roar: deep shelf breathing on a very slow LFO
   const bed = actx.createBufferSource(); bed.buffer = noiseBuf; bed.loop = true;
-  const bf = actx.createBiquadFilter(); bf.type = 'lowpass'; bf.frequency.value = 160;
+  const bf = actx.createBiquadFilter(); bf.type = 'lowpass'; bf.frequency.value = 150;
   const bg = actx.createGain(); bg.gain.value = 0.30;
+  const lfo = actx.createOscillator(); lfo.frequency.value = 0.06;
+  const lg = actx.createGain(); lg.gain.value = 0.10;
+  lfo.connect(lg); lg.connect(bg.gain); lfo.start();
   bed.connect(bf); bf.connect(bg); bg.connect(master); bed.start();
 }
 function scheduleWash(){
   if (!actx || !soundOn) return;
-  const t = actx.currentTime + 0.05;
-  const dur = 2.6 + Math.random()*2.4;
+  const t = actx.currentTime + 0.02;
+  // breaking phase: bright bandpass sweeps down to a deep thump
+  const dur = 1.6 + Math.random()*1.6;
   const src = actx.createBufferSource(); src.buffer = noiseBuf; src.loop = true;
-  src.playbackRate.value = 0.85 + Math.random()*0.3;
-  const f = actx.createBiquadFilter(); f.type = 'bandpass'; f.Q.value = 0.55;
-  f.frequency.setValueAtTime(1100 + Math.random()*700, t);
-  f.frequency.exponentialRampToValueAtTime(260, t + dur);
+  src.playbackRate.value = 0.8 + Math.random()*0.4;
+  const f = actx.createBiquadFilter(); f.type = 'bandpass'; f.Q.value = 0.5;
+  f.frequency.setValueAtTime(1300 + Math.random()*800, t);
+  f.frequency.exponentialRampToValueAtTime(320, t + dur);
   const g = actx.createGain();
-  const peak = 0.55 + Math.random()*0.4;
+  const peak = 0.5 + Math.random()*0.35;
   g.gain.setValueAtTime(0.0001, t);
-  g.gain.linearRampToValueAtTime(peak, t + 0.45 + Math.random()*0.5);
-  g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
-  let out = g;
+  g.gain.linearRampToValueAtTime(peak, t + 0.35 + Math.random()*0.35);
+  g.gain.exponentialRampToValueAtTime(0.03, t + dur);
+  // receding foam hiss: high tail that lingers after the break
+  const hs = actx.createBufferSource(); hs.buffer = noiseBuf; hs.loop = true;
+  const hf = actx.createBiquadFilter(); hf.type = 'highpass'; hf.frequency.value = 2400;
+  const hg = actx.createGain();
+  hg.gain.setValueAtTime(0.0001, t + dur*0.4);
+  hg.gain.linearRampToValueAtTime(peak*0.4, t + dur*0.7);
+  hg.gain.exponentialRampToValueAtTime(0.0001, t + dur*1.9);
+  let out = g, hout = hg;
   if (actx.createStereoPanner){
-    const p = actx.createStereoPanner();
-    p.pan.setValueAtTime((Math.random()*2 - 1)*0.7, t);
-    g.connect(p); out = p;
+    const pan = (Math.random()*2 - 1)*0.75;
+    const p1 = actx.createStereoPanner(); p1.pan.setValueAtTime(pan, t);
+    const p2 = actx.createStereoPanner(); p2.pan.setValueAtTime(pan*0.6, t);
+    g.connect(p1); out = p1;
+    hg.connect(p2); hout = p2;
   }
   src.connect(f); f.connect(g); out.connect(master);
+  hs.connect(hf); hf.connect(hg); hout.connect(master);
   src.start(t, Math.random()*3); src.stop(t + dur + 0.1);
-  washTimer = setTimeout(scheduleWash, (dur*0.5 + 0.8 + Math.random()*3.2)*1000);
+  hs.start(t, Math.random()*3); hs.stop(t + dur*2.0);
+  // tighter schedule so waves overlap into a continuous shore-break rhythm
+  washTimer = setTimeout(scheduleWash, 700 + Math.random()*2600);
 }
 soundBtn.addEventListener('click', () => {
   soundOn = !soundOn;
