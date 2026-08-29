@@ -44,6 +44,12 @@
     bottom:max(12px, env(safe-area-inset-bottom));padding:8px 12px;
     background:var(--panel);backdrop-filter:blur(14px);box-shadow:0 10px 28px rgba(0,0,0,.45)
   }
+  .sound-btn{
+    position:fixed;z-index:20;right:max(10px, env(safe-area-inset-right));
+    bottom:max(52px, calc(env(safe-area-inset-bottom) + 40px));padding:8px 12px;
+    background:var(--panel);backdrop-filter:blur(14px);box-shadow:0 10px 28px rgba(0,0,0,.45)
+  }
+  .sound-btn[aria-pressed="true"]{color:var(--acc);border-color:rgba(95,208,232,.45);background:rgba(95,208,232,.14)}
   .grp{border-top:1px solid var(--line);margin-top:9px;padding-top:7px}
   .grp>b{display:block;color:var(--acc);font-size:10px;letter-spacing:.16em;
     text-transform:uppercase;cursor:pointer;user-select:none;opacity:.85;margin-bottom:5px}
@@ -181,6 +187,7 @@
   <div id="ui"></div>
 </div>
 <button type="button" class="tools-btn" id="tools-show" aria-controls="panel" aria-expanded="false">tools</button>
+<button type="button" class="tools-btn sound-btn" id="sound-toggle" aria-pressed="false">sound</button>
 
 <div id="hud">
   <div><b id="fps">--</b> fps &nbsp;·&nbsp; <span id="stat"></span></div>
@@ -415,6 +422,8 @@ uniform vec3  uBetaM;
 uniform float uSunE;
 uniform float uMieG;
 uniform float uSkyGain;
+uniform float uNight;
+uniform vec3  uMoonDir;
 const float RAY_ZENITH = 8.4e3;
 const float MIE_ZENITH = 1.25e3;
 const float SUN_COS    = 0.9999566769464484;
@@ -477,6 +486,53 @@ uniform float uFar;
 float linearZ(float d){
   float z = d*2.0 - 1.0;
   return (2.0*uNear*uFar)/(uFar + uNear - z*(uFar - uNear));
+}
+`;
+
+/* ── night sky: stars + milky way + moon (needs GL_NOISE for fbm) ── */
+const GL_NIGHT = `
+float hash13(vec3 p3){
+  p3 = fract(p3*0.1031);
+  p3 += dot(p3, p3.zyx + 31.32);
+  return fract((p3.x + p3.y)*p3.z);
+}
+float stars(vec3 d, float scale, float thr, float gain){
+  vec3 p = d*scale;
+  vec3 id = floor(p);
+  float h = hash13(id);
+  if (h < thr) return 0.0;
+  vec3 sp = id + 0.25 + vec3(hash13(id + 7.1), hash13(id + 3.7), hash13(id + 9.3))*0.5;
+  float dist = length(p - sp);
+  float core = smoothstep(0.45, 0.0, dist);
+  float mag  = pow(hash13(id + 17.7), 8.0);
+  return core*core*(0.35 + 2.6*mag)*gain;
+}
+vec3 moonRender(vec3 d, float discAmt){
+  float c   = dot(d, uMoonDir);
+  float ang = acos(clamp(c, -1.0, 1.0));
+  float R   = 0.023;
+  float disc = smoothstep(R, R*0.90, ang);
+  float mot  = fbm(d.xz*42.0 + d.y*31.0, 4);
+  vec3 surf  = vec3(0.88, 0.89, 0.86)*(0.80 + 0.20*mot);
+  float limb = smoothstep(0.0, R, ang);
+  float glow = exp(-max(ang - R, 0.0)*34.0);
+  return surf*mix(0.55, 1.0, limb)*disc*discAmt + vec3(0.30, 0.36, 0.48)*glow*0.55;
+}
+vec3 nightSky(vec3 d, float starAmt, float moonAmt){
+  vec3 col = mix(vec3(0.014, 0.020, 0.038), vec3(0.002, 0.0035, 0.009), sat(d.y*1.5));
+  col += vec3(0.018, 0.014, 0.022)*pow(1.0 - sat(d.y), 5.0);      // horizon airglow
+  vec3 mwN  = normalize(vec3(0.42, 0.55, 0.72));
+  float band  = exp(-pow(dot(d, mwN)*5.8, 2.0));
+  float clouds= fbm(d.xz*3.2 + d.y*1.7 + 7.3, 5);
+  float core  = exp(-pow(dot(d, normalize(vec3(0.72, 0.28, 0.63)))*2.6, 2.0));
+  col += vec3(0.16, 0.17, 0.22)*band*(0.30 + 0.70*clouds)*(0.5 + 0.5*core);
+  col += vec3(0.05, 0.06, 0.09)*band*core*0.8;
+  float s = stars(d,  60.0, 0.988, 1.00)
+          + stars(d, 111.0, 0.990, 0.55)
+          + stars(d, 173.0, 0.993, 0.30);
+  col += vec3(0.9, 0.95, 1.05)*s*smoothstep(-0.02, 0.12, d.y)*starAmt;
+  col += moonRender(d, moonAmt)*uNight;
+  return col;
 }
 `;
 
@@ -852,6 +908,7 @@ const SUN = {
   betaM: new THREE.Vector3(),
   E: 1000, color: new THREE.Vector3(1,1,1)
 };
+const MOON = { dir: new THREE.Vector3(0,1,0) };
 const MIE_K = [0.686, 0.678, 0.666];
 const MIE_CONST = 1.8399918514433978e14;
 const SIMPLE_RAYLEIGH = [0.0005/94, 0.0005/40, 0.0005/18];
@@ -859,6 +916,9 @@ const SIMPLE_RAYLEIGH = [0.0005/94, 0.0005/40, 0.0005/18];
 function updateSun(){
   const el = P.sunElev*Math.PI/180, az = P.sunAzim*Math.PI/180;
   SUN.dir.set(Math.cos(el)*Math.cos(az), Math.sin(el), Math.cos(el)*Math.sin(az)).normalize();
+
+  const mel = 15*Math.PI/180, maz = 96*Math.PI/180;
+  MOON.dir.set(Math.cos(mel)*Math.cos(maz), Math.sin(mel), Math.cos(mel)*Math.sin(maz)).normalize();
 
   const fade = 1.0 - Math.min(1, Math.max(0, 1.0 - Math.exp(SUN.dir.y)));
   const rc   = P.rayleigh - (1.0 - fade);
@@ -883,7 +943,8 @@ updateSun();
 function skyUniforms(){
   return {
     uSunDir:{value:SUN.dir}, uBetaR:{value:SUN.betaR}, uBetaM:{value:SUN.betaM},
-    uSunE:{value:SUN.E}, uMieG:{value:P.mieG}, uSkyGain:{value:P.skyGain}
+    uSunE:{value:SUN.E}, uMieG:{value:P.mieG}, uSkyGain:{value:P.skyGain},
+    uNight:{value:0.0}, uMoonDir:{value:MOON.dir}
   };
 }
 
@@ -984,6 +1045,7 @@ function refreshSkyUniforms(){
   SKY_U.uSunE.value = SUN.E;
   SKY_U.uMieG.value = P.mieG;
   SKY_U.uSkyGain.value = P.skyGain;
+  SKY_U.uNight.value = Math.min(1, Math.max(0, (2.0 - P.sunElev)/8.0));
 }
 const mix2 = (...o) => Object.assign({}, ...o);
 
@@ -999,11 +1061,14 @@ uniform mat4 modelViewMatrix, projectionMatrix, modelMatrix;
 out vec3 vW;
 void main(){ vW = (modelMatrix*vec4(position,1.0)).xyz;
              gl_Position = projectionMatrix*modelViewMatrix*vec4(position,1.0); }`,
-  fragmentShader: `${GL_HEAD}${GL_SKY}
+  fragmentShader: `${GL_HEAD}${GL_SKY}${GL_NOISE}${GL_NIGHT}
 in vec3 vW;
 uniform vec3 uCamPos;
 layout(location=0) out vec4 oC;
-void main(){ oC = vec4(skyRadiance(normalize(vW - uCamPos)), 1.0); }`
+void main(){
+  vec3 d = normalize(vW - uCamPos);
+  oC = vec4(mix(skyRadiance(d), nightSky(d, 1.0, 1.0), uNight), 1.0);
+}`
 });
 const skyMesh = new THREE.Mesh(new THREE.SphereGeometry(20000, 48, 32), skyMat);
 skyMesh.frustumCulled = false;
@@ -1030,7 +1095,7 @@ void main(){
   vN = normalize(mat3(modelMatrix)*normal);
   gl_Position = projectionMatrix*modelViewMatrix*vec4(position,1.0);
 }`,
-  fragmentShader: `${GL_HEAD}${GL_SKY}${GL_NOISE}
+  fragmentShader: `${GL_HEAD}${GL_SKY}${GL_NOISE}${GL_NIGHT}
 in vec3 vW; in vec3 vN;
 uniform vec3  uCamPos, uSunColor;
 uniform sampler2D uDeriv1, uDeriv2;
@@ -1076,8 +1141,10 @@ void main(){
 
   vec3 sunL   = uSunColor;
   float ndl   = sat(dot(N, uSunDir));
-  vec3  amb   = skyRadiance(vec3(0.0,1.0,0.0))*0.9 + skyRadiance(normalize(N + vec3(0.0,0.6,0.0)))*0.4;
+  vec3  amb   = (skyRadiance(vec3(0.0,1.0,0.0))*0.9 + skyRadiance(normalize(N + vec3(0.0,0.6,0.0)))*0.4)
+              + nightSky(vec3(0.0,1.0,0.0), 0.0, 0.0)*vec3(0.35, 0.42, 0.55)*uNight;
   vec3  col   = alb*(sunL*ndl + amb*(0.45 + 0.55*sat(N.y)));
+  col += alb*vec3(0.30, 0.36, 0.48)*uNight*sat(dot(N, uMoonDir))*0.7;   // moonlight fill
 
   if (vW.y < 0.0){
     float depth = -vW.y;
@@ -1342,7 +1409,7 @@ void main(){
   vViewZ = -mv.z;
   gl_Position = projectionMatrix*mv;
 }`,
-  fragmentShader: `${GL_HEAD}${GL_SKY}${GL_NOISE}${GL_DEPTH}
+  fragmentShader: `${GL_HEAD}${GL_SKY}${GL_NOISE}${GL_NIGHT}${GL_DEPTH}
 in vec3 vW; in vec3 vDisp; in float vDist; in float vShoal; in float vViewZ;
 uniform mat4 viewMatrix, projectionMatrix;
 uniform vec3 uCamPos, uSunColor, uAbsorb, uScatter, uSSSColor, uFoamColor;
@@ -1400,7 +1467,8 @@ void main(){
   float path = max(zr - vViewZ, 0.0);
   vec3 behind = texture(uSceneColor, ruv).rgb;
   vec3 T = exp(-uAbsorb*min(path, 600.0));
-  vec3 inScat = uScatter*(uSunColor*0.30 + skyRadiance(vec3(0.0,1.0,0.0))*0.75);
+  vec3 inScat = uScatter*(uSunColor*0.30 + skyRadiance(vec3(0.0,1.0,0.0))*0.75)
+              + nightSky(vec3(0.0,1.0,0.0), 0.0, 0.0)*vec3(0.30, 0.38, 0.50)*uNight;
   vec3 refracted = behind*T + inScat*(vec3(1.0) - T);
 
   /* ---- subsurface scattering through wave crests --------------------- */
@@ -1413,7 +1481,7 @@ void main(){
   /* ---- reflection: sky + screen-space ray march ---------------------- */
   vec3 R = reflect(-V, N);
   if (R.y < 0.0) R = normalize(vec3(R.x, -R.y*0.5, R.z));
-  vec3 refl = skyRough(R, rough);
+  vec3 refl = mix(skyRough(R, rough), nightSky(R, 0.0, 0.30)*1.1, uNight);   // night: milky way + moon glow
 
   if (uSSR > 0.5 && facing > 0.0){
     vec3 pos = vW + N*0.06;
@@ -1445,11 +1513,19 @@ void main(){
   float Fs = 0.02 + 0.98*pow(1.0 - sat(dot(H, V)), 5.0);
   vec3  spec = min(uSunColor*(D*G*Fs)/(4.0*nv)*uGlitter, vec3(600.0));
 
+  /* moonlight path: broad soft lobe — a smooth silver road, not glitter */
+  vec3  Hm = normalize(uMoonDir + V);
+  float nhm = sat(dot(N, Hm)), nlm = sat(dot(N, uMoonDir));
+  float am2 = max(rough, 0.10);
+  float Dm = am2*am2/(PI*pow(nhm*nhm*(am2*am2 - 1.0) + 1.0, 2.0));
+  float Gm = (nv/(nv*(1.0-kk)+kk))*(nlm/(nlm*(1.0-kk)+kk));
+  vec3  mspec = vec3(0.85, 0.92, 1.05)*(Dm*Gm*0.5/(4.0*nv))*uNight;
+
   /* ---- composite ----------------------------------------------------- */
   float ct = sat(nv);
   float F  = 0.02 + 0.98*pow(1.0 - ct, 5.0);
   F *= (1.0 - foam*0.85);
-  vec3 col = mix(refracted + sssCol, refl, F) + spec*(1.0 - foam*0.7);
+  vec3 col = mix(refracted + sssCol, refl, F) + spec*(1.0 - foam*0.7) + mspec*(1.0 - foam*0.7);
 
   vec3 foamLit = uFoamColor*(uSunColor*(0.30 + 0.70*sat(dot(N, uSunDir)))
                + skyRadiance(vec3(0.0,1.0,0.0))*1.25);
@@ -1469,7 +1545,7 @@ void main(){
   /* ---- horizon fog blends water into the sky ------------------------- */
   if (uUnderwater < 0.5){
     float f = 1.0 - exp(-dist*dist*uFogDensity*uFogDensity);
-    col = mix(col, skyRadiance(-V), sat(f));
+    col = mix(col, mix(skyRadiance(-V), nightSky(-V, 0.0, 0.0)*0.8, uNight), sat(f));
   }
   oC = vec4(min(col, vec3(900.0)), 1.0);
 }`
@@ -1896,6 +1972,66 @@ group('Presets', b => {
     b.appendChild(btn);
   });
 }, true);
+
+/* ══════════════════════════════════════════════════════════════════════
+   SURF SOUND — procedural breaking-wave wash (no audio files needed)
+   ══════════════════════════════════════════════════════════════════════ */
+let soundOn = false, actx = null, master = null, washTimer = 0, noiseBuf = null;
+const soundBtn = document.getElementById('sound-toggle');
+function initAudio(){
+  const AC = window.AudioContext || window.webkitAudioContext;
+  if (!AC) return;
+  actx = new AC();
+  master = actx.createGain(); master.gain.value = 0; master.connect(actx.destination);
+  const len = actx.sampleRate*4;
+  noiseBuf = actx.createBuffer(1, len, actx.sampleRate);
+  const d = noiseBuf.getChannelData(0); let l = 0;
+  for (let i = 0; i < len; i++){ const w = Math.random()*2 - 1; l = (l + 0.02*w)/1.02; d[i] = l*3.5; }
+  const bed = actx.createBufferSource(); bed.buffer = noiseBuf; bed.loop = true;
+  const bf = actx.createBiquadFilter(); bf.type = 'lowpass'; bf.frequency.value = 160;
+  const bg = actx.createGain(); bg.gain.value = 0.30;
+  bed.connect(bf); bf.connect(bg); bg.connect(master); bed.start();
+}
+function scheduleWash(){
+  if (!actx || !soundOn) return;
+  const t = actx.currentTime + 0.05;
+  const dur = 2.6 + Math.random()*2.4;
+  const src = actx.createBufferSource(); src.buffer = noiseBuf; src.loop = true;
+  src.playbackRate.value = 0.85 + Math.random()*0.3;
+  const f = actx.createBiquadFilter(); f.type = 'bandpass'; f.Q.value = 0.55;
+  f.frequency.setValueAtTime(1100 + Math.random()*700, t);
+  f.frequency.exponentialRampToValueAtTime(260, t + dur);
+  const g = actx.createGain();
+  const peak = 0.55 + Math.random()*0.4;
+  g.gain.setValueAtTime(0.0001, t);
+  g.gain.linearRampToValueAtTime(peak, t + 0.45 + Math.random()*0.5);
+  g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+  let out = g;
+  if (actx.createStereoPanner){
+    const p = actx.createStereoPanner();
+    p.pan.setValueAtTime((Math.random()*2 - 1)*0.7, t);
+    g.connect(p); out = p;
+  }
+  src.connect(f); f.connect(g); out.connect(master);
+  src.start(t, Math.random()*3); src.stop(t + dur + 0.1);
+  washTimer = setTimeout(scheduleWash, (dur*0.5 + 0.8 + Math.random()*3.2)*1000);
+}
+soundBtn.addEventListener('click', () => {
+  soundOn = !soundOn;
+  soundBtn.setAttribute('aria-pressed', String(soundOn));
+  if (soundOn){
+    if (!actx) initAudio();
+    actx.resume();
+    clearTimeout(washTimer);
+    scheduleWash();
+  } else {
+    clearTimeout(washTimer);
+  }
+  if (actx){
+    master.gain.cancelScheduledValues(actx.currentTime);
+    master.gain.linearRampToValueAtTime(soundOn ? 0.9 : 0.0, actx.currentTime + 1.2);
+  }
+});
 
 /* ══════════════════════════════════════════════════════════════════════
    MAIN LOOP
