@@ -1974,11 +1974,10 @@ group('Presets', b => {
 }, true);
 
 /* ══════════════════════════════════════════════════════════════════════
-   SURF SOUND — plays the real recorded ocean loop (island-ocean.mp3);
-   falls back to a procedural synth if the file can't load.
+   SURF SOUND — continuous ocean: shaped noise swelling on slow, incommensurate
+   cycles. No melody, no discrete rhythm — just the irregular wash of surf.
    ══════════════════════════════════════════════════════════════════════ */
-let soundOn = false, actx = null, master = null, washTimer = 0, noiseBuf = null,
-    oceanSrc = null, mode = null;                    // 'file' | 'synth'
+let soundOn = false, actx = null, master = null, noiseBuf = null, mode = null;
 const soundBtn = document.getElementById('sound-toggle');
 function initAudio(){
   const AC = window.AudioContext || window.webkitAudioContext;
@@ -1995,80 +1994,56 @@ function makeNoise(){
   for (let i = 0; i < len; i++){ const w = Math.random()*2 - 1; l = (l + 0.02*w)/1.02; d[i] = l*3.5; }
   return noiseBuf;
 }
-function startFile(){
-  fetch('assets/audio/island-ocean.mp3')
-    .then(r => { if (!r.ok) throw new Error('no file'); return r.arrayBuffer(); })
-    .then(ab => actx.decodeAudioData(ab))
-    .then(buf => {
-      if (!soundOn) return;
-      const g = actx.createGain(); g.gain.value = 0.9;
-      oceanSrc = actx.createBufferSource(); oceanSrc.buffer = buf; oceanSrc.loop = true;
-      oceanSrc.connect(g); g.connect(master); oceanSrc.start();
-      mode = 'file';
-    })
-    .catch(() => { if (soundOn) startSynth(); });
+// constant-1 source for a DC offset (works in every AudioContext)
+function dcSource(v){
+  const b = actx.createBuffer(1, 1, actx.sampleRate);
+  b.getChannelData(0)[0] = v;
+  const s = actx.createBufferSource(); s.buffer = b; s.loop = true; s.start();
+  return s;
 }
-function startSynth(){
+function startSurf(){
   if (mode) return;
   mode = 'synth';
-  // distant ocean roar
-  const bed = actx.createBufferSource(); bed.buffer = makeNoise(); bed.loop = true;
-  const bf = actx.createBiquadFilter(); bf.type = 'lowpass'; bf.frequency.value = 150;
-  const bg = actx.createGain(); bg.gain.value = 0.30;
-  const lfo = actx.createOscillator(); lfo.frequency.value = 0.06;
-  const lg = actx.createGain(); lg.gain.value = 0.10;
-  lfo.connect(lg); lg.connect(bg.gain); lfo.start();
-  bed.connect(bf); bf.connect(bg); bg.connect(master); bed.start();
-  washTimer = setTimeout(scheduleWash, 500);
+  const t = actx.currentTime;
+  const noise = makeNoise();
+  // swell bus: 0.5 base + a few incommensurate slow sines (±0.48 total)
+  // the incommensurate periods keep it irregular — surf, not a beat
+  const add = actx.createGain(); add.gain.value = 1;
+  dcSource(0.5).connect(add);
+  [1/8.7, 1/13.2, 1/5.6, 1/19.5].forEach(fr => {
+    const o = actx.createOscillator(); o.frequency.value = fr;
+    const og = actx.createGain(); og.gain.value = 0.12;
+    o.connect(og); og.connect(add); o.start(t);
+  });
+  const swellA = actx.createGain(); swellA.gain.value = 0.5;   // body wash
+  const swellB = actx.createGain(); swellB.gain.value = 0.5;   // foam hiss (lighter)
+  add.connect(swellA.gain); add.connect(swellB.gain);
+
+  // body: brown noise low-passed, rising and falling with the swell
+  const src = actx.createBufferSource(); src.buffer = noise; src.loop = true;
+  const f = actx.createBiquadFilter(); f.type = 'lowpass'; f.frequency.value = 700;
+  src.connect(f); f.connect(swellA); swellA.connect(master); src.start(t);
+
+  // foam hiss: brighter band following the same swell, softer
+  const hs = actx.createBufferSource(); hs.buffer = noise; hs.loop = true;
+  const hf = actx.createBiquadFilter(); hf.type = 'bandpass'; hf.frequency.value = 2400; hf.Q.value = 0.6;
+  const hg = actx.createGain(); hg.gain.value = 0.35;
+  hs.connect(hf); hf.connect(hg); hg.connect(swellB); swellB.connect(master); hs.start(t);
+
+  // distant low rumble: steady, so silence never falls dead
+  const r = actx.createBufferSource(); r.buffer = noise; r.loop = true;
+  const rf = actx.createBiquadFilter(); rf.type = 'lowpass'; rf.frequency.value = 120;
+  const rg = actx.createGain(); rg.gain.value = 0.30;
+  r.connect(rf); rf.connect(rg); rg.connect(master); r.start(t);
 }
-function scheduleWash(){
-  if (!actx || !soundOn || mode !== 'synth') return;
-  const t = actx.currentTime + 0.02;
-  const dur = 1.6 + Math.random()*1.6;
-  const src = actx.createBufferSource(); src.buffer = makeNoise(); src.loop = true;
-  src.playbackRate.value = 0.8 + Math.random()*0.4;
-  const f = actx.createBiquadFilter(); f.type = 'bandpass'; f.Q.value = 0.5;
-  f.frequency.setValueAtTime(1300 + Math.random()*800, t);
-  f.frequency.exponentialRampToValueAtTime(320, t + dur);
-  const g = actx.createGain();
-  const peak = 0.5 + Math.random()*0.35;
-  g.gain.setValueAtTime(0.0001, t);
-  g.gain.linearRampToValueAtTime(peak, t + 0.35 + Math.random()*0.35);
-  g.gain.exponentialRampToValueAtTime(0.03, t + dur);
-  const hs = actx.createBufferSource(); hs.buffer = makeNoise(); hs.loop = true;
-  const hf = actx.createBiquadFilter(); hf.type = 'highpass'; hf.frequency.value = 2400;
-  const hg = actx.createGain();
-  hg.gain.setValueAtTime(0.0001, t + dur*0.4);
-  hg.gain.linearRampToValueAtTime(peak*0.4, t + dur*0.7);
-  hg.gain.exponentialRampToValueAtTime(0.0001, t + dur*1.9);
-  let out = g, hout = hg;
-  if (actx.createStereoPanner){
-    const pan = (Math.random()*2 - 1)*0.75;
-    const p1 = actx.createStereoPanner(); p1.pan.setValueAtTime(pan, t);
-    const p2 = actx.createStereoPanner(); p2.pan.setValueAtTime(pan*0.6, t);
-    g.connect(p1); out = p1;
-    hg.connect(p2); hout = p2;
-  }
-  src.connect(f); f.connect(g); out.connect(master);
-  hs.connect(hf); hf.connect(hg); hout.connect(master);
-  src.start(t, Math.random()*3); src.stop(t + dur + 0.1);
-  hs.start(t, Math.random()*3); hs.stop(t + dur*2.0);
-  washTimer = setTimeout(scheduleWash, 700 + Math.random()*2600);
-}
-function stopSound(){
-  clearTimeout(washTimer);
-  if (oceanSrc){ try{ oceanSrc.stop(); }catch(_){} oceanSrc = null; }
-  mode = null;
-}
+function stopSound(){ mode = null; }
 soundBtn.addEventListener('click', () => {
   soundOn = !soundOn;
   soundBtn.setAttribute('aria-pressed', String(soundOn));
   if (soundOn){
     if (!actx){ if (!initAudio()){ soundOn = false; soundBtn.setAttribute('aria-pressed', 'false'); return; } }
     actx.resume();
-    if (mode === 'file'){ stopSound(); startFile(); }   // restart loop from the top
-    else if (mode === 'synth'){ clearTimeout(washTimer); scheduleWash(); }
-    else startFile();
+    if (mode !== 'synth') startSurf();
   } else {
     stopSound();
   }
