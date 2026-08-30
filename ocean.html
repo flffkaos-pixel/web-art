@@ -44,12 +44,6 @@
     bottom:max(12px, env(safe-area-inset-bottom));padding:8px 12px;
     background:var(--panel);backdrop-filter:blur(14px);box-shadow:0 10px 28px rgba(0,0,0,.45)
   }
-  .sound-btn{
-    position:fixed;z-index:20;right:max(10px, env(safe-area-inset-right));
-    bottom:max(52px, calc(env(safe-area-inset-bottom) + 40px));padding:8px 12px;
-    background:var(--panel);backdrop-filter:blur(14px);box-shadow:0 10px 28px rgba(0,0,0,.45)
-  }
-  .sound-btn[aria-pressed="true"]{color:var(--acc);border-color:rgba(95,208,232,.45);background:rgba(95,208,232,.14)}
   .grp{border-top:1px solid var(--line);margin-top:9px;padding-top:7px}
   .grp>b{display:block;color:var(--acc);font-size:10px;letter-spacing:.16em;
     text-transform:uppercase;cursor:pointer;user-select:none;opacity:.85;margin-bottom:5px}
@@ -224,9 +218,13 @@
 <div id="boot"><div class="t">ABYSSAL</div><div class="s" id="bootmsg">initialising…</div></div>
 <div id="err"></div>
 
-<aside class="detail-audio-dock" aria-label="파도 사운드 제어">
-  <button id="sound-toggle" class="detail-sound-control" type="button" aria-pressed="false" aria-label="파도 소리 켜기"><span id="sound-label">sound off</span></button>
+<aside class="detail-audio-dock" aria-label="바다 사운드 제어">
+  <button class="detail-sound-control" type="button" data-track-name="Island Ocean" data-ambient-toggle="ocean-detail-audio" aria-pressed="false" aria-label="Island Ocean 사운드 켜기"><span data-ambient-label>sound off</span></button>
+  <button id="mute-toggle" class="detail-mute-control" type="button" aria-pressed="false" aria-label="전체 음소거"><span data-mute-label>mute</span></button>
+  <label class="detail-volume-wrap" aria-label="전체 볼륨"><input id="global-volume" type="range" min="0" max="100" value="44" step="1"><output id="volume-value" for="global-volume">44%</output></label>
 </aside>
+<audio id="ocean-detail-audio" data-ambient preload="metadata" src="assets/audio/island-ocean.mp3"></audio>
+<script src="assets/ambient-player.js"></script>
 
 <script type="importmap">
 { "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js" } }
@@ -1967,88 +1965,6 @@ group('Presets', b => {
     b.appendChild(btn);
   });
 }, true);
-
-/* ══════════════════════════════════════════════════════════════════════
-   SURF SOUND — continuous ocean: shaped noise swelling on slow, incommensurate
-   cycles. No melody, no discrete rhythm — just the irregular wash of surf.
-   ══════════════════════════════════════════════════════════════════════ */
-let soundOn = false, actx = null, master = null, noiseBuf = null, mode = null;
-const soundBtn = document.getElementById('sound-toggle');
-function initAudio(){
-  const AC = window.AudioContext || window.webkitAudioContext;
-  if (!AC) return false;
-  actx = new AC();
-  master = actx.createGain(); master.gain.value = 0; master.connect(actx.destination);
-  return true;
-}
-function makeNoise(){
-  if (noiseBuf) return noiseBuf;
-  const len = actx.sampleRate*4;
-  noiseBuf = actx.createBuffer(1, len, actx.sampleRate);
-  const d = noiseBuf.getChannelData(0); let l = 0;
-  for (let i = 0; i < len; i++){ const w = Math.random()*2 - 1; l = (l + 0.02*w)/1.02; d[i] = l*3.5; }
-  return noiseBuf;
-}
-// constant-1 source for a DC offset (works in every AudioContext)
-function dcSource(v){
-  const b = actx.createBuffer(1, 1, actx.sampleRate);
-  b.getChannelData(0)[0] = v;
-  const s = actx.createBufferSource(); s.buffer = b; s.loop = true; s.start();
-  return s;
-}
-function startSurf(){
-  if (mode) return;
-  mode = 'synth';
-  const t = actx.currentTime;
-  const noise = makeNoise();
-  // swell bus: 0.5 base + a few incommensurate slow sines (±0.48 total)
-  // the incommensurate periods keep it irregular — surf, not a beat
-  const add = actx.createGain(); add.gain.value = 1;
-  dcSource(0.5).connect(add);
-  [1/8.7, 1/13.2, 1/5.6, 1/19.5].forEach(fr => {
-    const o = actx.createOscillator(); o.frequency.value = fr;
-    const og = actx.createGain(); og.gain.value = 0.12;
-    o.connect(og); og.connect(add); o.start(t);
-  });
-  const swellA = actx.createGain(); swellA.gain.value = 0.5;   // body wash
-  const swellB = actx.createGain(); swellB.gain.value = 0.5;   // foam hiss (lighter)
-  add.connect(swellA.gain); add.connect(swellB.gain);
-
-  // body: brown noise low-passed, rising and falling with the swell
-  const src = actx.createBufferSource(); src.buffer = noise; src.loop = true;
-  const f = actx.createBiquadFilter(); f.type = 'lowpass'; f.frequency.value = 700;
-  src.connect(f); f.connect(swellA); swellA.connect(master); src.start(t);
-
-  // foam hiss: brighter band following the same swell, softer
-  const hs = actx.createBufferSource(); hs.buffer = noise; hs.loop = true;
-  const hf = actx.createBiquadFilter(); hf.type = 'bandpass'; hf.frequency.value = 2400; hf.Q.value = 0.6;
-  const hg = actx.createGain(); hg.gain.value = 0.35;
-  hs.connect(hf); hf.connect(hg); hg.connect(swellB); swellB.connect(master); hs.start(t);
-
-  // distant low rumble: steady, so silence never falls dead
-  const r = actx.createBufferSource(); r.buffer = noise; r.loop = true;
-  const rf = actx.createBiquadFilter(); rf.type = 'lowpass'; rf.frequency.value = 120;
-  const rg = actx.createGain(); rg.gain.value = 0.30;
-  r.connect(rf); rf.connect(rg); rg.connect(master); r.start(t);
-}
-function stopSound(){ mode = null; }
-soundBtn.addEventListener('click', () => {
-  soundOn = !soundOn;
-  soundBtn.setAttribute('aria-pressed', String(soundOn));
-  const lbl = document.getElementById('sound-label');
-  if (lbl) lbl.textContent = soundOn ? 'sound on' : 'sound off';
-  if (soundOn){
-    if (!actx){ if (!initAudio()){ soundOn = false; soundBtn.setAttribute('aria-pressed', 'false'); return; } }
-    actx.resume();
-    if (mode !== 'synth') startSurf();
-  } else {
-    stopSound();
-  }
-  if (actx){
-    master.gain.cancelScheduledValues(actx.currentTime);
-    master.gain.linearRampToValueAtTime(soundOn ? 0.9 : 0.0, actx.currentTime + 1.2);
-  }
-});
 
 /* ══════════════════════════════════════════════════════════════════════
    MAIN LOOP
