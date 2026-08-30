@@ -187,7 +187,6 @@
   <div id="ui"></div>
 </div>
 <button type="button" class="tools-btn" id="tools-show" aria-controls="panel" aria-expanded="false">tools</button>
-<button type="button" class="tools-btn sound-btn" id="sound-toggle" aria-pressed="false">sound</button>
 
 <div id="hud">
   <div><b id="fps">--</b> fps &nbsp;·&nbsp; <span id="stat"></span></div>
@@ -225,13 +224,9 @@
 <div id="boot"><div class="t">ABYSSAL</div><div class="s" id="bootmsg">initialising…</div></div>
 <div id="err"></div>
 
-<aside class="detail-audio-dock" aria-label="바다 사운드 제어">
-  <button class="detail-sound-control" type="button" data-track-name="Island Ocean" data-ambient-toggle="ocean-detail-audio" aria-pressed="false" aria-label="Island Ocean 사운드 켜기"><span data-ambient-label>sound off</span></button>
-  <button id="mute-toggle" class="detail-mute-control" type="button" aria-pressed="false" aria-label="전체 음소거"><span data-mute-label>mute</span></button>
-  <label class="detail-volume-wrap" aria-label="전체 볼륨"><input id="global-volume" type="range" min="0" max="100" value="44" step="1"><output id="volume-value" for="global-volume">44%</output></label>
+<aside class="detail-audio-dock" aria-label="파도 사운드 제어">
+  <button id="sound-toggle" class="detail-sound-control" type="button" aria-pressed="false" aria-label="파도 소리 켜기"><span id="sound-label">sound off</span></button>
 </aside>
-<audio id="ocean-detail-audio" data-ambient preload="metadata" src="assets/audio/island-ocean.mp3"></audio>
-<script src="assets/ambient-player.js"></script>
 
 <script type="importmap">
 { "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js" } }
@@ -2040,6 +2035,8 @@ function stopSound(){ mode = null; }
 soundBtn.addEventListener('click', () => {
   soundOn = !soundOn;
   soundBtn.setAttribute('aria-pressed', String(soundOn));
+  const lbl = document.getElementById('sound-label');
+  if (lbl) lbl.textContent = soundOn ? 'sound on' : 'sound off';
   if (soundOn){
     if (!actx){ if (!initAudio()){ soundOn = false; soundBtn.setAttribute('aria-pressed', 'false'); return; } }
     actx.resume();
