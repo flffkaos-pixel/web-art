@@ -218,13 +218,9 @@
 <div id="boot"><div class="t">ABYSSAL</div><div class="s" id="bootmsg">initialising…</div></div>
 <div id="err"></div>
 
-<aside class="detail-audio-dock" aria-label="바다 사운드 제어">
-  <button class="detail-sound-control" type="button" data-track-name="Island Ocean" data-ambient-toggle="ocean-detail-audio" aria-pressed="false" aria-label="Island Ocean 사운드 켜기"><span data-ambient-label>sound off</span></button>
-  <button id="mute-toggle" class="detail-mute-control" type="button" aria-pressed="false" aria-label="전체 음소거"><span data-mute-label>mute</span></button>
-  <label class="detail-volume-wrap" aria-label="전체 볼륨"><input id="global-volume" type="range" min="0" max="100" value="44" step="1"><output id="volume-value" for="global-volume">44%</output></label>
+<aside class="detail-audio-dock" aria-label="파도 사운드 제어">
+  <button id="sound-toggle" class="detail-sound-control" type="button" aria-pressed="false" aria-label="파도 소리 켜기"><span id="sound-label">sound off</span></button>
 </aside>
-<audio id="ocean-detail-audio" data-ambient preload="metadata" src="assets/audio/island-ocean.mp3"></audio>
-<script src="assets/ambient-player.js"></script>
 
 <script type="importmap">
 { "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js" } }
@@ -1965,6 +1961,72 @@ group('Presets', b => {
     b.appendChild(btn);
   });
 }, true);
+
+/* ══════════════════════════════════════════════════════════════════════
+   SURF SOUND — the poseidon beach wave sound: a low rumble bed plus
+   scheduled breaking-wave washes (bright bandpass sweeping down, decaying
+   to foam hiss). No melody, no music file.
+   ══════════════════════════════════════════════════════════════════════ */
+let soundOn = false, actx = null, master = null, washTimer = 0, noiseBuf = null;
+const soundBtn = document.getElementById('sound-toggle');
+const soundLbl = document.getElementById('sound-label');
+function initAudio(){
+  const AC = window.AudioContext || window.webkitAudioContext;
+  if (!AC) return;
+  actx = new AC();
+  master = actx.createGain(); master.gain.value = 0; master.connect(actx.destination);
+  const len = actx.sampleRate*4;
+  noiseBuf = actx.createBuffer(1, len, actx.sampleRate);
+  const d = noiseBuf.getChannelData(0); let l = 0;
+  for (let i = 0; i < len; i++){ const w = Math.random()*2 - 1; l = (l + 0.02*w)/1.02; d[i] = l*3.5; }
+  // constant bed: distant low rumble so silence between breaks is not dead
+  const bed = actx.createBufferSource(); bed.buffer = noiseBuf; bed.loop = true;
+  const bf = actx.createBiquadFilter(); bf.type = 'lowpass'; bf.frequency.value = 160;
+  const bg = actx.createGain(); bg.gain.value = 0.30;
+  bed.connect(bf); bf.connect(bg); bg.connect(master); bed.start();
+}
+function scheduleWash(){
+  if (!actx || !soundOn) return;
+  const t = actx.currentTime + 0.05;
+  const dur = 2.6 + Math.random()*2.4;
+  // one breaking wave: bandpassed noise, bright at the break, decaying to foam hiss
+  const src = actx.createBufferSource(); src.buffer = noiseBuf; src.loop = true;
+  src.playbackRate.value = 0.85 + Math.random()*0.3;
+  const f = actx.createBiquadFilter(); f.type = 'bandpass'; f.Q.value = 0.55;
+  f.frequency.setValueAtTime(1100 + Math.random()*700, t);
+  f.frequency.exponentialRampToValueAtTime(260, t + dur);
+  const g = actx.createGain();
+  const peak = 0.55 + Math.random()*0.4;
+  g.gain.setValueAtTime(0.0001, t);
+  g.gain.linearRampToValueAtTime(peak, t + 0.45 + Math.random()*0.5);
+  g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+  let out = g;
+  if (actx.createStereoPanner){
+    const p = actx.createStereoPanner();
+    p.pan.setValueAtTime((Math.random()*2 - 1)*0.7, t);
+    g.connect(p); out = p;
+  }
+  src.connect(f); f.connect(g); out.connect(master);
+  src.start(t, Math.random()*3); src.stop(t + dur + 0.1);
+  washTimer = setTimeout(scheduleWash, (dur*0.5 + 0.8 + Math.random()*3.2)*1000);
+}
+soundBtn.addEventListener('click', () => {
+  soundOn = !soundOn;
+  soundBtn.setAttribute('aria-pressed', String(soundOn));
+  if (soundLbl) soundLbl.textContent = soundOn ? 'sound on' : 'sound off';
+  if (soundOn){
+    if (!actx) initAudio();
+    actx.resume();
+    clearTimeout(washTimer);
+    scheduleWash();
+  } else {
+    clearTimeout(washTimer);
+  }
+  if (actx){
+    master.gain.cancelScheduledValues(actx.currentTime);
+    master.gain.linearRampToValueAtTime(soundOn ? 0.9 : 0.0, actx.currentTime + 1.2);
+  }
+});
 
 /* ══════════════════════════════════════════════════════════════════════
    MAIN LOOP
