@@ -368,25 +368,93 @@ document.addEventListener('touchmove', e => {
 }, {passive:false});
 
 const _fwd = new THREE.Vector3(), _rgt = new THREE.Vector3(), _mv = new THREE.Vector3();
+
+/* ══════════════════════════════════════════════════════════════════════
+   FIRST-PERSON WALKER — a grounded person instead of a flying camera.
+   Look with drag / WASD; move with W A S D on the ground. The camera rides
+   on a small humanoid that stays glued to the terrain height, so you walk
+   the beach (and the island) instead of flying. Toggle Fly mode in Render.
+   ══════════════════════════════════════════════════════════════════════ */
+const EYE = 1.7, WALK_SPEED = 5.0, MAX_SLOPE = 1.4;
+const PLAYER = { x: 0, z: 265, yaw: Math.PI, pitch: -0.05, h: 0, t: 0, moving: false };
+function groundH(x, z){ return terrainH(x, z); }
+
+// simple humanoid body (visible when you look down)
+function makeBody(){
+  const g = new THREE.Group();
+  const skin  = new THREE.MeshBasicMaterial({ color: 0xd9b48f });
+  const cloth = new THREE.MeshBasicMaterial({ color: 0x3f6ea5 });
+  const box = (w, h, d) => new THREE.BoxGeometry(w, h, d);
+  const legs = [
+    (() => { const m = new THREE.Mesh(box(0.16,0.85,0.16), cloth); m.position.set(-0.09,0.42,0); m.geometry.translate(0,-0.425,0); g.add(m); return m; })(),
+    (() => { const m = new THREE.Mesh(box(0.16,0.85,0.16), cloth); m.position.set( 0.09,0.42,0); m.geometry.translate(0,-0.425,0); g.add(m); return m; })() ];
+  const torso = new THREE.Mesh(box(0.5,0.65,0.28), cloth); torso.position.set(0,1.05,0); torso.geometry.translate(0,0.325,0); g.add(torso);
+  const head  = new THREE.Mesh(new THREE.SphereGeometry(0.16,16,12), skin); head.position.set(0,1.55,0); g.add(head);
+  const arms = [
+    (() => { const m = new THREE.Mesh(box(0.13,0.7,0.13), skin); m.position.set(-0.34,1.2,0); m.geometry.translate(0,-0.35,0); g.add(m); return m; })(),
+    (() => { const m = new THREE.Mesh(box(0.13,0.7,0.13), skin); m.position.set( 0.34,1.2,0); m.geometry.translate(0,-0.35,0); g.add(m); return m; })() ];
+  return { g, legs, arms };
+}
+const body = makeBody();
+function updateBody(dt){
+  body.g.position.set(PLAYER.x, PLAYER.h, PLAYER.z);
+  body.g.rotation.y = PLAYER.yaw;
+  if (PLAYER.moving){
+    PLAYER.t += dt * 9.0;
+    const s = Math.sin(PLAYER.t);
+    body.legs[0].rotation.x =  s * 0.6;
+    body.legs[1].rotation.x = -s * 0.6;
+    body.arms[0].rotation.x = -s * 0.5;
+    body.arms[1].rotation.x =  s * 0.5;
+  } else {
+    body.legs.forEach(l => l.rotation.x = 0);
+    body.arms.forEach(a => a.rotation.x = 0);
+  }
+}
+
 function updateCamera(dt){
   if (ctl.lookYaw) ctl.yaw += ctl.lookYaw * dt * 1.55;
   if (ctl.lookPitch){
     ctl.pitch += ctl.lookPitch * dt * 1.25;
     ctl.pitch = Math.max(-1.5533, Math.min(1.5533, ctl.pitch));
   }
-  const k = ctl.keys;
+  PLAYER.yaw = ctl.yaw;
   camera.quaternion.setFromEuler(new THREE.Euler(ctl.pitch, ctl.yaw, 0, 'YXZ'));
-  _fwd.set(0,0,-1).applyQuaternion(camera.quaternion);
-  _rgt.set(1,0, 0).applyQuaternion(camera.quaternion);
-  _mv.set(0,0,0);
-  // W/S/A/D plus Z/Q for AZERTY layouts, arrows as fallback
-  if (k.KeyW || k.KeyZ || k.ArrowUp)    _mv.add(_fwd);
-  if (k.KeyS || k.ArrowDown)            _mv.sub(_fwd);
-  if (k.KeyD || k.ArrowRight)           _mv.add(_rgt);
-  if (k.KeyA || k.KeyQ || k.ArrowLeft)  _mv.sub(_rgt);
-  if (k.Space)                          _mv.y += 1;
-  if (k.ControlLeft || k.ShiftLeft || k.KeyC) _mv.y -= 1;
-  if (_mv.lengthSq() > 0) camera.position.addScaledVector(_mv.normalize(), ctl.speed * dt);
+  const k = ctl.keys;
+  if (!P.flyMode){
+    // grounded walk
+    const fwd = new THREE.Vector3(-Math.sin(ctl.yaw), 0, -Math.cos(ctl.yaw));
+    const rgt = new THREE.Vector3( Math.cos(ctl.yaw), 0, -Math.sin(ctl.yaw));
+    _mv.set(0,0,0);
+    if (k.KeyW || k.KeyZ || k.ArrowUp)    _mv.add(fwd);
+    if (k.KeyS || k.ArrowDown)            _mv.sub(fwd);
+    if (k.KeyD || k.ArrowRight)           _mv.add(rgt);
+    if (k.KeyA || k.KeyQ || k.ArrowLeft)  _mv.sub(rgt);
+    PLAYER.moving = _mv.lengthSq() > 0;
+    if (PLAYER.moving){
+      _mv.normalize().multiplyScalar(WALK_SPEED * dt);
+      const nx = PLAYER.x + _mv.x, nz = PLAYER.z + _mv.z;
+      const g0 = groundH(PLAYER.x, PLAYER.z), g1 = groundH(nx, nz);
+      if (g1 - g0 < MAX_SLOPE && g0 - g1 < 2.5){ PLAYER.x = nx; PLAYER.z = nz; }
+    }
+    PLAYER.h = groundH(PLAYER.x, PLAYER.z);
+    const bob = PLAYER.moving ? Math.abs(Math.sin(PLAYER.t)) * 0.05 : 0;
+    camera.position.set(PLAYER.x, PLAYER.h + EYE + bob, PLAYER.z);
+    updateBody(dt);
+  } else {
+    // fly mode (original)
+    _fwd.set(0,0,-1).applyQuaternion(camera.quaternion);
+    _rgt.set(1,0, 0).applyQuaternion(camera.quaternion);
+    _mv.set(0,0,0);
+    if (k.KeyW || k.KeyZ || k.ArrowUp)    _mv.add(_fwd);
+    if (k.KeyS || k.ArrowDown)            _mv.sub(_fwd);
+    if (k.KeyD || k.ArrowRight)           _mv.add(_rgt);
+    if (k.KeyA || k.KeyQ || k.ArrowLeft)  _mv.sub(_rgt);
+    if (k.Space)                          _mv.y += 1;
+    if (k.ControlLeft || k.ShiftLeft || k.KeyC) _mv.y -= 1;
+    if (_mv.lengthSq() > 0) camera.position.addScaledVector(_mv.normalize(), ctl.speed * dt);
+    body.g.position.copy(camera.position); body.g.rotation.y = ctl.yaw;
+  }
   camera.updateMatrixWorld(true);
 }
 
@@ -606,7 +674,7 @@ const P = {
   scatter: '#0f5f6b', sss: '#2fbfa2', sssStrength: 1.5, refract: 0.55,
   // render
   exposure: 0.85, bloom: 0.30, ssr: !IS_PHONE, glitter: 1.0,
-  scale: IS_PHONE ? 1.0 : 1.5, wire: false, showFoam: true
+  scale: IS_PHONE ? 1.0 : 1.5, wire: false, showFoam: true, flyMode: false
 };
 
 /* ══════════════════════════════════════════════════════════════════════
@@ -1634,6 +1702,7 @@ sceneA.add(skyMesh, terrainMesh);
 buoyMeshes.forEach(b => sceneA.add(b));
 sceneA.add(sprayMesh);                     // + spray particles (Poseidon)
 sceneA.add(grassMesh);                     // + grass (gaia)
+sceneA.add(body.g);                        // + the first-person walker body
 const sceneO = new THREE.Scene();          // water surface
 sceneO.add(oceanMesh);
 
@@ -1920,6 +1989,7 @@ group('Render', b => {
   slider(b,'glitter','Sun glitter',0,3,0.01,'',false);
   check(b,'ssr','Screen-space reflections');
   check(b,'wire','Wireframe');
+  check(b,'flyMode','Fly mode (else walk on the ground)');
   const r = document.createElement('div'); r.className = 'row';
   const l = document.createElement('label'); l.textContent = 'Supersample';
   const s = document.createElement('select');
@@ -1977,6 +2047,7 @@ group('Presets', b => {
       Object.assign(P, pr);
       if (pr.cam){
         camera.position.set(pr.cam.pos[0], pr.cam.pos[1], pr.cam.pos[2]);
+        PLAYER.x = pr.cam.pos[0]; PLAYER.z = pr.cam.pos[2];
         ctl.yaw = pr.cam.yaw; ctl.pitch = pr.cam.pitch;
       }
       h0Dirty = true;
