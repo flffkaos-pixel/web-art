@@ -285,14 +285,13 @@ const camera = new THREE.PerspectiveCamera(50, viewSize().w / viewSize().h, 0.25
 camera.position.set(0, 3.0, 265);
 
 /* ── free-look camera controller ─────────────────────────────────────── */
-const IS_FINE = matchMedia('(pointer: fine)').matches;
 const ctl = { yaw: Math.PI, pitch: -0.05, speed: 26, keys: Object.create(null),
               drag:false, lx:0, ly:0, lookYaw:0, lookPitch:0, mx: innerWidth/2, my: innerHeight/2 };
 canvas.addEventListener('pointerdown', e => { ctl.drag = true; ctl.lx = e.clientX; ctl.ly = e.clientY; canvas.setPointerCapture(e.pointerId); });
 canvas.addEventListener('pointerup',   e => { ctl.drag = false; try{canvas.releasePointerCapture(e.pointerId);}catch(_){} });
 canvas.addEventListener('pointermove', e => {
   ctl.mx = e.clientX; ctl.my = e.clientY;
-  if (ctl.drag && !IS_FINE){                       // touch: drag to look
+  if (ctl.drag){                                // click + drag to look
     ctl.yaw   -= (e.clientX - ctl.lx) * 0.0026;
     ctl.pitch -= (e.clientY - ctl.ly) * 0.0026;
     ctl.pitch  = Math.max(-1.5533, Math.min(1.5533, ctl.pitch));
@@ -449,16 +448,11 @@ function updateBody(dt){
 }
 
 function updateCamera(dt){
-  if (IS_FINE){
-    // mouse-follow look: the view tracks the cursor (no dragging)
-    ctl.yaw   = Math.PI + (ctl.mx - innerWidth/2) * 0.0022;
-    ctl.pitch = Math.max(-1.5533, Math.min(1.5533, -0.05 + (ctl.my - innerHeight/2) * 0.0022));
-  } else {
-    if (ctl.lookYaw) ctl.yaw += ctl.lookYaw * dt * 1.55;
-    if (ctl.lookPitch){
-      ctl.pitch += ctl.lookPitch * dt * 1.25;
-      ctl.pitch = Math.max(-1.5533, Math.min(1.5533, ctl.pitch));
-    }
+  function updateCamera(dt){
+  if (ctl.lookYaw) ctl.yaw += ctl.lookYaw * dt * 1.55;
+  if (ctl.lookPitch){
+    ctl.pitch += ctl.lookPitch * dt * 1.25;
+    ctl.pitch = Math.max(-1.5533, Math.min(1.5533, ctl.pitch));
   }
   PLAYER.yaw = ctl.yaw;
   camera.quaternion.setFromEuler(new THREE.Euler(ctl.pitch, ctl.yaw, 0, 'YXZ'));
