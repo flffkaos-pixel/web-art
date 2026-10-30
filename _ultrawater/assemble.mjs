@@ -10,6 +10,10 @@ if (moduleIdx < 0) throw new Error('ocean.original.html: module script marker no
 
 let prefix = raw.slice(0, moduleIdx);
 prefix = prefix.replace(/<script type="importmap">[\s\S]*?<\/script>/, '');
+prefix = prefix.replace(
+  '<meta name="apple-mobile-web-app-capable" content="yes">',
+  '<meta name="apple-mobile-web-app-capable" content="yes">\n<meta name="mobile-web-app-capable" content="yes">',
+);
 
 const block = `<style id="ultra-water-ui">
   #pads{display:none!important}
