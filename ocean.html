@@ -168,6 +168,50 @@
     body.tools-hidden #panel{transform:translateX(110%)}
   }
   #hud.hidden, #pads.hidden { display:none !important; }
+
+  /* 3rd-person beach controls */
+  #joy, #sit-btn{display:none}
+  @media (pointer:coarse){
+    #joy{
+      display:block;position:fixed;z-index:12;
+      right:max(16px, env(safe-area-inset-right));
+      bottom:max(18px, env(safe-area-inset-bottom));
+      width:116px;height:116px;border-radius:50%;
+      border:1px solid var(--line);background:rgba(10,16,22,.4);
+      backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);
+      touch-action:none;-webkit-tap-highlight-color:transparent;user-select:none;-webkit-user-select:none
+    }
+    #joy-knob{
+      position:absolute;left:50%;top:50%;width:46px;height:46px;margin:-23px 0 0 -23px;
+      border-radius:50%;background:rgba(95,208,232,.32);border:1px solid rgba(95,208,232,.55);
+      pointer-events:none
+    }
+    #sit-btn{
+      display:block;position:fixed;z-index:12;
+      right:max(16px, env(safe-area-inset-right));
+      bottom:calc(max(18px, env(safe-area-inset-bottom)) + 132px);
+      min-height:44px;padding:0 18px;border:1px solid var(--line);border-radius:22px;
+      background:var(--panel);color:var(--acc);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
+      font:700 11px/1 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+      letter-spacing:.18em;text-transform:uppercase;cursor:pointer;
+      -webkit-tap-highlight-color:transparent;touch-action:manipulation
+    }
+    #sit-btn.on{background:rgba(95,208,232,.25);border-color:rgba(95,208,232,.5)}
+    body.tools-hidden #tools-show{
+      right:max(16px, env(safe-area-inset-right));
+      bottom:calc(max(18px, env(safe-area-inset-bottom)) + 192px)
+    }
+  }
+  @media (max-width:950px) and (orientation:landscape){
+    #joy{
+      right:auto;left:max(16px, env(safe-area-inset-left));
+      bottom:calc(max(16px, env(safe-area-inset-bottom)) + 60px)
+    }
+    #sit-btn{
+      right:auto;left:max(16px, env(safe-area-inset-left));
+      bottom:calc(max(16px, env(safe-area-inset-bottom)) + 192px)
+    }
+  }
 </style>
 <link rel="stylesheet" href="assets/detail-audio.css">
 </head>
@@ -188,33 +232,8 @@
   <div class="desk-hint"><kbd>drag</kbd> look &nbsp; <kbd>W A S D</kbd> move &nbsp; <kbd>Space</kbd>/<kbd>Ctrl</kbd> up/down &nbsp; <kbd>wheel</kbd> speed</div>
 </div>
 
-<div id="pads" aria-label="Camera controls">
-  <div class="cluster">
-    <span>look</span>
-    <div class="dpad">
-      <button type="button" data-slot="n" data-look="pitch:-1" aria-label="Look up">▲</button>
-      <button type="button" data-slot="w" data-look="yaw:1" aria-label="Look left">◀</button>
-      <button type="button" data-slot="e" data-look="yaw:-1" aria-label="Look right">▶</button>
-      <button type="button" data-slot="s" data-look="pitch:1" aria-label="Look down">▼</button>
-    </div>
-  </div>
-  <div class="cluster">
-    <span>move</span>
-    <div class="dpad">
-      <button type="button" data-slot="n" data-key="ArrowUp" aria-label="Move forward">▲</button>
-      <button type="button" data-slot="w" data-key="ArrowLeft" aria-label="Move left">◀</button>
-      <button type="button" data-slot="e" data-key="ArrowRight" aria-label="Move right">▶</button>
-      <button type="button" data-slot="s" data-key="ArrowDown" aria-label="Move back">▼</button>
-    </div>
-  </div>
-  <div class="cluster">
-    <span>heave</span>
-    <div class="heave">
-      <button type="button" data-key="Space" aria-label="Move up">▲</button>
-      <button type="button" data-key="ControlLeft" aria-label="Move down">▼</button>
-    </div>
-  </div>
-</div>
+<div id="joy" aria-label="이동 조이스틱"><div id="joy-knob"></div></div>
+<button type="button" id="sit-btn" class="on">stand</button>
 
 <div id="boot"><div class="t">ABYSSAL</div><div class="s" id="bootmsg">initialising…</div></div>
 <div id="err"></div>
@@ -272,7 +291,7 @@ try {
 }
 
 const hint = document.querySelector('#hud .desk-hint');
-if (hint) hint.innerHTML = '<kbd>drag</kbd> orbit &nbsp; <kbd>wheel</kbd> zoom &nbsp; <kbd>right-drag</kbd> pan';
+if (hint) hint.innerHTML = '<kbd>W A S D</kbd> walk &nbsp; <kbd>F</kbd> sit / stand &nbsp; <kbd>drag</kbd> orbit &nbsp; <kbd>wheel</kbd> zoom';
 
 {
   const hideBtn = document.getElementById('tools-hide'), showBtn = document.getElementById('tools-show');
@@ -285,17 +304,259 @@ if (hint) hint.innerHTML = '<kbd>drag</kbd> orbit &nbsp; <kbd>wheel</kbd> zoom &
   showBtn?.addEventListener('click', e => { e.preventDefault(); setTools(true); });
 }
 
+/* ---------- procedural surf — waves only, no music ---------- */
 {
-  const audio = new Audio('assets/audio/island-ocean.mp3');
-  audio.loop = true; audio.volume = 0.6;
   const btn = document.getElementById('sound-toggle'), lbl = document.getElementById('sound-label');
-  let on = false;
+  let ctx = null, master = null, hiss = null, buf = null, swell = 0, on = false;
+
+  function brown(){
+    const sr = ctx.sampleRate, len = sr * 4, b = ctx.createBuffer(2, len, sr);
+    for (let ch = 0; ch < 2; ch++){
+      const d = b.getChannelData(ch); let last = 0;
+      for (let i = 0; i < len; i++){ last = (last + 0.02 * (Math.random() * 2 - 1)) / 1.02; d[i] = last * 3.5; }
+    }
+    return b;
+  }
+  function layer(type, freq, depth, rate){
+    const src = ctx.createBufferSource(); src.buffer = buf; src.loop = true;
+    src.playbackRate.value = 0.85 + Math.random() * 0.3;
+    const f = ctx.createBiquadFilter(); f.type = type; f.frequency.value = freq; f.Q.value = 0.5;
+    const g = ctx.createGain(); g.gain.value = 1;
+    const lfo = ctx.createOscillator(); lfo.frequency.value = rate;
+    const lg = ctx.createGain(); lg.gain.value = depth;
+    lfo.connect(lg); lg.connect(g.gain);
+    src.connect(f); f.connect(g); g.connect(master);
+    lfo.start(); src.start();
+    return g;
+  }
+  function crash(){
+    if (!on || !ctx) return;
+    const t = ctx.currentTime;
+    hiss.gain.cancelScheduledValues(t);
+    hiss.gain.setValueAtTime(hiss.gain.value, t);
+    hiss.gain.linearRampToValueAtTime(2.4, t + 1.2);
+    hiss.gain.linearRampToValueAtTime(1, t + 4);
+    swell = setTimeout(crash, 4500 + Math.random() * 4500);
+  }
   btn?.addEventListener('click', async () => {
     on = !on;
-    try { on ? await audio.play() : audio.pause(); } catch (e) {}
+    if (on){
+      if (!ctx){
+        ctx = new (window.AudioContext || window.webkitAudioContext)();
+        master = ctx.createGain(); master.gain.value = 0; master.connect(ctx.destination);
+        buf = brown();
+        layer('lowpass', 360, 0.45, 0.055);
+        hiss = layer('bandpass', 920, 0.3, 0.1);
+      }
+      try { await ctx.resume(); } catch (e) {}
+      const t = ctx.currentTime;
+      master.gain.cancelScheduledValues(t);
+      master.gain.setValueAtTime(master.gain.value, t);
+      master.gain.linearRampToValueAtTime(0.55, t + 1.5);
+      if (!swell) swell = setTimeout(crash, 1200);
+    } else {
+      clearTimeout(swell); swell = 0;
+      const t = ctx.currentTime;
+      master.gain.cancelScheduledValues(t);
+      master.gain.setValueAtTime(master.gain.value, t);
+      master.gain.linearRampToValueAtTime(0, t + 0.4);
+      setTimeout(() => { if (!on) ctx?.suspend(); }, 500);
+    }
     btn.setAttribute('aria-pressed', String(on));
-    if (lbl) lbl.textContent = on ? 'sound on' : 'sound off';
+    btn.classList.toggle('is-playing', on);
+    if (lbl) lbl.textContent = on ? 'waves on' : 'waves off';
   });
+}
+
+/* ---------- sun follows the browser clock ---------- */
+if (app){
+  const sunUi = { auto: true };
+  function sunByTime(){
+    const d = new Date();
+    const t = d.getHours() + d.getMinutes() / 60 + d.getSeconds() / 3600;
+    return {
+      elev: Math.max(-8, 44 * Math.cos((t - 12.7) / 24 * Math.PI * 2)),
+      az: (90 + (((t - 6.7 + 24) % 24) / 24) * 360) % 360,
+    };
+  }
+  function applyTimeSun(){
+    if (!sunUi.auto) return;
+    const s = sunByTime();
+    app.sky.params.elevation = s.elev;
+    app.sky.params.azimuth = s.az;
+    app.markSun();
+    app.gui?.controllersRecursive().forEach((c) => c.updateDisplay());
+  }
+  const fSun = app.gui?.folders.find((f) => f._title === 'Sun & sky');
+  fSun?.add(sunUi, 'auto').name('auto · browser time').onChange((v) => { if (v) applyTimeSun(); });
+  app.gui?.controllersRecursive().find((c) => c.property === 'view')?.destroy();
+  applyTimeSun();
+  setInterval(applyTimeSun, 10000);
+}
+
+/* ---------- 3rd-person avatar sitting on the beach ---------- */
+if (app){
+  const T = app.THREE, hAt = app.islandHeight;
+  const { scene, camera, controls } = app;
+  const sitBtn = document.getElementById('sit-btn');
+
+  function makePerson(color){
+    const g = new T.Group();
+    const cloth = new T.MeshStandardMaterial({ color, roughness: 0.9 });
+    const skin = new T.MeshStandardMaterial({ color: 0xd9b38c, roughness: 0.95 });
+    const dark = new T.MeshStandardMaterial({ color: 0x39424e, roughness: 0.95 });
+    const hips = new T.Group();
+    g.add(hips);
+    const torso = new T.Mesh(new T.CapsuleGeometry(0.2, 0.4, 4, 10), cloth);
+    torso.position.y = 0.42; hips.add(torso);
+    const head = new T.Mesh(new T.SphereGeometry(0.15, 14, 12), skin);
+    head.position.y = 0.96; hips.add(head);
+    const leg = (x) => {
+      const p = new T.Group(); p.position.set(x, 0.03, 0);
+      const m = new T.Mesh(new T.CapsuleGeometry(0.07, 0.32, 3, 8), dark);
+      m.position.y = -0.26; p.add(m); hips.add(p); return p;
+    };
+    const arm = (x) => {
+      const p = new T.Group(); p.position.set(x, 0.66, 0);
+      const m = new T.Mesh(new T.CapsuleGeometry(0.05, 0.28, 3, 8), cloth);
+      m.position.y = -0.2; p.add(m); hips.add(p); return p;
+    };
+    const p = { g, hips, legL: leg(-0.11), legR: leg(0.11), armL: arm(-0.27), armR: arm(0.27), sit: false, phase: Math.random() * 9 };
+    g.traverse((o) => { if (o.isMesh){ o.castShadow = true; o.receiveShadow = true; } });
+    return p;
+  }
+  function pose(p, t, walking){
+    if (p.sit){
+      p.hips.position.y = 0.2 + Math.sin(t * 1.3 + p.phase) * 0.008;
+      p.legL.rotation.x = p.legR.rotation.x = -1.45;
+      p.armL.rotation.x = p.armR.rotation.x = -0.4;
+    } else {
+      const s = walking ? Math.sin(t * 7.5) * 0.55 : 0;
+      p.hips.position.y = 0.56 + (walking ? Math.abs(Math.sin(t * 7.5)) * 0.045 : Math.sin(t * 1.5 + p.phase) * 0.012);
+      p.legL.rotation.x = s; p.legR.rotation.x = -s;
+      p.armL.rotation.x = -s * 0.7; p.armR.rotation.x = s * 0.7;
+    }
+  }
+  function beachPoint(deg){
+    const a = deg * Math.PI / 180, c = Math.cos(a), s = Math.sin(a);
+    let r = 100;
+    while (r < 900 && hAt(c * r, s * r) > 0.55) r += 2;
+    while (r > 100 && hAt(c * r, s * r) < 0.62) r -= 1;
+    const v = new T.Vector3(c * r, 0, s * r);
+    v.y = hAt(v.x, v.z);
+    return v;
+  }
+
+  const BEARING = 205;
+  const spawn = beachPoint(BEARING);
+  const outward = spawn.clone().setY(0).normalize();
+
+  const player = makePerson(0xefe9db);
+  player.sit = true;
+  player.g.position.copy(spawn);
+  player.g.lookAt(spawn.clone().add(outward));
+  scene.add(player.g);
+  pose(player, 0, false);
+
+  const npcs = [0xc7dbe8, 0xe8c9b8, 0xbfd8c2, 0xd8c7e8, 0xe8dfb8].map((col, i) => {
+    const p = makePerson(col);
+    p.sit = true;
+    const pos = beachPoint(BEARING + (i - 2) * 1.5);
+    pos.addScaledVector(pos.clone().setY(0).normalize(), -(0.6 + Math.random() * 1.6));
+    pos.y = hAt(pos.x, pos.z);
+    p.g.position.copy(pos);
+    p.g.lookAt(pos.clone().add(pos.clone().setY(0).normalize()));
+    scene.add(p.g);
+    return p;
+  });
+
+  const side = new T.Vector3(outward.z, 0, -outward.x);
+  const seatCam = (out) => player.g.position.clone()
+    .addScaledVector(out, -4.8).addScaledVector(side, 1.6).add(new T.Vector3(0, 1.7, 0));
+  camera.position.copy(seatCam(outward));
+  controls.target.copy(spawn).add(new T.Vector3(0, 1.1, 0));
+  controls.maxDistance = 60;
+  controls.update();
+
+  let seated = true, gliding = 0;
+  const goalCam = new T.Vector3();
+  function toggleSit(){
+    seated = !seated;
+    player.sit = seated;
+    sitBtn?.classList.toggle('on', seated);
+    if (sitBtn) sitBtn.textContent = seated ? 'stand' : 'sit';
+    if (seated){
+      goalCam.copy(seatCam(outward));
+      gliding = 1;
+      controls.enabled = false;
+    }
+  }
+  sitBtn?.addEventListener('click', toggleSit);
+  addEventListener('keydown', (e) => { if (e.code === 'KeyF' && !e.repeat) toggleSit(); });
+
+  const keys = {};
+  addEventListener('keydown', (e) => { keys[e.code] = true; });
+  addEventListener('keyup', (e) => { keys[e.code] = false; });
+
+  const joy = document.getElementById('joy'), knob = document.getElementById('joy-knob');
+  const stick = { x: 0, y: 0, id: null };
+  if (joy){
+    const set = (e) => {
+      const r = joy.getBoundingClientRect();
+      let dx = e.clientX - (r.left + r.width / 2), dy = e.clientY - (r.top + r.height / 2);
+      const len = Math.hypot(dx, dy), max = r.width / 2 - 20;
+      if (len > max){ dx *= max / len; dy *= max / len; }
+      knob.style.transform = `translate(${dx}px, ${dy}px)`;
+      stick.x = dx / max; stick.y = dy / max;
+    };
+    joy.addEventListener('pointerdown', (e) => { stick.id = e.pointerId; joy.setPointerCapture(e.pointerId); set(e); });
+    joy.addEventListener('pointermove', (e) => { if (e.pointerId === stick.id) set(e); });
+    const end = (e) => { if (e.pointerId !== stick.id) return; stick.id = null; stick.x = stick.y = 0; knob.style.transform = ''; };
+    joy.addEventListener('pointerup', end);
+    joy.addEventListener('pointercancel', end);
+  }
+
+  const head = new T.Vector3(), fwd = new T.Vector3(), dir = new T.Vector3(), right = new T.Vector3();
+  let last = performance.now();
+  function tick(now){
+    const dt = Math.min((now - last) / 1000, 0.1);
+    last = now;
+    const t = now / 1000;
+
+    if (gliding){
+      gliding = Math.max(0, gliding - dt / 1.1);
+      camera.position.lerp(goalCam, 1 - Math.pow(0.001, dt));
+      if (!gliding) controls.enabled = true;
+    }
+
+    const ix = ((keys.KeyD || keys.ArrowRight) ? 1 : 0) - ((keys.KeyA || keys.ArrowLeft) ? 1 : 0) + stick.x;
+    const iz = ((keys.KeyS || keys.ArrowDown) ? 1 : 0) - ((keys.KeyW || keys.ArrowUp) ? 1 : 0) + stick.y;
+    const mag = Math.min(Math.hypot(ix, iz), 1);
+    const moving = !seated && mag > 0.06;
+    if (moving){
+      camera.getWorldDirection(fwd); fwd.y = 0; fwd.normalize();
+      right.set(-fwd.z, 0, fwd.x);
+      dir.copy(fwd).multiplyScalar(-iz).addScaledVector(right, ix).normalize();
+      const np = player.g.position.clone().addScaledVector(dir, mag * 3.4 * dt);
+      const h = hAt(np.x, np.z);
+      if (h > -1.1 && np.length() < 780){
+        np.y = Math.max(h, -1.1);
+        player.g.position.copy(np);
+        let d = Math.atan2(dir.x, dir.z) - player.g.rotation.y;
+        d = Math.atan2(Math.sin(d), Math.cos(d));
+        player.g.rotation.y += d * Math.min(1, dt * 9);
+      }
+    }
+    pose(player, t, moving);
+    for (const n of npcs) pose(n, t, false);
+
+    head.copy(player.g.position); head.y += seated ? 0.95 : 1.5;
+    controls.target.lerp(head, 1 - Math.pow(0.0005, dt));
+    controls.update();
+    app.renderer.shadowMap.needsUpdate = true;
+    requestAnimationFrame(tick);
+  }
+  requestAnimationFrame(tick);
 }
 
 window.addEventListener('error', (e) => { if (!app) fatal('Startup failed:<br><code style="color:#ffb">' + (e.message || e) + '</code>'); });

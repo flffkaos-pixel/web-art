@@ -605,7 +605,8 @@ void main() { outColor = texture(uTex, vUv); }`, { uTex: { value: null } }));
 
   const api = {
     canvas, renderer, camera, controls, scene, sky, post, surface, ocean, terrain, timer, views, quality,
-    floaters, query, underwater, spray, snow, caustics, floatShadow, gui,
+    floaters, query, underwater, spray, snow, caustics, floatShadow, gui, sunLight,
+    THREE, islandHeight,
     camWater: () => camWater, markSun: () => (sunDirty = true), setView, runBenchmark, dispose,
   };
   window.app = api;
