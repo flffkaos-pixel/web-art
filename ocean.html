@@ -613,9 +613,12 @@ if (app){
       if (np.length() < 900){
         np.y = nh < -1.0 ? -0.45 + Math.sin(t * 1.8) * 0.07 : nh;
         player.g.position.copy(np);
-        let d = Math.atan2(dir.x, dir.z) - player.g.rotation.y;
-        d = Math.atan2(Math.sin(d), Math.cos(d));
-        player.g.rotation.y += d * Math.min(1, dt * (swim ? 4 : 9));
+        const back = dir.x * fwd.x + dir.z * fwd.z < -0.45;   // walking toward the camera: keep facing away, backpedal
+        if (!back){
+          let d = Math.atan2(dir.x, dir.z) - player.g.rotation.y;
+          d = Math.atan2(Math.sin(d), Math.cos(d));
+          player.g.rotation.y += d * Math.min(1, dt * (swim ? 4 : 9));
+        }
       }
     }
     for (const r of remotes.values()){
@@ -631,11 +634,11 @@ if (app){
     head.copy(player.g.position); head.y += seated ? 0.85 : 1.3;
     controls.target.lerp(head, 1 - Math.pow(0.0005, dt));
     controls.update();
-    if (moving && performance.now() - lastDrag > 1200){
+    if (moving && iz < -0.25 && performance.now() - lastDrag > 1200){
       off.copy(camera.position).sub(controls.target);
       const dd = Math.atan2(Math.sin(player.g.rotation.y + Math.PI - Math.atan2(off.x, off.z)),
                             Math.cos(player.g.rotation.y + Math.PI - Math.atan2(off.x, off.z)));
-      const rot = dd * Math.min(1, dt * 1.5), cs = Math.cos(rot), sn = Math.sin(rot);
+      const rot = dd * Math.min(1, dt * 2.0), cs = Math.cos(rot), sn = Math.sin(rot);
       camera.position.set(controls.target.x + off.x * cs + off.z * sn, camera.position.y,
                           controls.target.z - off.x * sn + off.z * cs);
     }
