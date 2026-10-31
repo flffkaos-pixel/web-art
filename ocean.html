@@ -504,10 +504,6 @@ if (app){
   sitBtn?.addEventListener('click', toggleSit);
   addEventListener('keydown', (e) => { if (e.code === 'KeyF' && !e.repeat) toggleSit(); });
 
-  let lastDrag = 0;
-  controls.addEventListener('start', () => { lastDrag = performance.now(); });
-  controls.addEventListener('end', () => { lastDrag = performance.now(); });
-
   const keys = {};
   addEventListener('keydown', (e) => { keys[e.code] = true; });
   addEventListener('keyup', (e) => { keys[e.code] = false; });
@@ -584,7 +580,7 @@ if (app){
     })
     .catch(() => {});
 
-  const head = new T.Vector3(), fwd = new T.Vector3(), dir = new T.Vector3(), right = new T.Vector3(), off = new T.Vector3();
+  const head = new T.Vector3(), fwd = new T.Vector3(), dir = new T.Vector3(), right = new T.Vector3();
   let last = performance.now();
   function tick(now){
     const dt = Math.min((now - last) / 1000, 0.1);
@@ -603,8 +599,10 @@ if (app){
     if (seated && mag > 0.35) toggleSit();
     const moving = !seated && mag > 0.06;
     if (moving){
+      camera.updateWorldMatrix(true, false);
       camera.getWorldDirection(fwd); fwd.y = 0; fwd.normalize();
-      right.set(-fwd.z, 0, fwd.x);
+      const e = camera.matrixWorld.elements;          // camera local +X = screen right, always
+      right.set(e[0], e[1], e[2]); right.y = 0; right.normalize();
       dir.copy(fwd).multiplyScalar(-iz).addScaledVector(right, ix).normalize();
       const swim = hAt(player.g.position.x, player.g.position.z) < -1.0;
       const sp = (swim ? 1.7 : (keys.ShiftLeft || keys.ShiftRight) ? 7.0 : 3.4) * mag;
@@ -634,14 +632,6 @@ if (app){
     head.copy(player.g.position); head.y += seated ? 0.85 : 1.3;
     controls.target.lerp(head, 1 - Math.pow(0.0005, dt));
     controls.update();
-    if (moving && iz < -0.25 && performance.now() - lastDrag > 1200){
-      off.copy(camera.position).sub(controls.target);
-      const dd = Math.atan2(Math.sin(player.g.rotation.y + Math.PI - Math.atan2(off.x, off.z)),
-                            Math.cos(player.g.rotation.y + Math.PI - Math.atan2(off.x, off.z)));
-      const rot = dd * Math.min(1, dt * 2.0), cs = Math.cos(rot), sn = Math.sin(rot);
-      camera.position.set(controls.target.x + off.x * cs + off.z * sn, camera.position.y,
-                          controls.target.z - off.x * sn + off.z * cs);
-    }
     app.renderer.shadowMap.needsUpdate = true;
     requestAnimationFrame(tick);
   }
