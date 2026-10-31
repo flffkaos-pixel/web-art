@@ -83,6 +83,22 @@ float fbm(vec2 p) {
   return s;
 }
 
+float hash13(vec3 p) {
+  p = fract(p * 0.1031);
+  p += dot(p, p.zyx + 31.32);
+  return fract((p.x + p.y) * p.z);
+}
+
+// sparse point stars pinned to the direction cube
+float starField(vec3 d) {
+  vec3 p = d * 130.0;
+  vec3 id = floor(p);
+  vec3 f = fract(p) - 0.5;
+  vec3 rnd = vec3(hash13(id), hash13(id + 17.1), hash13(id + 43.7));
+  float pt = smoothstep(0.22 + rnd.x * 0.1, 0.0, length(f - (rnd - 0.5) * 0.6));
+  return pt * step(0.80, rnd.y) * (0.3 + 0.7 * rnd.z);
+}
+
 void main() {
   vec3 d = normalize(faceDir(vUv));
   vec3 up = skyView(vec3(0.0, 1.0, 0.0), uSunDir);
@@ -94,6 +110,16 @@ void main() {
     return;
   }
   vec3 col = skyView(d, uSunDir);
+  // night sky: stars + a milky-way band, fading in as the sun drops and near the hazy horizon
+  float night = smoothstep(0.10, -0.14, uSunDir.y);
+  if (night > 0.001) {
+    float band = exp(-pow(dot(d, normalize(vec3(0.45, 0.35, 0.82))) * 3.2, 2.0));
+    float mwN = fbm(vec2(d.x + d.z * 0.6, d.y + d.z * 0.3) * 5.0) * 0.5 + 0.5;
+    float horiz = smoothstep(0.0, 0.18, d.y);
+    col += night * horiz * starField(d) * 0.4;
+    col += night * horiz * band * (0.25 + 0.75 * mwN * mwN) * vec3(0.10, 0.13, 0.20);
+    col += night * horiz * band * band * vec3(0.02, 0.025, 0.04);
+  }
   float vis = 1.0;
   if (d.y > 1e-3 && uCloudCoverage > 0.0) {
     vec2 p = d.xz / d.y * 0.396;   // cloudScale 2e-4 * 1000 / mix(1, 0.1, cloudElevation 0.55)
