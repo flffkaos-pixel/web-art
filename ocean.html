@@ -391,61 +391,71 @@ if (app){
   const { scene, camera, controls } = app;
   const sitBtn = document.getElementById('sit-btn');
 
+  const PASTELS = [0xf2b8c6, 0xa8d8c8, 0xa8c4e8, 0xf2e3a0, 0xd8b8f0, 0xf2c8a8];
+  const SKINS = [0xe3b48d, 0xf0c8a0, 0xc98d63, 0x8d5a3b];
+  const HAIRS = [0x2a2a2e, 0x4a3624, 0x6b4a2a, 0x151515, 0x8a6a4a];
+  const pick = (a) => a[Math.floor(Math.random() * a.length)];
+
   function makePerson(shirtC, skinC, hairC){
     const g = new T.Group();
     const root = new T.Group(); g.add(root);
-    const skin  = new T.MeshStandardMaterial({ color: skinC, roughness: 0.9 });
+    const skin  = new T.MeshStandardMaterial({ color: skinC, roughness: 0.85 });
     const shirt = new T.MeshStandardMaterial({ color: shirtC, roughness: 0.95 });
-    const pants = new T.MeshStandardMaterial({ color: 0x35445a, roughness: 0.95 });
-    const shoe  = new T.MeshStandardMaterial({ color: 0x23272c, roughness: 0.8 });
+    const dark  = new T.MeshStandardMaterial({ color: 0x2a2a30, roughness: 0.6 });
+    const white = new T.MeshBasicMaterial({ color: 0xffffff });
+    const blush = new T.MeshStandardMaterial({ color: 0xf0989c, roughness: 1 });
     const hair  = new T.MeshStandardMaterial({ color: hairC, roughness: 0.9 });
-    const limb = (w, h, d, mat, y, px, taper) => {
-      const hip = new T.Group(); hip.position.set(px, y, 0);
-      const geo = new T.BoxGeometry(w, h, d); geo.translate(0, -h * 0.5, 0);
-      if (taper) geo.scale(0.82, 1, 0.82);
-      hip.add(new T.Mesh(geo, mat));
-      const knee = new T.Group(); knee.position.set(0, -h, 0);
-      const geo2 = new T.BoxGeometry(w * (taper ? 0.7 : 0.8), h, d * (taper ? 0.7 : 0.8));
-      geo2.translate(0, -h * 0.5, 0);
-      knee.add(new T.Mesh(geo2, mat));
-      hip.add(knee); root.add(hip);
-      return { hip, knee };
-    };
-    const legL = limb(0.18, 0.50, 0.20, pants, 0.92, -0.10, true);
-    const legR = limb(0.18, 0.50, 0.20, pants, 0.92, 0.10, true);
-    const armL = limb(0.14, 0.38, 0.15, shirt, 1.50, -0.37, false);
-    const armR = limb(0.14, 0.38, 0.15, shirt, 1.50, 0.37, false);
-    const mkShoe = (knee) => { const m = new T.Mesh(new T.BoxGeometry(0.20, 0.10, 0.30), shoe); m.position.set(0, -0.45, 0.05); knee.add(m); };
-    mkShoe(legL.knee); mkShoe(legR.knee);
-    const hand = (knee) => { const m = new T.Mesh(new T.SphereGeometry(0.075, 10, 8), skin); m.position.y = -0.50; knee.add(m); };
-    hand(armL.knee); hand(armR.knee);
-    const pelvis = new T.Mesh(new T.BoxGeometry(0.34, 0.20, 0.24), pants); pelvis.position.y = 0.92; root.add(pelvis);
-    const torso = new T.Mesh(new T.BoxGeometry(0.46, 0.52, 0.28), shirt); torso.position.y = 1.28; torso.geometry.translate(0, 0.26, 0); torso.scale.x = 1.25; root.add(torso);
-    const chest = new T.Mesh(new T.BoxGeometry(0.52, 0.30, 0.32), shirt); chest.position.y = 1.52; root.add(chest);
-    const neck = new T.Mesh(new T.CylinderGeometry(0.06, 0.08, 0.14, 8), skin); neck.position.y = 1.74; root.add(neck);
-    const head = new T.Mesh(new T.SphereGeometry(0.155, 20, 16), skin); head.position.y = 1.88; root.add(head);
-    const cap = new T.Mesh(new T.SphereGeometry(0.158, 20, 16, 0, Math.PI * 2, 0, Math.PI * 0.55), hair); cap.position.y = 1.92; root.add(cap);
+    const stub = (r, len, mat) => new T.Mesh(new T.CapsuleGeometry(r, len, 4, 10), mat);
+    const legL = new T.Group(), legR = new T.Group();
+    legL.position.set(-0.12, 0.34, 0); legR.position.set(0.12, 0.34, 0);
+    for (const lg of [legL, legR]){
+      const m = stub(0.115, 0.10, skin); m.position.y = -0.13; lg.add(m);
+      const shoe = new T.Mesh(new T.SphereGeometry(0.12, 12, 10), dark);
+      shoe.position.set(0, -0.28, 0.05); shoe.scale.set(1, 0.55, 1.35); lg.add(shoe);
+      root.add(lg);
+    }
+    const body = stub(0.20, 0.20, shirt); body.position.y = 0.56; body.scale.y = 1.1; root.add(body);
+    const armL = new T.Group(), armR = new T.Group();
+    armL.position.set(-0.27, 0.72, 0); armR.position.set(0.27, 0.72, 0);
+    armL.rotation.z = -0.25; armR.rotation.z = 0.25;
+    for (const am of [armL, armR]){
+      const m = stub(0.075, 0.16, shirt); m.position.y = -0.16; am.add(m);
+      const hand = new T.Mesh(new T.SphereGeometry(0.09, 10, 8), skin); hand.position.y = -0.30; am.add(hand);
+      root.add(am);
+    }
+    const head = new T.Mesh(new T.SphereGeometry(0.34, 22, 18), skin); head.position.y = 1.08; root.add(head);
+    const cap = new T.Mesh(new T.SphereGeometry(0.36, 22, 18), hair); cap.position.set(0, 1.14, -0.05); root.add(cap);
+    const tuft = new T.Mesh(new T.SphereGeometry(0.10, 10, 8), hair); tuft.position.set(0, 1.44, -0.02); root.add(tuft);
+    for (const s of [-1, 1]){
+      const eye = new T.Mesh(new T.SphereGeometry(0.045, 8, 8), dark);
+      eye.position.set(s * 0.115, 1.10, 0.30); root.add(eye);
+      const hi = new T.Mesh(new T.SphereGeometry(0.015, 6, 6), white);
+      hi.position.set(s * 0.115 + 0.015, 1.125, 0.33); root.add(hi);
+      const cheek = new T.Mesh(new T.SphereGeometry(0.05, 8, 8), blush);
+      cheek.position.set(s * 0.19, 0.99, 0.28); cheek.scale.z = 0.4; root.add(cheek);
+    }
     g.traverse((o) => { if (o.isMesh){ o.castShadow = true; o.receiveShadow = true; } });
     return { g, root, legL, legR, armL, armR, sit: false, phase: Math.random() * 9 };
   }
   function pose(p, t, walking){
     const L = p.legL, R = p.legR, AL = p.armL, AR = p.armR;
     if (p.sit){
-      p.root.position.y = -0.55 + Math.sin(t * 1.3 + p.phase) * 0.008;
-      L.hip.rotation.x = R.hip.rotation.x = -1.5;
-      L.knee.rotation.x = R.knee.rotation.x = 1.35;
-      AL.hip.rotation.x = AR.hip.rotation.x = -0.5;
-      AL.knee.rotation.x = AR.knee.rotation.x = -0.35;
+      p.root.position.y = -0.32 + Math.sin(t * 1.3 + p.phase) * 0.008;
+      p.root.rotation.z = Math.sin(t * 0.8 + p.phase) * 0.03;
+      L.rotation.set(-1.1, 0, 0.45); R.rotation.set(-1.1, 0, -0.45);
+      AL.rotation.x = AR.rotation.x = -0.45;
     } else if (walking){
-      p.root.position.y = Math.abs(Math.sin(t * 9)) * 0.05;
-      const s = Math.sin(t * 9), c = Math.cos(t * 9);
-      L.hip.rotation.x = s * 0.55;  L.knee.rotation.x = Math.max(0, -c) * 0.8;
-      R.hip.rotation.x = -s * 0.55; R.knee.rotation.x = Math.max(0, c) * 0.8;
-      AL.hip.rotation.x = -s * 0.5; AL.knee.rotation.x = Math.max(0, -s) * 0.6;
-      AR.hip.rotation.x = s * 0.5;  AR.knee.rotation.x = Math.max(0, s) * 0.6;
+      const s = Math.sin(t * 10);
+      p.root.position.y = Math.abs(Math.sin(t * 10)) * 0.045;
+      p.root.rotation.z = s * 0.05;
+      L.rotation.set(s * 0.75, 0, 0); R.rotation.set(-s * 0.75, 0, 0);
+      AL.rotation.x = -s * 0.6; AR.rotation.x = s * 0.6;
     } else {
-      p.root.position.y = Math.sin(t * 1.5 + p.phase) * 0.012;
-      for (const l of [L, R, AL, AR]){ l.hip.rotation.x = 0; l.knee.rotation.x = 0; }
+      p.root.position.y = Math.sin(t * 1.6 + p.phase) * 0.014;
+      p.root.rotation.z = 0;
+      L.rotation.set(0, 0, 0); R.rotation.set(0, 0, 0);
+      AL.rotation.x = Math.sin(t * 1.6 + p.phase) * 0.04;
+      AR.rotation.x = -Math.sin(t * 1.6 + p.phase) * 0.04;
     }
   }
   function beachPoint(deg){
@@ -462,25 +472,13 @@ if (app){
   const spawn = beachPoint(BEARING);
   const outward = spawn.clone().setY(0).normalize();
 
-  const player = makePerson(0xe8e2d2, 0xe3b48d, 0x4a3624);
+  const MY_SHIRT = pick(PASTELS);
+  const player = makePerson(MY_SHIRT, pick(SKINS), pick(HAIRS));
   player.sit = true;
   player.g.position.copy(spawn);
   player.g.lookAt(spawn.clone().add(outward));
   scene.add(player.g);
   pose(player, 0, false);
-
-  const npcs = [[0x7fa8c9, 0xe3b48d, 0x151515], [0xd9a08a, 0xd9a077, 0x2a2a2e], [0x8fbf9f, 0xc98d63, 0x6b4a2a], [0xb9a0d9, 0xf0c8a0, 0x4a3624], [0xd9c98a, 0xe3b48d, 0x3a2c1e]]
-    .map(([sc, sk, hc], i) => {
-      const p = makePerson(sc, sk, hc);
-      p.sit = true;
-      const pos = beachPoint(BEARING + (i - 2) * 1.5);
-      pos.addScaledVector(pos.clone().setY(0).normalize(), -(0.6 + Math.random() * 1.6));
-      pos.y = hAt(pos.x, pos.z);
-      p.g.position.copy(pos);
-      p.g.lookAt(pos.clone().add(pos.clone().setY(0).normalize()));
-      scene.add(p.g);
-      return p;
-    });
 
   const side = new T.Vector3(outward.z, 0, -outward.x);
   const seatCam = (out) => player.g.position.clone()
@@ -505,6 +503,10 @@ if (app){
   }
   sitBtn?.addEventListener('click', toggleSit);
   addEventListener('keydown', (e) => { if (e.code === 'KeyF' && !e.repeat) toggleSit(); });
+
+  let lastDrag = 0;
+  controls.addEventListener('start', () => { lastDrag = performance.now(); });
+  controls.addEventListener('end', () => { lastDrag = performance.now(); });
 
   const keys = {};
   addEventListener('keydown', (e) => { keys[e.code] = true; });
@@ -531,7 +533,7 @@ if (app){
   /* real visitors — serverless P2P sync (falls back to single-player if the CDN is blocked) */
   const peersEl = document.getElementById('peers');
   const remotes = new Map();
-  const MY = { n: '파도' + Math.floor(100 + Math.random() * 900), c: 0xe8e2d2 };
+  const MY = { n: '파도' + Math.floor(100 + Math.random() * 900), c: MY_SHIRT };
   function makeTag(text){
     const cv = document.createElement('canvas'); cv.width = 256; cv.height = 64;
     const g2 = cv.getContext('2d');
@@ -540,14 +542,14 @@ if (app){
     g2.textAlign = 'center'; g2.textBaseline = 'middle';
     g2.fillStyle = '#cfe3ee'; g2.fillText(text, 128, 33);
     const sp = new T.Sprite(new T.SpriteMaterial({ map: new T.CanvasTexture(cv), transparent: true, depthWrite: false }));
-    sp.scale.set(2.2, 0.55, 1); sp.position.y = 2.35;
+    sp.scale.set(2.0, 0.5, 1); sp.position.y = 1.75;
     return sp;
   }
   function setPeersText(){
     if (peersEl) peersEl.textContent = remotes.size ? (remotes.size + 1) + ' here' : '';
   }
   function addRemote(id, st){
-    const p = makePerson((Number(st.c) || 0x7fa8c9) & 0xffffff, 0xe3b48d, 0x3a2c1e);
+    const p = makePerson((Number(st.c) || pick(PASTELS)) & 0xffffff, pick(SKINS), pick(HAIRS));
     p.sit = !!st.sit;
     p.g.position.set(+st.x || 0, +st.y || 0, +st.z || 0);
     p.g.rotation.y = +st.ry || 0;
@@ -582,7 +584,7 @@ if (app){
     })
     .catch(() => {});
 
-  const head = new T.Vector3(), fwd = new T.Vector3(), dir = new T.Vector3(), right = new T.Vector3();
+  const head = new T.Vector3(), fwd = new T.Vector3(), dir = new T.Vector3(), right = new T.Vector3(), off = new T.Vector3();
   let last = performance.now();
   function tick(now){
     const dt = Math.min((now - last) / 1000, 0.1);
@@ -625,11 +627,18 @@ if (app){
       pose(r.p, t, !r.sit && r.p.g.position.distanceTo(r.tp) > 0.25);
     }
     pose(player, t, moving);
-    for (const n of npcs) pose(n, t, false);
 
-    head.copy(player.g.position); head.y += seated ? 0.95 : 1.5;
+    head.copy(player.g.position); head.y += seated ? 0.85 : 1.3;
     controls.target.lerp(head, 1 - Math.pow(0.0005, dt));
     controls.update();
+    if (moving && performance.now() - lastDrag > 1200){
+      off.copy(camera.position).sub(controls.target);
+      const dd = Math.atan2(Math.sin(player.g.rotation.y + Math.PI - Math.atan2(off.x, off.z)),
+                            Math.cos(player.g.rotation.y + Math.PI - Math.atan2(off.x, off.z)));
+      const rot = dd * Math.min(1, dt * 1.5), cs = Math.cos(rot), sn = Math.sin(rot);
+      camera.position.set(controls.target.x + off.x * cs + off.z * sn, camera.position.y,
+                          controls.target.z - off.x * sn + off.z * cs);
+    }
     app.renderer.shadowMap.needsUpdate = true;
     requestAnimationFrame(tick);
   }
