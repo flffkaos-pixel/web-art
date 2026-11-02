@@ -20,6 +20,7 @@ import { Floaters } from './scene/floaters.js';
 import { FLOATER_KINDS } from './scene/floaterMeshes.js';
 import { FloaterShadow } from './scene/floaterShadow.js';
 import { WaveCaustics } from './water/Caustics.js';
+import { createRoom } from './presence.js';
 
 const REFLECT_LAYER = 1;
 
@@ -606,7 +607,7 @@ void main() { outColor = texture(uTex, vUv); }`, { uTex: { value: null } }));
   const api = {
     canvas, renderer, camera, controls, scene, sky, post, surface, ocean, terrain, timer, views, quality,
     floaters, query, underwater, spray, snow, caustics, floatShadow, gui, sunLight,
-    THREE, islandHeight,
+    THREE, islandHeight, createRoom,
     camWater: () => camWater, markSun: () => (sunDirty = true), setView, runBenchmark, dispose,
   };
   window.app = api;

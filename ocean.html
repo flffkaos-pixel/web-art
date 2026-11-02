@@ -526,7 +526,7 @@ if (app){
     joy.addEventListener('pointercancel', end);
   }
 
-  /* real visitors — serverless P2P sync (falls back to single-player if the CDN is blocked) */
+  /* real visitors — bundled serverless P2P (trystero/nostr); auto-reconnect + staleness sweep */
   const peersEl = document.getElementById('peers');
   const remotes = new Map();
   const MY = { n: '파도' + Math.floor(100 + Math.random() * 900), c: MY_SHIRT };
@@ -541,8 +541,10 @@ if (app){
     sp.scale.set(2.0, 0.5, 1); sp.position.y = 1.75;
     return sp;
   }
+  let netUp = false;
   function setPeersText(){
-    if (peersEl) peersEl.textContent = remotes.size ? (remotes.size + 1) + ' here' : '';
+    if (!peersEl) return;
+    peersEl.textContent = netUp ? (remotes.size + 1) + ' here' : 'connecting…';
   }
   function addRemote(id, st){
     const p = makePerson((Number(st.c) || pick(PASTELS)) & 0xffffff, pick(SKINS), pick(HAIRS));
@@ -551,7 +553,7 @@ if (app){
     p.g.rotation.y = +st.ry || 0;
     p.g.add(makeTag(String(st.n || 'guest').slice(0, 8)));
     scene.add(p.g);
-    remotes.set(id, { p, tp: p.g.position.clone(), ry: p.g.rotation.y, sit: p.sit });
+    remotes.set(id, { p, tp: p.g.position.clone(), ry: p.g.rotation.y, sit: p.sit, seen: performance.now() });
     setPeersText();
   }
   function dropRemote(id){
@@ -562,23 +564,26 @@ if (app){
     x: +player.g.position.x.toFixed(2), y: +player.g.position.y.toFixed(2), z: +player.g.position.z.toFixed(2),
     ry: +player.g.rotation.y.toFixed(2), sit: seated ? 1 : 0, c: MY.c, n: MY.n,
   });
-  import('https://esm.sh/trystero@0/nostr')
-    .then(({ joinRoom }) => {
-      const room = joinRoom({ appId: 'flffkaos-web-art-ocean' }, 'beach-v1');
-      const [sendState, onState] = room.makeAction('st');
-      room.onPeerJoin((id) => { try { sendState(selfState()); } catch (e) {} });
-      room.onPeerLeave(dropRemote);
-      onState((st, id) => {
-        if (!remotes.has(id)) addRemote(id, st);
-        const r = remotes.get(id);
-        r.tp.set(+st.x || 0, +st.y || 0, +st.z || 0);
-        r.ry = +st.ry || 0;
-        r.sit = !!st.sit;
-      });
-      setInterval(() => { try { sendState(selfState()); } catch (e) {} }, 150);
-      addEventListener('pagehide', () => { try { room.leave(); } catch (e) {} });
-    })
-    .catch(() => {});
+  let room = null;
+  room = app.createRoom({
+    onJoin: () => { room.send(selfState()); setPeersText(); },
+    onLeave: (id) => dropRemote(id),
+    onState: (id, st) => {
+      if (!remotes.has(id)) addRemote(id, st);
+      const r = remotes.get(id);
+      r.tp.set(+st.x || 0, +st.y || 0, +st.z || 0);
+      r.ry = +st.ry || 0;
+      r.sit = !!st.sit;
+      r.seen = performance.now();
+    },
+    onStatus: (s) => { netUp = (s === 'online'); setPeersText(); },
+  });
+  setInterval(() => room.send(selfState()), 150);
+  setInterval(() => {
+    const now = performance.now();
+    for (const [id, r] of remotes) if (now - (r.seen || 0) > 12000) dropRemote(id);
+  }, 2500);
+  addEventListener('pagehide', () => room.leave());
 
   const head = new T.Vector3(), fwd = new T.Vector3(), dir = new T.Vector3(), right = new T.Vector3();
   let last = performance.now();
