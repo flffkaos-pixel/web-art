@@ -664,11 +664,8 @@ if (app){
       if (np.length() < 900){
         np.y = nh < -1.0 ? -0.45 + Math.sin(t * 1.8) * 0.07 : nh;
         player.g.position.copy(np);
-        const back = dir.x * fwd.x + dir.z * fwd.z < -0.45;   // walking toward the camera: keep facing away, backpedal
-        if (!back){
-          _look.copy(player.g.position).add(dir);
-          player.g.lookAt(_look);
-        }
+        _look.copy(player.g.position).add(dir);
+        player.g.lookAt(_look);
       }
     }
     for (const r of remotes.values()){
