@@ -69,10 +69,15 @@
     padding:2px 4px;font:inherit;font-size:11px}
   .chk{display:flex;align-items:center;gap:6px;margin:4px 0;cursor:pointer;color:var(--dim)}
   .chk input{accent-color:var(--acc)}
-  #hud{position:fixed;left:12px;bottom:78px;z-index:10;color:var(--dim);
+  #hud{position:fixed;left:12px;bottom:12px;z-index:10;color:var(--dim);
     background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:7px 10px;
     backdrop-filter:blur(14px);line-height:1.6}
   #hud b{color:var(--acc);font-weight:600}
+  #sound-toggle{appearance:none;border:1px solid var(--line);background:rgba(140,200,230,.10);
+    color:var(--txt);border-radius:100px;padding:2px 9px;font:inherit;font-size:10px;
+    letter-spacing:.08em;cursor:pointer;text-transform:uppercase;-webkit-tap-highlight-color:transparent;touch-action:manipulation}
+  #sound-toggle.is-playing{color:var(--acc);border-color:currentColor;background:rgba(95,208,232,.16)}
+  #sound-toggle:active{transform:scale(.97)}
   #hud kbd{background:rgba(140,200,230,.13);border:1px solid var(--line);border-radius:3px;
     padding:0 4px;color:var(--txt)}
   #boot{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;
@@ -213,13 +218,12 @@
     }
   }
 </style>
-<link rel="stylesheet" href="assets/detail-audio.css">
 </head>
 <body>
 <canvas id="c"></canvas>
 
 <div id="hud">
-  <div><b id="fps">--</b> fps &nbsp;·&nbsp; <span id="stat"></span> &nbsp;·&nbsp; <span id="peers"></span></div>
+  <div><b id="fps">--</b> fps &nbsp;·&nbsp; <span id="stat"></span> &nbsp;·&nbsp; <span id="peers"></span> &nbsp;·&nbsp; <button type="button" id="sound-toggle" aria-pressed="false" aria-label="파도 소리 켜기"><span id="sound-label">waves off</span></button></div>
   <div class="desk-hint"><kbd>drag</kbd> look &nbsp; <kbd>W A S D</kbd> move &nbsp; <kbd>Space</kbd>/<kbd>Ctrl</kbd> up/down &nbsp; <kbd>wheel</kbd> speed</div>
 </div>
 
@@ -229,9 +233,7 @@
 <div id="boot"><div class="t">ABYSSAL</div><div class="s" id="bootmsg">initialising…</div></div>
 <div id="err"></div>
 
-<aside class="detail-audio-dock" aria-label="파도 사운드 제어">
-  <button id="sound-toggle" class="detail-sound-control" type="button" aria-pressed="false" aria-label="파도 소리 켜기"><span id="sound-label">sound off</span></button>
-</aside>
+
 
 
 
