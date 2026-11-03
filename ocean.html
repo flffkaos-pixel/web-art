@@ -666,7 +666,7 @@ if (app){
         player.g.position.copy(np);
         const back = dir.x * fwd.x + dir.z * fwd.z < -0.45;   // walking toward the camera: keep facing away, backpedal
         if (!back){
-          let d = Math.atan2(dir.x, dir.z) - player.g.rotation.y;
+          let d = Math.atan2(dir.x, dir.z) + Math.PI - player.g.rotation.y;
           d = Math.atan2(Math.sin(d), Math.cos(d));
           player.g.rotation.y += d * Math.min(1, dt * (swim ? 4 : 9));
         }
