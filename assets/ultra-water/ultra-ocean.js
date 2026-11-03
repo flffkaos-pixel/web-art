@@ -23871,16 +23871,18 @@ function PT({ appId: e = "flffkaos-web-art-ocean", roomId: t = "beach-v1", passw
 				s = MT({
 					appId: e,
 					password: n
-				}, t);
-				let [l, d] = s.makeAction("st");
-				c = l, u = 0, o?.("online", f.size), s.onPeerJoin((e) => {
-					f.set(e, m), o?.("online", f.size), r?.(e);
-				}), s.onPeerLeave((e) => {
+				}, t), c = s.makeAction("st"), c.onMessage = (e, t) => {
+					let n = t && t.peerId;
+					n && (f.set(n, Date.now()), a?.(n, e));
+				}, s.onPeerJoin = (e) => {
+					f.set(e, Date.now()), o?.("online", f.size), r?.(e);
+				}, s.onPeerLeave = (e) => {
 					f.delete(e), o?.("online", f.size), i?.(e);
-				}), d((e, t) => {
-					f.set(t, Date.now()), a?.(t, e);
-				});
-			} catch {
+				}, u = 0, o?.("online", f.size);
+			} catch (e) {
+				try {
+					console.error("[presence] joinRoom failed:", e && (e.stack || e.message || e));
+				} catch {}
 				o?.("offline", f.size), h();
 			}
 		}
@@ -23895,7 +23897,7 @@ function PT({ appId: e = "flffkaos-web-art-ocean", roomId: t = "beach-v1", passw
 	}), {
 		send(e) {
 			if (c) try {
-				c(e);
+				c.send(e);
 			} catch {
 				o?.("offline", f.size), h();
 			}
