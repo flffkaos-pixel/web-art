@@ -286,7 +286,7 @@ if (hint) hint.innerHTML = '<kbd>W A S D</kbd> walk &nbsp; <kbd>Shift</kbd> run 
 /* ---------- procedural surf — waves only, no music ---------- */
 {
   const btn = document.getElementById('sound-toggle'), lbl = document.getElementById('sound-label');
-  let ctx = null, master = null, hiss = null, buf = null, swell = 0, on = false;
+  let ctx = null, master = null, hiss = null, buf = null, swell = 0, on = false, audioEl = null;
 
   function brown(){
     const sr = ctx.sampleRate, len = sr * 4, b = ctx.createBuffer(2, len, sr);
@@ -319,6 +319,7 @@ if (hint) hint.innerHTML = '<kbd>W A S D</kbd> walk &nbsp; <kbd>Shift</kbd> run 
   }
   function build(){
     if (ctx) return;
+    if (navigator.audioSession) { try { navigator.audioSession.type = 'playback'; } catch (e) {} }
     const AC = window.AudioContext || window.webkitAudioContext;
     if (!AC) return;
     ctx = new AC();
@@ -326,6 +327,13 @@ if (hint) hint.innerHTML = '<kbd>W A S D</kbd> walk &nbsp; <kbd>Shift</kbd> run 
     buf = brown();
     layer('lowpass', 360, 0.45, 0.055);
     hiss = layer('bandpass', 920, 0.3, 0.1);
+  }
+  function useFallback(){
+    if (audioEl) return;
+    audioEl = new Audio('assets/audio/island-ocean.mp3');
+    audioEl.loop = true; audioEl.volume = 0.55;
+    audioEl.play().catch(() => {});
+    ramp(0, 0.4);
   }
   function ramp(v, dur){
     if (!ctx) return;
@@ -346,9 +354,11 @@ if (hint) hint.innerHTML = '<kbd>W A S D</kbd> walk &nbsp; <kbd>Shift</kbd> run 
       if (ctx && ctx.state !== 'running') ctx.resume().catch(() => {});
       ramp(0.6, 1.2);
       if (!swell) swell = setTimeout(crash, 900);
+      setTimeout(() => { if (on && (!ctx || ctx.state !== 'running')) useFallback(); }, 800);
     } else {
       clearTimeout(swell); swell = 0;
       ramp(0, 0.3);
+      if (audioEl) { try { audioEl.pause(); } catch (e) {} }
       if (ctx) setTimeout(() => { if (!on && ctx.state === 'running') ctx.suspend().catch(() => {}); }, 400);
     }
     refresh();
@@ -646,7 +656,7 @@ if (app){
       camera.getWorldDirection(fwd); fwd.y = 0; fwd.normalize();
       const e = camera.matrixWorld.elements;          // camera local +X = screen right, always
       right.set(e[0], e[1], e[2]); right.y = 0; right.normalize();
-      dir.copy(fwd).multiplyScalar(-iz).addScaledVector(right, ix).normalize();
+      dir.copy(fwd).multiplyScalar(-iz).addScaledVector(right, -ix).normalize();
       const swim = hAt(player.g.position.x, player.g.position.z) < -1.0;
       const sp = (swim ? 1.7 : (keys.ShiftLeft || keys.ShiftRight) ? 7.0 : 3.4) * mag;
       const np = player.g.position.clone().addScaledVector(dir, sp * dt);
