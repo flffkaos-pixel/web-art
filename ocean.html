@@ -486,10 +486,10 @@ if (app){
   function pose(p, t, walking){
     const L = p.legL, R = p.legR, AL = p.armL, AR = p.armR;
     if (p.sit){
-      p.root.position.y = -0.14 + Math.sin(t * 1.3 + p.phase) * 0.008;
+      p.root.position.y = -0.22 + Math.sin(t * 1.3 + p.phase) * 0.008;
       p.root.rotation.z = Math.sin(t * 0.8 + p.phase) * 0.03;
-      L.rotation.set(-1.5, 0, 0.55); R.rotation.set(-1.5, 0, -0.55);
-      AL.rotation.x = AR.rotation.x = -0.35;
+      L.rotation.set(-1.5, 0, 0.12); R.rotation.set(-1.5, 0, -0.12);
+      AL.rotation.x = AR.rotation.x = -0.3;
     } else if (walking){
       const s = Math.sin(t * 10);
       p.root.position.y = Math.abs(Math.sin(t * 10)) * 0.045;
