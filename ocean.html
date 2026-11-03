@@ -423,16 +423,17 @@ if (app){
       root.add(am);
     }
     const head = new T.Mesh(new T.SphereGeometry(0.34, 22, 18), skin); head.position.y = 1.08; root.add(head);
-    const cap = new T.Mesh(new T.SphereGeometry(0.356, 22, 18, 0, Math.PI * 2, 0, Math.PI * 0.58), hair); cap.position.set(0, 1.10, -0.03); root.add(cap);
-    const tuft = new T.Mesh(new T.SphereGeometry(0.10, 10, 8), hair); tuft.position.set(0, 1.44, -0.02); root.add(tuft);
+    const cap = new T.Mesh(new T.SphereGeometry(0.35, 22, 18, 0, Math.PI * 2, 0, Math.PI * 0.42), hair); cap.position.set(0, 1.09, -0.03); root.add(cap);
+    const tuft = new T.Mesh(new T.SphereGeometry(0.10, 10, 8), hair); tuft.position.set(0, 1.42, -0.02); root.add(tuft);
     for (const s of [-1, 1]){
-      const eye = new T.Mesh(new T.SphereGeometry(0.045, 8, 8), dark);
-      eye.position.set(s * 0.115, 1.10, 0.30); root.add(eye);
-      const hi = new T.Mesh(new T.SphereGeometry(0.015, 6, 6), white);
-      hi.position.set(s * 0.115 + 0.015, 1.125, 0.33); root.add(hi);
-      const cheek = new T.Mesh(new T.SphereGeometry(0.05, 8, 8), blush);
-      cheek.position.set(s * 0.19, 0.99, 0.28); cheek.scale.z = 0.4; root.add(cheek);
+      const eye = new T.Mesh(new T.SphereGeometry(0.055, 10, 8), dark);
+      eye.position.set(s * 0.13, 1.09, 0.30); root.add(eye);
+      const hi = new T.Mesh(new T.SphereGeometry(0.02, 6, 6), white);
+      hi.position.set(s * 0.13 + 0.02, 1.115, 0.335); root.add(hi);
+      const cheek = new T.Mesh(new T.SphereGeometry(0.055, 8, 8), blush);
+      cheek.position.set(s * 0.20, 0.99, 0.28); cheek.scale.z = 0.4; root.add(cheek);
     }
+    const mouth = new T.Mesh(new T.SphereGeometry(0.028, 8, 6), dark); mouth.position.set(0, 1.0, 0.315); mouth.scale.set(1.4, 0.5, 0.5); root.add(mouth);
     g.traverse((o) => { if (o.isMesh){ o.castShadow = true; o.receiveShadow = true; } });
     return { g, root, legL, legR, armL, armR, sit: false, phase: Math.random() * 9 };
   }
