@@ -252,7 +252,7 @@
   #panel .lil-controller>.lil-name{color:#9fb6c4}
 </style>
 <script type="module">
-import { createOcean } from './assets/ultra-water/ultra-ocean.js';
+import { createOcean, GLTFLoader, SkeletonUtils } from './assets/ultra-water/ultra-ocean.js';
 
 const bootEl = document.getElementById('boot');
 const bootMsg = document.getElementById('bootmsg');
@@ -452,153 +452,61 @@ if (app){
   };
 }
 
-/* ---------- 3rd-person avatar sitting on the beach ---------- */
+/* ---------- 3rd-person avatar (cute person, GLTF) ---------- */
 if (app){
   const T = app.THREE, hAt = app.islandHeight;
   const { scene, camera, controls } = app;
   const sitBtn = document.getElementById('sit-btn');
+  const AVATAR_YAW = 0;
+  const CHAR_URL = 'assets/avatars/person.glb';
 
-  const PASTELS = [0xf2b8c6, 0xa8d8c8, 0xa8c4e8, 0xf2e3a0, 0xd8b8f0, 0xf2c8a8];
-  const SKINS = [0xfbe9db, 0xf7e0ce, 0xfdeee2, 0xf2d7c4, 0xf9e6d6];
-  const HAIRS = [0x2a2a2e, 0x4a3624, 0x6b4a2a, 0x151515, 0x8a6a4a];
+  const PASTEL = [0xf2b8c6, 0xa8d8c8, 0xa8c4e8, 0xf2e3a0, 0xd8b8f0, 0xf2c8a8, 0x9fe0c0, 0xffd0a0, 0xc9b6ff, 0xa8e0d8];
   const pick = (a) => a[Math.floor(Math.random() * a.length)];
 
-  function makePerson(shirtC, skinC, hairC, style){
-    const g = new T.Group();
-    const root = new T.Group(); g.add(root);
-    const skin  = new T.MeshStandardMaterial({ color: skinC, roughness: 0.85 });
-    const shirt = new T.MeshStandardMaterial({ color: shirtC, roughness: 0.95 });
-    const dark  = new T.MeshStandardMaterial({ color: 0x2a2a30, roughness: 0.6 });
-    const white = new T.MeshBasicMaterial({ color: 0xffffff });
-    const blush = new T.MeshStandardMaterial({ color: 0xf0989c, roughness: 1 });
-    const hair  = new T.MeshStandardMaterial({ color: hairC, roughness: 0.9 });
-    const stub = (r, len, mat) => new T.Mesh(new T.CapsuleGeometry(r, len, 4, 10), mat);
-    const legL = new T.Group(), legR = new T.Group();
-    legL.position.set(-0.12, 0.34, 0); legR.position.set(0.12, 0.34, 0);
-    for (const lg of [legL, legR]){
-      const m = stub(0.083, 0.10, skin); m.position.y = -0.13; lg.add(m);
-      const shoe = new T.Mesh(new T.SphereGeometry(0.10, 12, 10), dark);
-      shoe.position.set(0, -0.28, 0.05); shoe.scale.set(1, 0.55, 1.35); lg.add(shoe);
-      root.add(lg);
-    }
-    const body = stub(0.20, 0.20, shirt); body.position.y = 0.56; body.scale.y = 1.1; root.add(body);
-    const armL = new T.Group(), armR = new T.Group();
-    armL.position.set(-0.20, 0.80, 0); armR.position.set(0.20, 0.80, 0);
-    armL.rotation.z = -0.26; armR.rotation.z = 0.26;
-    for (const am of [armL, armR]){
-      const m = stub(0.075, 0.16, shirt); m.position.y = -0.16; am.add(m);
-      const hand = new T.Mesh(new T.SphereGeometry(0.09, 10, 8), skin); hand.position.y = -0.30; am.add(hand);
-      root.add(am);
-    }
-    const head = new T.Mesh(new T.SphereGeometry(0.34, 22, 18), skin); head.position.y = 1.08; root.add(head);
-    const addHair = (geo, x, y, z, sx, sy, sz) => { const m = new T.Mesh(geo, hair); m.position.set(x, y, z); if (sx !== undefined) m.scale.set(sx, sy, sz); root.add(m); return m; };
-    addHair(new T.SphereGeometry(0.355, 24, 18, 0, Math.PI * 2, 0, Math.PI * 0.44), 0, 1.09, -0.02);
-    if (style === 0) addHair(new T.SphereGeometry(0.36, 22, 16, 0, Math.PI * 2, 0, Math.PI * 0.62), 0, 1.06, -0.12, 1.0, 1.15, 1.0);
-    else if (style === 1){ addHair(new T.SphereGeometry(0.16, 14, 12), 0, 1.03, -0.42, 0.9, 1.7, 0.9); addHair(new T.SphereGeometry(0.075, 10, 8), 0, 1.22, -0.30); }
-    else if (style === 2) for (const s of [-1, 1]){ addHair(new T.SphereGeometry(0.14, 14, 12), s * 0.34, 0.98, -0.16, 0.9, 1.5, 0.9); addHair(new T.SphereGeometry(0.06, 10, 8), s * 0.30, 1.18, -0.10); }
-    else if (style === 3) for (let i = 0; i < 5; i++){ const a = i / 5 * Math.PI * 2; const m = addHair(new T.ConeGeometry(0.09, 0.26, 8), Math.cos(a) * 0.15, 1.40, Math.sin(a) * 0.15 - 0.02); m.rotation.z = -Math.cos(a) * 0.5; m.rotation.x = Math.sin(a) * 0.5; }
-    else if (style === 4){ addHair(new T.CapsuleGeometry(0.27, 0.5, 8, 18), 0, 1.0, -0.13, 1.12, 1.0, 0.72); addHair(new T.CapsuleGeometry(0.13, 0.42, 6, 12), -0.30, 0.98, -0.03, 0.9, 1.0, 0.8); addHair(new T.CapsuleGeometry(0.13, 0.42, 6, 12), 0.30, 0.98, -0.03, 0.9, 1.0, 0.8); }
-    else if (style === 5){ }
-    else if (style === 6){ addHair(new T.SphereGeometry(0.17, 14, 12), 0, 1.31, -0.17, 1.0, 0.95, 1.0); addHair(new T.SphereGeometry(0.07, 10, 8), 0, 1.40, -0.16); }
-    else if (style === 7){ addHair(new T.SphereGeometry(0.15, 14, 12), 0.34, 1.02, -0.20, 0.9, 1.6, 0.9); addHair(new T.SphereGeometry(0.07, 10, 8), 0.30, 1.22, -0.14); addHair(new T.SphereGeometry(0.31, 18, 14, 0, Math.PI * 2, 0, Math.PI * 0.5), 0.05, 1.10, -0.02, 1.0, 1.0, 1.0); }
-    else { addHair(new T.SphereGeometry(0.20, 14, 12), -0.30, 1.02, -0.10, 1.0, 1.3, 1.0); addHair(new T.SphereGeometry(0.20, 14, 12), 0.30, 1.02, -0.10, 1.0, 1.3, 1.0); addHair(new T.SphereGeometry(0.16, 12, 10), -0.30, 0.80, -0.02, 1.0, 1.4, 1.0); addHair(new T.SphereGeometry(0.16, 12, 10), 0.30, 0.80, -0.02, 1.0, 1.4, 1.0); }
-    for (const s of [-1, 1]){
-      const eye = new T.Mesh(new T.SphereGeometry(0.055, 10, 8), dark);
-      eye.position.set(s * 0.13, 1.09, 0.30); root.add(eye);
-      const hi = new T.Mesh(new T.SphereGeometry(0.02, 6, 6), white);
-      hi.position.set(s * 0.13 + 0.02, 1.115, 0.335); root.add(hi);
-      const cheek = new T.Mesh(new T.SphereGeometry(0.055, 8, 8), blush);
-      cheek.position.set(s * 0.20, 0.99, 0.28); cheek.scale.z = 0.4; root.add(cheek);
-    }
-    const mouth = new T.Mesh(new T.SphereGeometry(0.028, 8, 6), dark); mouth.position.set(0, 1.0, 0.315); mouth.scale.set(1.4, 0.5, 0.5); root.add(mouth);
-    g.traverse((o) => { if (o.isMesh){ o.castShadow = true; o.receiveShadow = true; } });
-    return { g, root, legL, legR, armL, armR, sit: false, phase: Math.random() * 9 };
-  }
-  function pose(p, t, walking){
-    const L = p.legL, R = p.legR, AL = p.armL, AR = p.armR;
-    if (p.sit){
-      p.root.position.y = -0.22 + Math.sin(t * 1.3 + p.phase) * 0.008;
-      p.root.rotation.z = Math.sin(t * 0.8 + p.phase) * 0.03;
-      L.rotation.set(-1.5, 0, 0.12); R.rotation.set(-1.5, 0, -0.12);
-      AL.rotation.x = AR.rotation.x = -0.3;
-    } else if (walking){
-      const s = Math.sin(t * 10);
-      p.root.position.y = Math.abs(Math.sin(t * 10)) * 0.045;
-      p.root.rotation.z = s * 0.05;
-      L.rotation.set(s * 0.75, 0, 0); R.rotation.set(-s * 0.75, 0, 0);
-      AL.rotation.x = -s * 0.6; AR.rotation.x = s * 0.6;
-    } else {
-      p.root.position.y = Math.sin(t * 1.6 + p.phase) * 0.014;
-      p.root.rotation.z = 0;
-      L.rotation.set(0, 0, 0); R.rotation.set(0, 0, 0);
-      AL.rotation.x = Math.sin(t * 1.6 + p.phase) * 0.04;
-      AR.rotation.x = -Math.sin(t * 1.6 + p.phase) * 0.04;
-    }
-  }
   function beachPoint(deg){
     const a = deg * Math.PI / 180, c = Math.cos(a), s = Math.sin(a);
     let r = 100;
     while (r < 900 && hAt(c * r, s * r) > 0.55) r += 2;
     while (r > 100 && hAt(c * r, s * r) < 0.62) r -= 1;
-    const v = new T.Vector3(c * r, 0, s * r);
-    v.y = hAt(v.x, v.z);
-    return v;
+    const v = new T.Vector3(c * r, 0, s * r); v.y = hAt(v.x, v.z); return v;
   }
 
   const BEARING = 205;
   const spawn = beachPoint(BEARING);
   const outward = spawn.clone().setY(0).normalize();
-
-  const MY_SHIRT = pick(PASTELS);
-  const MY_STYLE = Math.floor(Math.random() * 9);
-  const player = makePerson(MY_SHIRT, pick(SKINS), pick(HAIRS), MY_STYLE);
-  player.sit = true;
-  player.g.position.copy(spawn);
-  player.g.lookAt(spawn.clone().add(outward));
-  scene.add(player.g);
-  pose(player, 0, false);
-
   const side = new T.Vector3(outward.z, 0, -outward.x);
   const aspectDist = Math.min(2.3, Math.max(1, 1 / Math.max(0.35, camera.aspect)));
-  const seatCam = (out) => player.g.position.clone()
-    .addScaledVector(out, -4.8 * aspectDist).addScaledVector(side, 1.6 * aspectDist)
-    .add(new T.Vector3(0, 1.7 * Math.sqrt(aspectDist), 0));
-  camera.position.copy(seatCam(outward));
-  controls.target.copy(spawn).add(new T.Vector3(0, 1.1, 0));
-  controls.maxDistance = 60;
-  controls.update();
 
+  let player = null, gltf = null, MODEL_SCALE = 1, MODEL_Y = 0;
+  const anims = {};
   let seated = true, gliding = 0;
   const goalCam = new T.Vector3();
+  const remotes = new Map();
+  let room = null, netUp = false;
+  const MY = { n: '파도' + Math.floor(100 + Math.random() * 900) };
+  const head = new T.Vector3(), fwd = new T.Vector3(), dir = new T.Vector3(), right = new T.Vector3();
+  let last = 0, stepTimer = 0;
+  const keys = {};
+
+  function seatCam(out){
+    const p = player ? player.holder.position : spawn;
+    return p.clone().addScaledVector(out, -4.8 * aspectDist).addScaledVector(side, 1.6 * aspectDist).add(new T.Vector3(0, 1.7 * Math.sqrt(aspectDist), 0));
+  }
   function toggleSit(){
-    seated = !seated;
-    player.sit = seated;
+    seated = !seated; if (player) player.sit = seated;
     sitBtn?.classList.toggle('on', seated);
     if (sitBtn) sitBtn.textContent = seated ? 'stand' : 'sit';
-    if (seated){
-      goalCam.copy(seatCam(outward));
-      gliding = 1;
-      controls.enabled = false;
-    }
+    if (seated){ goalCam.copy(seatCam(outward)); gliding = 1; controls.enabled = false; }
   }
   sitBtn?.addEventListener('click', toggleSit);
   addEventListener('keydown', (e) => { if (e.code === 'KeyF' && !e.repeat) toggleSit(); });
-
-  const keys = {};
   addEventListener('keydown', (e) => { keys[e.code] = true; });
   addEventListener('keyup', (e) => { keys[e.code] = false; });
 
   const joy = document.getElementById('joy'), knob = document.getElementById('joy-knob');
   const stick = { x: 0, y: 0, id: null };
   if (joy){
-    const set = (e) => {
-      const r = joy.getBoundingClientRect();
-      let dx = e.clientX - (r.left + r.width / 2), dy = e.clientY - (r.top + r.height / 2);
-      const len = Math.hypot(dx, dy), max = r.width / 2 - 20;
-      if (len > max){ dx *= max / len; dy *= max / len; }
-      knob.style.transform = `translate(${dx}px, ${dy}px)`;
-      stick.x = dx / max; stick.y = dy / max;
-    };
+    const set = (e) => { const r = joy.getBoundingClientRect(); let dx = e.clientX - (r.left + r.width / 2), dy = e.clientY - (r.top + r.height / 2); const len = Math.hypot(dx, dy), max = r.width / 2 - 20; if (len > max){ dx *= max / len; dy *= max / len; } knob.style.transform = `translate(${dx}px, ${dy}px)`; stick.x = dx / max; stick.y = dy / max; };
     joy.addEventListener('pointerdown', (e) => { stick.id = e.pointerId; joy.setPointerCapture(e.pointerId); set(e); });
     joy.addEventListener('pointermove', (e) => { if (e.pointerId === stick.id) set(e); });
     const end = (e) => { if (e.pointerId !== stick.id) return; stick.id = null; stick.x = stick.y = 0; knob.style.transform = ''; };
@@ -606,118 +514,121 @@ if (app){
     joy.addEventListener('pointercancel', end);
   }
 
-  /* real visitors — bundled serverless P2P (trystero/nostr); auto-reconnect + staleness sweep */
+  function playAnim(av, name, dur){
+    const nm = anims[name];
+    if (!av || !nm || av.cur === nm) return;
+    const next = av.mixer.clipAction(nm);
+    next.reset().setEffectiveWeight(1).fadeIn(dur).play();
+    if (av.cur) av.mixer.clipAction(av.cur).fadeOut(dur);
+    av.cur = nm;
+  }
+  function makeAvatar(){
+    const holder = new T.Group();
+    const model = SkeletonUtils.clone(gltf.scene);
+    model.scale.setScalar(MODEL_SCALE);
+    model.position.y = MODEL_Y;
+    model.traverse((o) => {
+      if (o.isMesh){ o.castShadow = true; o.receiveShadow = true; o.frustumCulled = false; o.material = o.material.clone(); if (o.material.color) o.material.color.setHex(pick(PASTEL)); }
+    });
+    holder.add(model);
+    const mixer = new T.AnimationMixer(model);
+    return { holder, mixer, cur: null, sit: false, moving: false };
+  }
+
   const peersEl = document.getElementById('peers');
-  const remotes = new Map();
-  const MY = { n: '파도' + Math.floor(100 + Math.random() * 900), c: MY_SHIRT, hs: MY_STYLE };
+  function setPeersText(){ if (peersEl) peersEl.textContent = netUp ? (remotes.size + 1) + ' here' : 'connecting…'; }
   function makeTag(text){
     const cv = document.createElement('canvas'); cv.width = 256; cv.height = 64;
     const g2 = cv.getContext('2d');
     g2.fillStyle = 'rgba(5,11,16,.55)'; g2.fillRect(58, 10, 140, 44);
-    g2.font = '700 28px ui-monospace, Menlo, Consolas, monospace';
-    g2.textAlign = 'center'; g2.textBaseline = 'middle';
+    g2.font = '700 28px ui-monospace, Menlo, Consolas, monospace'; g2.textAlign = 'center'; g2.textBaseline = 'middle';
     g2.fillStyle = '#cfe3ee'; g2.fillText(text, 128, 33);
     const sp = new T.Sprite(new T.SpriteMaterial({ map: new T.CanvasTexture(cv), transparent: true, depthWrite: false }));
-    sp.scale.set(2.0, 0.5, 1); sp.position.y = 1.75;
-    return sp;
-  }
-  let netUp = false;
-  function setPeersText(){
-    if (!peersEl) return;
-    peersEl.textContent = netUp ? (remotes.size + 1) + ' here' : 'connecting…';
+    sp.scale.set(1.6, 0.4, 1); sp.position.y = 2.0; return sp;
   }
   function addRemote(id, st){
-    const p = makePerson((Number(st.c) || pick(PASTELS)) & 0xffffff, pick(SKINS), pick(HAIRS), Math.abs(Number(st.hs) || 0) % 9);
-    p.sit = !!st.sit;
-    p.g.position.set(+st.x || 0, +st.y || 0, +st.z || 0);
-    p.g.rotation.y = +st.ry || 0;
-    p.g.add(makeTag(String(st.n || 'guest').slice(0, 8)));
-    scene.add(p.g);
-    remotes.set(id, { p, tp: p.g.position.clone(), ry: p.g.rotation.y, sit: p.sit, seen: performance.now() });
+    const av = makeAvatar();
+    const x = +st.x || 0, z = +st.z || 0;
+    av.holder.position.set(x, hAt(x, z), z);
+    av.holder.rotation.y = (+st.ry || 0) + AVATAR_YAW;
+    av.holder.add(makeTag(String(st.n || 'guest').slice(0, 8)));
+    av.tx = x; av.tz = z; av.ry = +st.ry || 0; av.tsit = !!st.sit; av.tmove = !!st.mv; av.seen = performance.now();
+    scene.add(av.holder);
+    remotes.set(id, av);
     setPeersText();
   }
-  function dropRemote(id){
-    const r = remotes.get(id);
-    if (r){ scene.remove(r.p.g); remotes.delete(id); setPeersText(); }
+  function dropRemote(id){ const r = remotes.get(id); if (r){ scene.remove(r.holder); remotes.delete(id); setPeersText(); } }
+  function selfState(){
+    const ry = player ? player.holder.rotation.y : 0;
+    return { x: +(player ? player.holder.position.x : 0).toFixed(2), y: 0, z: +(player ? player.holder.position.z : 0).toFixed(2), ry: +(ry - AVATAR_YAW).toFixed(2), sit: seated ? 1 : 0, mv: player && player.moving ? 1 : 0, n: MY.n };
   }
-  const selfState = () => ({
-    x: +player.g.position.x.toFixed(2), y: +player.g.position.y.toFixed(2), z: +player.g.position.z.toFixed(2),
-    ry: +player.g.rotation.y.toFixed(2), sit: seated ? 1 : 0, c: MY.c, n: MY.n, hs: MY.hs,
-  });
-  let room = null;
-  room = app.createRoom({
-    onJoin: () => { room.send(selfState()); setPeersText(); },
-    onLeave: (id) => dropRemote(id),
-    onState: (id, st) => {
-      if (!remotes.has(id)) addRemote(id, st);
-      const r = remotes.get(id);
-      r.tp.set(+st.x || 0, +st.y || 0, +st.z || 0);
-      r.ry = +st.ry || 0;
-      r.sit = !!st.sit;
-      r.seen = performance.now();
-    },
-    onStatus: (s) => { netUp = (s === 'online'); setPeersText(); },
-  });
-  setInterval(() => room.send(selfState()), 150);
-  setInterval(() => {
-    const now = performance.now();
-    for (const [id, r] of remotes) if (now - (r.seen || 0) > 12000) dropRemote(id);
-  }, 2500);
-  addEventListener('pagehide', () => room.leave());
+  function startNet(){
+    room = app.createRoom({
+      onJoin: () => { room.send(selfState()); setPeersText(); },
+      onLeave: (id) => dropRemote(id),
+      onState: (id, st) => {
+        if (!remotes.has(id)) addRemote(id, st);
+        const r = remotes.get(id); if (!r) return;
+        r.tx = +st.x || 0; r.tz = +st.z || 0; r.ry = +st.ry || 0; r.tsit = !!st.sit; r.tmove = !!st.mv; r.seen = performance.now();
+      },
+      onStatus: (s) => { netUp = (s === 'online'); setPeersText(); },
+    });
+    setInterval(() => room.send(selfState()), 150);
+    setInterval(() => { const now = performance.now(); for (const [id, r] of remotes) if (now - (r.seen || 0) > 12000) dropRemote(id); }, 2500);
+    addEventListener('pagehide', () => room.leave());
+  }
 
-  const head = new T.Vector3(), fwd = new T.Vector3(), dir = new T.Vector3(), right = new T.Vector3(), _look = new T.Vector3();
-  let last = 0, stepTimer = 0;
   function tick(now){
+    if (!player){ requestAnimationFrame(tick); return; }
     const dt = last ? Math.min(0.1, Math.max(0, (now - last) / 1000)) : 0;
     last = now;
     const t = now / 1000;
-
     if (seaTick) seaTick(dt);
-
-    if (gliding){
-      gliding = Math.max(0, gliding - dt / 1.1);
-      camera.position.lerp(goalCam, 1 - Math.pow(0.001, dt));
-      if (!gliding) controls.enabled = true;
-    }
+    if (gliding){ gliding = Math.max(0, gliding - dt / 1.1); camera.position.lerp(goalCam, 1 - Math.pow(0.001, dt)); if (!gliding) controls.enabled = true; }
 
     const ix = ((keys.KeyD || keys.ArrowRight) ? 1 : 0) - ((keys.KeyA || keys.ArrowLeft) ? 1 : 0) + stick.x;
     const iz = ((keys.KeyS || keys.ArrowDown) ? 1 : 0) - ((keys.KeyW || keys.ArrowUp) ? 1 : 0) + stick.y;
     const mag = Math.min(Math.hypot(ix, iz), 1);
     if (seated && mag > 0.35) toggleSit();
     const moving = !seated && mag > 0.06;
+    player.moving = moving;
     if (moving){
       camera.updateWorldMatrix(true, false);
       camera.getWorldDirection(fwd); fwd.y = 0; fwd.normalize();
-      const e = camera.matrixWorld.elements;          // camera local +X = screen right, always
+      const e = camera.matrixWorld.elements;
       right.set(e[0], e[1], e[2]); right.y = 0; right.normalize();
       dir.copy(fwd).multiplyScalar(-iz).addScaledVector(right, ix).normalize();
-      const swim = hAt(player.g.position.x, player.g.position.z) < -1.0;
+      const swim = hAt(player.holder.position.x, player.holder.position.z) < -1.0;
       const sp = (swim ? 1.7 : (keys.ShiftLeft || keys.ShiftRight) ? 7.0 : 3.4) * mag;
-      const np = player.g.position.clone().addScaledVector(dir, sp * dt);
+      const np = player.holder.position.clone().addScaledVector(dir, sp * dt);
       const nh = hAt(np.x, np.z);
       if (np.length() < 900){
         np.y = nh < -1.0 ? -0.45 + Math.sin(t * 1.8) * 0.07 : nh;
-        player.g.position.copy(np);
-        _look.copy(player.g.position).add(dir);
-        player.g.lookAt(_look);
+        player.holder.position.copy(np);
+        player.holder.rotation.y = Math.atan2(dir.x, dir.z) + AVATAR_YAW;
       }
     }
-    // water footsteps: splash cadence while walking in the shallows
-    if (moving && playStep && hAt(player.g.position.x, player.g.position.z) < -0.05){
-      stepTimer -= dt;
-      if (stepTimer <= 0){ stepTimer = 0.42; playStep(); }
+    if (moving && playStep && hAt(player.holder.position.x, player.holder.position.z) < -0.05){
+      stepTimer -= dt; if (stepTimer <= 0){ stepTimer = 0.42; playStep(); }
     } else stepTimer = 0;
-    for (const r of remotes.values()){
-      r.p.g.position.lerp(r.tp, Math.min(1, dt * 6));
-      let d = r.ry - r.p.g.rotation.y;
-      d = Math.atan2(Math.sin(d), Math.cos(d));
-      r.p.g.rotation.y += d * Math.min(1, dt * 6);
-      r.p.sit = r.sit;
-      pose(r.p, t, !r.sit && r.p.g.position.distanceTo(r.tp) > 0.25);
-    }
-    pose(player, t, moving);
+    if (seated) playAnim(player, 'sit', 0.3);
+    else if (moving) playAnim(player, (keys.ShiftLeft || keys.ShiftRight) ? 'run' : 'walk', 0.2);
+    else playAnim(player, 'idle', 0.3);
+    player.mixer.update(dt);
 
-    head.copy(player.g.position); head.y += seated ? 0.85 : 1.3;
+    for (const r of remotes.values()){
+      r.holder.position.x += (r.tx - r.holder.position.x) * Math.min(1, dt * 6);
+      r.holder.position.z += (r.tz - r.holder.position.z) * Math.min(1, dt * 6);
+      r.holder.position.y = hAt(r.holder.position.x, r.holder.position.z);
+      let d = r.ry + AVATAR_YAW - r.holder.rotation.y; d = Math.atan2(Math.sin(d), Math.cos(d));
+      r.holder.rotation.y += d * Math.min(1, dt * 6);
+      if (r.tsit) playAnim(r, 'sit', 0.3);
+      else if (r.tmove) playAnim(r, 'walk', 0.25);
+      else playAnim(r, 'idle', 0.3);
+      r.mixer.update(dt);
+    }
+
+    head.copy(player.holder.position); head.y += 1.4;
     const fk = 1 - Math.pow(0.0005, dt);
     const ddx = (head.x - controls.target.x) * fk, ddy = (head.y - controls.target.y) * fk, ddz = (head.z - controls.target.z) * fk;
     controls.target.x += ddx; controls.target.y += ddy; controls.target.z += ddz;
@@ -726,7 +637,30 @@ if (app){
     app.renderer.shadowMap.needsUpdate = true;
     requestAnimationFrame(tick);
   }
-  requestAnimationFrame(tick);
+
+  new GLTFLoader().load(CHAR_URL, (g) => {
+    gltf = g;
+    const clips = g.animations;
+    const find = (want) => { for (const c of clips){ if (c.name.toLowerCase() === want) return c; } for (const c of clips){ if (c.name.toLowerCase().includes(want)) return c; } return null; };
+    anims.idle = find('idle'); anims.walk = find('walk'); anims.run = find('run');
+    anims.sit = find('sneak') || find('sit') || anims.idle;
+    const box = new T.Box3().setFromObject(g.scene);
+    const hh = (box.max.y - box.min.y) || 1.7;
+    MODEL_SCALE = 1.6 / hh;
+    MODEL_Y = -box.min.y * MODEL_SCALE;
+    player = makeAvatar();
+    player.sit = true;
+    player.holder.position.copy(spawn);
+    player.holder.rotation.y = Math.atan2(outward.x, outward.z) + AVATAR_YAW;
+    scene.add(player.holder);
+    playAnim(player, 'sit', 0);
+    camera.position.copy(seatCam(outward));
+    controls.target.copy(spawn).add(new T.Vector3(0, 1.0, 0));
+    controls.maxDistance = 60;
+    controls.update();
+    startNet();
+    requestAnimationFrame(tick);
+  }, undefined, (e) => { console.error('[avatar] load failed', e); });
 }
 
 window.addEventListener('error', (e) => { if (!app) fatal('Startup failed:<br><code style="color:#ffb">' + (e.message || e) + '</code>'); });
