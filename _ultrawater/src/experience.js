@@ -619,3 +619,6 @@ void main() { outColor = texture(uTex, vUv); }`, { uTex: { value: null } }));
 }
 
 export default createOcean;
+
+export { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+export * as SkeletonUtils from 'three/addons/utils/SkeletonUtils.js';
