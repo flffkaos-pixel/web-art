@@ -483,8 +483,8 @@ if (app){
     }
     const body = stub(0.20, 0.20, shirt); body.position.y = 0.56; body.scale.y = 1.1; root.add(body);
     const armL = new T.Group(), armR = new T.Group();
-    armL.position.set(-0.19, 0.70, 0); armR.position.set(0.19, 0.70, 0);
-    armL.rotation.z = -0.08; armR.rotation.z = 0.08;
+    armL.position.set(-0.20, 0.70, 0); armR.position.set(0.20, 0.70, 0);
+    armL.rotation.z = -0.26; armR.rotation.z = 0.26;
     for (const am of [armL, armR]){
       const m = stub(0.075, 0.16, shirt); m.position.y = -0.16; am.add(m);
       const hand = new T.Mesh(new T.SphereGeometry(0.09, 10, 8), skin); hand.position.y = -0.30; am.add(hand);
