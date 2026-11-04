@@ -476,8 +476,8 @@ if (app){
     const legL = new T.Group(), legR = new T.Group();
     legL.position.set(-0.12, 0.34, 0); legR.position.set(0.12, 0.34, 0);
     for (const lg of [legL, legR]){
-      const m = stub(0.115, 0.10, skin); m.position.y = -0.13; lg.add(m);
-      const shoe = new T.Mesh(new T.SphereGeometry(0.12, 12, 10), dark);
+      const m = stub(0.083, 0.10, skin); m.position.y = -0.13; lg.add(m);
+      const shoe = new T.Mesh(new T.SphereGeometry(0.10, 12, 10), dark);
       shoe.position.set(0, -0.28, 0.05); shoe.scale.set(1, 0.55, 1.35); lg.add(shoe);
       root.add(lg);
     }
