@@ -285,6 +285,7 @@ try {
 const hint = document.querySelector('#hud .desk-hint');
 if (hint) hint.innerHTML = '<kbd>W A S D</kbd> walk &nbsp; <kbd>Shift</kbd> run &nbsp; <kbd>F</kbd> sit / stand &nbsp; <kbd>drag</kbd> orbit &nbsp; <kbd>wheel</kbd> zoom';
 
+let playStep = null;
 /* ---------- procedural surf — waves only, no music ---------- */
 {
   const btn = document.getElementById('sound-toggle'), lbl = document.getElementById('sound-label');
@@ -385,7 +386,6 @@ if (hint) hint.innerHTML = '<kbd>W A S D</kbd> walk &nbsp; <kbd>Shift</kbd> run 
 
 /* ---------- ambience: sun follows the clock; the sea drifts calm ↔ stormy ---------- */
 let seaTick = null;
-let playStep = null;
 if (app){
   const auto = true;
   const KEYS = [  // hour → wind, waves, chop, swell, sun intensity, clouds, haze, spray
