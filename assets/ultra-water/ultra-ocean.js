@@ -20115,46 +20115,28 @@ function bv(e, t = 1e-4) {
 	}
 	return g.setIndex(u), g;
 }
-function xv(e, t) {
-	if (t === 0) return console.warn("THREE.BufferGeometryUtils.toTrianglesDrawMode(): Geometry already defined as triangles."), e;
-	if (t === 2 || t === 1) {
-		let n = e.getIndex();
-		if (n === null) {
-			let t = [], r = e.getAttribute("position");
-			if (r !== void 0) {
-				for (let e = 0; e < r.count; e++) t.push(e);
-				e.setIndex(t), n = e.getIndex();
-			} else return console.error("THREE.BufferGeometryUtils.toTrianglesDrawMode(): Undefined position attribute. Processing not possible."), e;
-		}
-		let r = n.count - 2, i = [];
-		if (t === 2) for (let e = 1; e <= r; e++) i.push(n.getX(0)), i.push(n.getX(e)), i.push(n.getX(e + 1));
-		else for (let e = 0; e < r; e++) e % 2 == 0 ? (i.push(n.getX(e)), i.push(n.getX(e + 1)), i.push(n.getX(e + 2))) : (i.push(n.getX(e + 2)), i.push(n.getX(e + 1)), i.push(n.getX(e)));
-		return i.length / 3 !== r && console.error("THREE.BufferGeometryUtils.toTrianglesDrawMode(): Unable to generate correct amount of triangles."), e.setIndex(i), e.clearGroups(), e;
-	}
-	return console.error("THREE.BufferGeometryUtils.toTrianglesDrawMode(): Unknown draw mode:", t), e;
-}
 // src/scene/noise.js
-function Sv(e, t, n) {
+function xv(e, t, n) {
 	let r = Math.imul(e, 374761393) ^ Math.imul(t, 668265263) ^ Math.imul(n, 2147483647);
 	return r = Math.imul(r ^ r >>> 13, 1274126177), ((r ^ r >>> 16) >>> 0) / 4294967295;
 }
-function Cv(e, t, n = 0) {
-	let r = Math.floor(e), i = Math.floor(t), a = e - r, o = t - i, s = a * a * (3 - 2 * a), c = o * o * (3 - 2 * o), l = Sv(r, i, n), u = Sv(r + 1, i, n), d = Sv(r, i + 1, n), f = Sv(r + 1, i + 1, n);
+function Sv(e, t, n = 0) {
+	let r = Math.floor(e), i = Math.floor(t), a = e - r, o = t - i, s = a * a * (3 - 2 * a), c = o * o * (3 - 2 * o), l = xv(r, i, n), u = xv(r + 1, i, n), d = xv(r, i + 1, n), f = xv(r + 1, i + 1, n);
 	return (l + (u - l) * s + (d - l) * c + (l - u - d + f) * s * c) * 2 - 1;
 }
-function wv(e, t, n = 5, r = 0) {
+function Cv(e, t, n = 5, r = 0) {
 	let i = 0, a = .5, o = 0;
 	for (let s = 0; s < n; s++) {
-		i += a * Cv(e, t, r + s * 17), o += a;
+		i += a * Sv(e, t, r + s * 17), o += a;
 		let n = 1.6 * e - 1.2 * t, c = 1.2 * e + 1.6 * t;
 		e = n, t = c, a *= .5;
 	}
 	return i / o;
 }
-function Tv(e, t, n = 5, r = 0) {
+function wv(e, t, n = 5, r = 0) {
 	let i = 0, a = .5, o = 0;
 	for (let s = 0; s < n; s++) {
-		let n = 1 - Math.abs(Cv(e, t, r + s * 31));
+		let n = 1 - Math.abs(Sv(e, t, r + s * 31));
 		i += a * n * n, o += a;
 		let c = 1.6 * e - 1.2 * t, l = 1.2 * e + 1.6 * t;
 		e = c, t = l, a *= .5;
@@ -20162,29 +20144,29 @@ function Tv(e, t, n = 5, r = 0) {
 	return i / o;
 }
 // src/scene/islandHeight.js
-var Ev = 2400, Dv = (e, t, n) => {
+var Tv = 2400, Ev = (e, t, n) => {
 	let r = Math.min(1, Math.max(0, (n - e) / (t - e)));
 	return r * r * (3 - 2 * r);
 };
-function Ov(e, t) {
-	let n = wv(e * .0035 + 11.3, t * .0035 - 4.1, 4, 3), r = Math.hypot(e - 40 * n, t + 30 * n) * (1 + .32 * wv(e * .003, t * .003, 3, 7)), i = 62 * Math.exp(-((r / 190) ** 2)) + 15 * Math.exp(-((r / 430) ** 2)) - 10;
-	i -= 32 * Dv(380, 1100, r);
-	let a = Dv(4, 40, i);
-	return i += a * 26 * (Tv(e * .009, t * .009, 5, 1) - .45), i > 0 && i < 5 ? i *= .55 + .09 * i : i <= 0 && i > -14 && (i = -14 * (-i / 14) ** 1.8), i += 1.2 * wv(e * .05, t * .05, 3, 9) * Dv(-30, 2, i), i;
+function Dv(e, t) {
+	let n = Cv(e * .0035 + 11.3, t * .0035 - 4.1, 4, 3), r = Math.hypot(e - 40 * n, t + 30 * n) * (1 + .32 * Cv(e * .003, t * .003, 3, 7)), i = 62 * Math.exp(-((r / 190) ** 2)) + 15 * Math.exp(-((r / 430) ** 2)) - 10;
+	i -= 32 * Ev(380, 1100, r);
+	let a = Ev(4, 40, i);
+	return i += a * 26 * (wv(e * .009, t * .009, 5, 1) - .45), i > 0 && i < 5 ? i *= .55 + .09 * i : i <= 0 && i > -14 && (i = -14 * (-i / 14) ** 1.8), i += 1.2 * Cv(e * .05, t * .05, 3, 9) * Ev(-30, 2, i), i;
 }
 // src/scene/terrainGeometry.js
-function kv(e = 384, t = 256) {
-	let n = new Ac(Ev, Ev, e, e);
+function Ov(e = 384, t = 256) {
+	let n = new Ac(Tv, Tv, e, e);
 	n.rotateX(-Math.PI / 2);
 	let r = n.attributes.position;
-	for (let e = 0; e < r.count; e++) r.setY(e, Ov(r.getX(e), r.getZ(e)));
+	for (let e = 0; e < r.count; e++) r.setY(e, Dv(r.getX(e), r.getZ(e)));
 	let i = n.index.array, a = [];
 	for (let e = 0; e < i.length; e += 3) Math.max(r.getY(i[e]), r.getY(i[e + 1]), r.getY(i[e + 2])) > -34 && a.push(i[e], i[e + 1], i[e + 2]);
 	n.setIndex(a), n.computeVertexNormals(), n.computeBoundingSphere();
 	let o = new Float32Array(t * t);
 	for (let e = 0; e < t; e++) for (let n = 0; n < t; n++) {
-		let r = ((n + .5) / t - .5) * Ev, i = ((e + .5) / t - .5) * Ev;
-		o[e * t + n] = Ov(r, i);
+		let r = ((n + .5) / t - .5) * Tv, i = ((e + .5) / t - .5) * Tv;
+		o[e * t + n] = Dv(r, i);
 	}
 	let c = new Pa(o, t, t, ne, T);
 	return c.minFilter = c.magFilter = m, c.wrapS = c.wrapT = s, c.needsUpdate = !0, {
@@ -20193,13 +20175,13 @@ function kv(e = 384, t = 256) {
 	};
 }
 // src/water/Caustics.js
-var Av = Wg[2], jv = 1 / 1.33, Mv = 16, Nv = [{
+var kv = Wg[2], Av = 1 / 1.33, jv = 16, Mv = [{
 	res: 512,
 	format: ne
 }, {
 	res: 256,
 	format: ie
-}], Pv = [
+}], Nv = [
 	{
 		depth: 1.5,
 		target: 0,
@@ -20221,7 +20203,7 @@ var Av = Wg[2], jv = 1 / 1.33, Mv = 16, Nv = [{
 		cells: 32,
 		margin: 8
 	}
-], Fv = (e) => e.toPrecision(9), [Iv, Lv, Rv] = Pv.map((e) => Fv(e.depth)), zv = `
+], Pv = (e) => e.toPrecision(9), [Fv, Iv, Lv] = Nv.map((e) => Pv(e.depth)), Rv = `
 precision highp float;
 in vec3 position;               // PlaneGeometry vertex: cell coords - uCells / 2
 uniform highp sampler2D uSlope; // cascade 2 (sx, sz, ...)
@@ -20247,14 +20229,14 @@ vec2 slopeBSpline(vec2 uv, float lod) {
 void main() {
   vec2 t = (position.xy + 0.5 * uCells + 0.5) / uCells;   // tile uv, at a texel centre of mip uLod
   vec2 s = slopeBSpline(t, uLod);
-  vec3 r = refract(-uSun, normalize(vec3(-s.x, 1.0, -s.y)), ${Fv(jv)});
-  vec3 rf = refract(-uSun, vec3(0.0, 1.0, 0.0), ${Fv(jv)});
-  vec2 d = (r.xz / max(-r.y, 0.05) - rf.xz / -rf.y) * (uDepth / ${Fv(Av)});
+  vec3 r = refract(-uSun, normalize(vec3(-s.x, 1.0, -s.y)), ${Pv(Av)});
+  vec3 rf = refract(-uSun, vec3(0.0, 1.0, 0.0), ${Pv(Av)});
+  vec2 d = (r.xz / max(-r.y, 0.05) - rf.xz / -rf.y) * (uDepth / ${Pv(kv)});
   // ponytail: offsets past the margin (steep facets at low sun) are clamped, widen the margin if it shows
   d = clamp(d, -uMargin, uMargin);
   vOld = t * uRes;
   gl_Position = vec4((t + d) * 2.0 - 1.0, 0.0, 1.0);
-}`, Bv = `
+}`, zv = `
 precision highp float;
 uniform vec3 uMask;
 in vec2 vOld;
@@ -20264,25 +20246,25 @@ void main() {
   // raster space is the landed space at one texel per pixel, so the landed area is 1 and
   // the ratio is the undisturbed area (in texels) per pixel
   vec2 a = dFdx(vOld), b = dFdy(vOld);
-  outColor = vec4(uMask * min(abs(a.x * b.y - a.y * b.x), ${Fv(Mv)}), 0.0);
-}`, Vv = `
+  outColor = vec4(uMask * min(abs(a.x * b.y - a.y * b.x), ${Pv(jv)}), 0.0);
+}`, Bv = `
 uniform sampler2D uCaustics, uCausticsDeep;
-const float CAUSTIC_TEXELS_PER_M = ${Fv(Nv[0].res / Av)};
+const float CAUSTIC_TEXELS_PER_M = ${Pv(Mv[0].res / kv)};
 float waveCaustic(vec2 entryXZ, float depth, float lod) {
-  vec2 uv = entryXZ * ${Fv(1 / Av)};
+  vec2 uv = entryXZ * ${Pv(1 / kv)};
   float v = textureLod(uCaustics, uv, lod).r;
-  if (depth > ${Iv}) {
+  if (depth > ${Fv}) {
     // deep texels are 2x the near ones; past the deepest slice keep it, one mip blurrier
     // per doubling of depth
-    vec2 d = textureLod(uCausticsDeep, uv, max(lod - 1.0, 0.0) + log2(max(depth / ${Rv}, 1.0))).rg;
-    v = depth < ${Lv} ? mix(v, d.r, (depth - ${Iv}) / (${Lv} - ${Iv}))
-                      : mix(d.r, d.g, clamp((depth - ${Lv}) / (${Rv} - ${Lv}), 0.0, 1.0));
+    vec2 d = textureLod(uCausticsDeep, uv, max(lod - 1.0, 0.0) + log2(max(depth / ${Lv}, 1.0))).rg;
+    v = depth < ${Iv} ? mix(v, d.r, (depth - ${Fv}) / (${Iv} - ${Fv}))
+                      : mix(d.r, d.g, clamp((depth - ${Iv}) / (${Lv} - ${Iv}), 0.0, 1.0));
   }
-  return mix(1.0, v, clamp(depth / ${Iv}, 0.0, 1.0));   // no caustic at zero depth
+  return mix(1.0, v, clamp(depth / ${Fv}, 0.0, 1.0));   // no caustic at zero depth
 }
-`, Hv = new Y(), Uv = class {
+`, Vv = new Y(), Hv = class {
 	constructor(e, t) {
-		this.renderer = e, this.sim = t, this.targets = Nv.map(({ res: e, format: t }) => new Ln(e, e, {
+		this.renderer = e, this.sim = t, this.targets = Mv.map(({ res: e, format: t }) => new Ln(e, e, {
 			type: E,
 			format: t,
 			samples: 4,
@@ -20295,18 +20277,18 @@ float waveCaustic(vec2 entryXZ, float depth, float lod) {
 		})), this.uniforms = {
 			uCaustics: { value: this.targets[0].texture },
 			uCausticsDeep: { value: this.targets[1].texture }
-		}, this.slope = { value: null }, this.sun = { value: new q() }, this.scenes = Nv.map(() => new hr()), Pv.forEach(({ depth: e, target: t, channel: n, cells: r, margin: i }) => {
-			let a = Vg(Bv, {
+		}, this.slope = { value: null }, this.sun = { value: new q() }, this.scenes = Mv.map(() => new hr()), Nv.forEach(({ depth: e, target: t, channel: n, cells: r, margin: i }) => {
+			let a = Vg(zv, {
 				uSlope: this.slope,
 				uSun: this.sun,
-				uRes: { value: Nv[t].res },
+				uRes: { value: Mv[t].res },
 				uDepth: { value: e },
 				uCells: { value: r },
 				uLod: { value: Math.max(0, Math.log2(256 / r)) },
 				uMargin: { value: (i - 1) / r },
 				uMask: { value: new q().setComponent(n, 1) }
 			}, {
-				vertexShader: zv,
+				vertexShader: Rv,
 				side: 2,
 				blending: 5,
 				blendSrc: 201,
@@ -20320,11 +20302,11 @@ float waveCaustic(vec2 entryXZ, float depth, float lod) {
 		if (!t && this.flat) return;
 		this.flat = !t;
 		let n = this.renderer, r = n.getRenderTarget(), i = n.getActiveCubeFace(), a = n.getActiveMipmapLevel(), o = n.getClearAlpha();
-		n.getClearColor(Hv), this.sun.value.copy(e).normalize(), this.slope.value = this.sim.slope[2], n.setClearColor(t ? 0 : 16777215, 1), this.targets.forEach((e, r) => {
+		n.getClearColor(Vv), this.sun.value.copy(e).normalize(), this.slope.value = this.sim.slope[2], n.setClearColor(t ? 0 : 16777215, 1), this.targets.forEach((e, r) => {
 			this.scenes[r].visible = t, n.setRenderTarget(e), n.clear(!0, !1, !1), n.render(this.scenes[r], this.camera);
-		}), n.setRenderTarget(r, i, a), n.setClearColor(Hv, o);
+		}), n.setRenderTarget(r, i, a), n.setClearColor(Vv, o);
 	}
-}, Wv = "\nvarying vec3 vWPos;\nvarying vec3 vWNrm;\n", Gv = `
+}, Uv = "\nvarying vec3 vWPos;\nvarying vec3 vWNrm;\n", Wv = `
 varying vec3 vWPos;
 varying vec3 vWNrm;
 uniform samplerCube uSkyCube;
@@ -20332,7 +20314,7 @@ uniform vec3 uAbsorption;
 uniform vec3 uSunDirT;
 uniform float uCausticStrength;
 uniform float uFogDensity;
-${Vv}
+${Bv}
 ${n_}
 ${d_}
 ${f_}
@@ -20351,34 +20333,34 @@ vec2 rippleSlope(vec2 p, vec2 d, float w, float s, float a, float amp) {
   return grad * amp * (cos(ph) + 0.5 * sin(2.0 * ph));
 }
 uniform mat4 uSunShadowMatrix;
-`, Kv = "\n  float hgt = vWPos.y;\n  float flat_ = clamp(vWNrm.y, 0.0, 1.0);\n  float n1 = tn(vWPos.xz * 0.08), n2 = tn(vWPos.xz * 0.6), n3 = tn(vWPos.xz * 0.013);\n  vec3 sand = mix(vec3(0.80, 0.71, 0.53), vec3(0.72, 0.62, 0.45), n1) * (0.92 + 0.16 * n2);\n  vec3 seabed = mix(vec3(0.78, 0.72, 0.56), vec3(0.62, 0.58, 0.44), n1 * n3);\n  vec3 grass = mix(vec3(0.20, 0.30, 0.10), vec3(0.33, 0.37, 0.15), n1) * (0.85 + 0.3 * n2);\n  vec3 rock = mix(vec3(0.33, 0.31, 0.29), vec3(0.45, 0.41, 0.36), n2) * (0.8 + 0.4 * n3);\n#ifdef ROCK\n  vec3 albedo = rock * mix(0.9, 1.15, n1);\n#else\n  float sandLine = 2.4 + 1.6 * n3 + 0.8 * n1;\n  vec3 albedo = hgt < 0.0 ? seabed : sand;\n  albedo = mix(albedo, grass, smoothstep(sandLine, sandLine + 1.5, hgt) * smoothstep(0.62, 0.8, flat_));\n  albedo = mix(albedo, rock, smoothstep(0.78, 0.62, flat_) * smoothstep(-6.0, 1.0, hgt));\n  albedo = mix(albedo, rock * 1.1, smoothstep(38.0, 52.0, hgt + n1 * 8.0));\n#endif\n  // wet band above the waterline, plus where the swash has run (dries over seconds)\n  vec3 sw = swash(vWPos.xz, hgt);\n  float wet = max(1.0 - smoothstep(0.35, 1.3 + 0.5 * n1, hgt), sw.z);\n  albedo *= mix(1.0, 0.58, wet);\n  // the swash film itself: a faint water tint and foam on its leading edge\n  float film = smoothstep(0.0, 0.015, sw.x) * step(0.0, hgt);\n  albedo *= mix(vec3(1.0), vec3(0.78, 0.88, 0.92), film);\n  albedo = mix(albedo, vec3(0.92), sw.y * (0.5 + 0.5 * n2));\n  diffuseColor.rgb = albedo;\n", qv = "\n#ifndef ROCK\n  {\n    vec2 fw = fwidth(vWPos.xz);\n    float px = max(fw.x, fw.y);\n    if (px < 0.5) {   // both ripple bands are faded out beyond this\n    float sandMask = (1.0 - smoothstep(sandLine - 0.5, sandLine + 0.5, hgt)) * smoothstep(0.85, 0.95, flat_);\n    sandMask *= mix(1.0, 0.25, smoothstep(-0.3, 0.6, hgt)); // dry sand: faint wind ripples only\n    // long wave-formed ripples (~1.6 m) and short ones (~0.3 m), each fading in and out\n    // in patches\n    vec2 p = vWPos.xz;\n    vec2 d1 = normalize(vec2(0.8, 0.6) + (vec2(tn(p * 0.02), tn(p * 0.02 + 5.0)) - 0.5));\n    float a1 = 0.02 * (0.3 + 0.7 * smoothstep(0.25, 0.75, tn(p * 0.06 + 11.0)));\n    vec2 g = rippleSlope(p, d1, 3.9, 0.35, 0.8, a1) * (1.0 - smoothstep(0.15, 0.5, px));\n    if (px < 0.09) {\n      float a2 = 0.002 * (0.3 + 0.7 * smoothstep(0.25, 0.75, tn(p * 0.15 + 3.0)));\n      g += rippleSlope(p, normalize(d1 + vec2(-d1.y, d1.x) * 0.3), 21.0, 2.2, 0.1, a2) * (1.0 - smoothstep(0.03, 0.09, px));\n    }\n    vec3 nW = normalize(vWNrm - vec3(g.x, 0.0, g.y) * sandMask);\n    normal = normalize((viewMatrix * vec4(nW, 0.0)).xyz);\n    }\n  }\n#endif\n", Jv = "\n  float wdepth = max(-vWPos.y, 0.0);\n  // sun and sky light reaching the bed through the water column (the sun along its\n  // refracted path)\n  vec3 rsun = refract(-uSunDirT, vec3(0.0, 1.0, 0.0), 1.0 / 1.33);\n  float sunPath = wdepth / max(-rsun.y, 0.1);\n  diffuseColor.rgb *= exp(-uAbsorption * (sunPath * 0.6 + wdepth * 0.4));\n", Yv = Lf.lights_fragment_begin.replace("getDirectionalLightInfo( directionalLight, directLight );", "\n    getDirectionalLightInfo( directionalLight, directLight );\n    float under = smoothstep(0.05, -0.25, vWPos.y);\n    vec3 shadowAt = vWPos + vWNrm * 0.04;\n    bool viaSurface = false;\n    if (under > 0.0) {\n      vec3 rsun = refract(-uSunDirT, vec3(0.0, 1.0, 0.0), 1.0 / 1.33);\n      viaSurface = rsun.y < -0.05 && under > 0.5;\n      if (viaSurface) shadowAt = vec3(vWPos.x - rsun.x / rsun.y * vWPos.y, 0.05, vWPos.z - rsun.z / rsun.y * vWPos.y);\n      directLight.direction = normalize(mix(directLight.direction, (viewMatrix * vec4(-rsun, 0.0)).xyz, under));\n      float Ft = 0.02 + 0.98 * pow(1.0 - max(uSunDirT.y, 0.0), 5.0);\n      directLight.color *= 1.0 - Ft * under;\n    }\n    directLight.color *= floatShadow(shadowAt);\n#if defined( USE_SHADOWMAP ) && NUM_DIR_LIGHT_SHADOWS > 0\n    vec4 sunShadowCoord = viaSurface ? uSunShadowMatrix * vec4(shadowAt, 1.0) : vDirectionalShadowCoord[ 0 ];\n#endif\n").replace("vDirectionalShadowCoord[ i ]", "sunShadowCoord"), Xv = "\n  roughnessFactor = mix(mix(roughnessFactor, 0.32, wet * step(0.0, hgt)), 0.06, film);\n", Zv = "\n  if (wdepth > 0.0 && rsun.y < -0.05) {\n    vec2 entry = vWPos.xz + rsun.xz / rsun.y * wdepth;   // where this light entered the surface\n    vec2 fwc = fwidth(entry);\n    float c = waveCaustic(entry, wdepth, log2(max(max(fwc.x, fwc.y) * CAUSTIC_TEXELS_PER_M, 1.0)));\n    reflectedLight.directDiffuse *= max(mix(1.0, c, uCausticStrength), 0.0);\n  }\n", Qv = "\n  vec3 fdir = normalize(vWPos - cameraPosition);\n  float fogAmt = 1.0 - exp(-length(vWPos - cameraPosition) * uFogDensity);\n  outgoingLight = mix(outgoingLight, textureLod(uSkyCube, vec3(fdir.x, max(fdir.y, 0.0), fdir.z), 3.0).rgb, fogAmt);\n";
-function $v(e, t, n) {
+`, Gv = "\n  float hgt = vWPos.y;\n  float flat_ = clamp(vWNrm.y, 0.0, 1.0);\n  float n1 = tn(vWPos.xz * 0.08), n2 = tn(vWPos.xz * 0.6), n3 = tn(vWPos.xz * 0.013);\n  vec3 sand = mix(vec3(0.80, 0.71, 0.53), vec3(0.72, 0.62, 0.45), n1) * (0.92 + 0.16 * n2);\n  vec3 seabed = mix(vec3(0.78, 0.72, 0.56), vec3(0.62, 0.58, 0.44), n1 * n3);\n  vec3 grass = mix(vec3(0.20, 0.30, 0.10), vec3(0.33, 0.37, 0.15), n1) * (0.85 + 0.3 * n2);\n  vec3 rock = mix(vec3(0.33, 0.31, 0.29), vec3(0.45, 0.41, 0.36), n2) * (0.8 + 0.4 * n3);\n#ifdef ROCK\n  vec3 albedo = rock * mix(0.9, 1.15, n1);\n#else\n  float sandLine = 2.4 + 1.6 * n3 + 0.8 * n1;\n  vec3 albedo = hgt < 0.0 ? seabed : sand;\n  albedo = mix(albedo, grass, smoothstep(sandLine, sandLine + 1.5, hgt) * smoothstep(0.62, 0.8, flat_));\n  albedo = mix(albedo, rock, smoothstep(0.78, 0.62, flat_) * smoothstep(-6.0, 1.0, hgt));\n  albedo = mix(albedo, rock * 1.1, smoothstep(38.0, 52.0, hgt + n1 * 8.0));\n#endif\n  // wet band above the waterline, plus where the swash has run (dries over seconds)\n  vec3 sw = swash(vWPos.xz, hgt);\n  float wet = max(1.0 - smoothstep(0.35, 1.3 + 0.5 * n1, hgt), sw.z);\n  albedo *= mix(1.0, 0.58, wet);\n  // the swash film itself: a faint water tint and foam on its leading edge\n  float film = smoothstep(0.0, 0.015, sw.x) * step(0.0, hgt);\n  albedo *= mix(vec3(1.0), vec3(0.78, 0.88, 0.92), film);\n  albedo = mix(albedo, vec3(0.92), sw.y * (0.5 + 0.5 * n2));\n  diffuseColor.rgb = albedo;\n", Kv = "\n#ifndef ROCK\n  {\n    vec2 fw = fwidth(vWPos.xz);\n    float px = max(fw.x, fw.y);\n    if (px < 0.5) {   // both ripple bands are faded out beyond this\n    float sandMask = (1.0 - smoothstep(sandLine - 0.5, sandLine + 0.5, hgt)) * smoothstep(0.85, 0.95, flat_);\n    sandMask *= mix(1.0, 0.25, smoothstep(-0.3, 0.6, hgt)); // dry sand: faint wind ripples only\n    // long wave-formed ripples (~1.6 m) and short ones (~0.3 m), each fading in and out\n    // in patches\n    vec2 p = vWPos.xz;\n    vec2 d1 = normalize(vec2(0.8, 0.6) + (vec2(tn(p * 0.02), tn(p * 0.02 + 5.0)) - 0.5));\n    float a1 = 0.02 * (0.3 + 0.7 * smoothstep(0.25, 0.75, tn(p * 0.06 + 11.0)));\n    vec2 g = rippleSlope(p, d1, 3.9, 0.35, 0.8, a1) * (1.0 - smoothstep(0.15, 0.5, px));\n    if (px < 0.09) {\n      float a2 = 0.002 * (0.3 + 0.7 * smoothstep(0.25, 0.75, tn(p * 0.15 + 3.0)));\n      g += rippleSlope(p, normalize(d1 + vec2(-d1.y, d1.x) * 0.3), 21.0, 2.2, 0.1, a2) * (1.0 - smoothstep(0.03, 0.09, px));\n    }\n    vec3 nW = normalize(vWNrm - vec3(g.x, 0.0, g.y) * sandMask);\n    normal = normalize((viewMatrix * vec4(nW, 0.0)).xyz);\n    }\n  }\n#endif\n", qv = "\n  float wdepth = max(-vWPos.y, 0.0);\n  // sun and sky light reaching the bed through the water column (the sun along its\n  // refracted path)\n  vec3 rsun = refract(-uSunDirT, vec3(0.0, 1.0, 0.0), 1.0 / 1.33);\n  float sunPath = wdepth / max(-rsun.y, 0.1);\n  diffuseColor.rgb *= exp(-uAbsorption * (sunPath * 0.6 + wdepth * 0.4));\n", Jv = Lf.lights_fragment_begin.replace("getDirectionalLightInfo( directionalLight, directLight );", "\n    getDirectionalLightInfo( directionalLight, directLight );\n    float under = smoothstep(0.05, -0.25, vWPos.y);\n    vec3 shadowAt = vWPos + vWNrm * 0.04;\n    bool viaSurface = false;\n    if (under > 0.0) {\n      vec3 rsun = refract(-uSunDirT, vec3(0.0, 1.0, 0.0), 1.0 / 1.33);\n      viaSurface = rsun.y < -0.05 && under > 0.5;\n      if (viaSurface) shadowAt = vec3(vWPos.x - rsun.x / rsun.y * vWPos.y, 0.05, vWPos.z - rsun.z / rsun.y * vWPos.y);\n      directLight.direction = normalize(mix(directLight.direction, (viewMatrix * vec4(-rsun, 0.0)).xyz, under));\n      float Ft = 0.02 + 0.98 * pow(1.0 - max(uSunDirT.y, 0.0), 5.0);\n      directLight.color *= 1.0 - Ft * under;\n    }\n    directLight.color *= floatShadow(shadowAt);\n#if defined( USE_SHADOWMAP ) && NUM_DIR_LIGHT_SHADOWS > 0\n    vec4 sunShadowCoord = viaSurface ? uSunShadowMatrix * vec4(shadowAt, 1.0) : vDirectionalShadowCoord[ 0 ];\n#endif\n").replace("vDirectionalShadowCoord[ i ]", "sunShadowCoord"), Yv = "\n  roughnessFactor = mix(mix(roughnessFactor, 0.32, wet * step(0.0, hgt)), 0.06, film);\n", Xv = "\n  if (wdepth > 0.0 && rsun.y < -0.05) {\n    vec2 entry = vWPos.xz + rsun.xz / rsun.y * wdepth;   // where this light entered the surface\n    vec2 fwc = fwidth(entry);\n    float c = waveCaustic(entry, wdepth, log2(max(max(fwc.x, fwc.y) * CAUSTIC_TEXELS_PER_M, 1.0)));\n    reflectedLight.directDiffuse *= max(mix(1.0, c, uCausticStrength), 0.0);\n  }\n", Zv = "\n  vec3 fdir = normalize(vWPos - cameraPosition);\n  float fogAmt = 1.0 - exp(-length(vWPos - cameraPosition) * uFogDensity);\n  outgoingLight = mix(outgoingLight, textureLod(uSkyCube, vec3(fdir.x, max(fdir.y, 0.0), fdir.z), 3.0).rgb, fogAmt);\n";
+function Qv(e, t, n) {
 	let r = n !== "prop";
 	n === "rock" && (e.defines = {
 		...e.defines,
 		ROCK: ""
 	}), e.onBeforeCompile = (e) => {
-		Object.assign(e.uniforms, t), e.vertexShader = e.vertexShader.replace("#include <common>", "#include <common>\n" + Wv).replace("#include <project_vertex>", "#include <project_vertex>\n  vec4 wp = vec4(transformed, 1.0);\n#ifdef USE_INSTANCING\n  wp = instanceMatrix * wp;\n#endif\n  vWPos = (modelMatrix * wp).xyz;\n  vec3 wn = objectNormal;\n#ifdef USE_INSTANCING\n  wn = mat3(instanceMatrix) * wn;\n#endif\n  vWNrm = normalize(mat3(modelMatrix) * wn);"), e.fragmentShader = e.fragmentShader.replace("#include <common>", "#include <common>\n" + Gv).replace("#include <map_fragment>", "#include <map_fragment>\n" + (r ? Kv : "") + Jv).replace("#include <roughnessmap_fragment>", "#include <roughnessmap_fragment>\n" + (r ? Xv : "")).replace("#include <normal_fragment_maps>", "#include <normal_fragment_maps>\n" + (r ? qv : "")).replace("#include <lights_fragment_begin>", Yv).replace("#include <lights_fragment_end>", "#include <lights_fragment_end>\n" + Zv).replace("#include <opaque_fragment>", Qv + "#include <opaque_fragment>");
+		Object.assign(e.uniforms, t), e.vertexShader = e.vertexShader.replace("#include <common>", "#include <common>\n" + Uv).replace("#include <project_vertex>", "#include <project_vertex>\n  vec4 wp = vec4(transformed, 1.0);\n#ifdef USE_INSTANCING\n  wp = instanceMatrix * wp;\n#endif\n  vWPos = (modelMatrix * wp).xyz;\n  vec3 wn = objectNormal;\n#ifdef USE_INSTANCING\n  wn = mat3(instanceMatrix) * wn;\n#endif\n  vWNrm = normalize(mat3(modelMatrix) * wn);"), e.fragmentShader = e.fragmentShader.replace("#include <common>", "#include <common>\n" + Wv).replace("#include <map_fragment>", "#include <map_fragment>\n" + (r ? Gv : "") + qv).replace("#include <roughnessmap_fragment>", "#include <roughnessmap_fragment>\n" + (r ? Yv : "")).replace("#include <normal_fragment_maps>", "#include <normal_fragment_maps>\n" + (r ? Kv : "")).replace("#include <lights_fragment_begin>", Jv).replace("#include <lights_fragment_end>", "#include <lights_fragment_end>\n" + Xv).replace("#include <opaque_fragment>", Zv + "#include <opaque_fragment>");
 	}, e.customProgramCacheKey = () => "gelatin-" + n;
 }
-function ey() {
+function $v() {
 	let e = new Dc(1, 4);
 	e.deleteAttribute("normal"), e.deleteAttribute("uv"), e = bv(e);
 	let t = e.attributes.position, n = new q();
 	for (let e = 0; e < t.count; e++) {
 		n.fromBufferAttribute(t, e);
-		let r = wv(n.x * 1.4 + 3, n.z * 1.4 + n.y * .7, 5, 21), i = Math.abs(wv(n.x * 3.1, n.y * 3.1 + n.z, 3, 5));
+		let r = Cv(n.x * 1.4 + 3, n.z * 1.4 + n.y * .7, 5, 21), i = Math.abs(Cv(n.x * 3.1, n.y * 3.1 + n.z, 3, 5));
 		n.multiplyScalar(1 + .38 * r - .12 * i), n.y < -.2 && (n.y = -.2 + (n.y + .2) * .4), t.setXYZ(e, n.x, n.y, n.z);
 	}
 	return e.computeVertexNormals(), e;
 }
-function ty(e, t) {
+function ey(e, t) {
 	let n = [];
 	for (let r = 0; r < e * 6 && n.length < e; r++) {
 		let r = t() * Math.PI * 2, i = 150;
-		for (; i < 700 && Ov(Math.cos(r) * i, Math.sin(r) * i) > 0;) i += 4;
+		for (; i < 700 && Dv(Math.cos(r) * i, Math.sin(r) * i) > 0;) i += 4;
 		i += (t() - .6) * 40;
-		let a = Math.cos(r) * i, o = Math.sin(r) * i, s = Ov(a, o);
+		let a = Math.cos(r) * i, o = Math.sin(r) * i, s = Dv(a, o);
 		if (s < -5 || s > 6) continue;
 		let c = 1.5 + t() ** 2.2 * 9;
 		n.push({
@@ -20392,14 +20374,14 @@ function ty(e, t) {
 			n.push({
 				x: e,
 				z: r,
-				y: Ov(e, r) - i * .2,
+				y: Dv(e, r) - i * .2,
 				s: i
 			});
 		}
 	}
 	return n;
 }
-function ny({ sky: e, caustics: t, floatShadow: n, water: r, absorption: i, reflectionLayer: a = 1 }) {
+function ty({ sky: e, caustics: t, floatShadow: n, water: r, absorption: i, reflectionLayer: a = 1 }) {
 	let o = {
 		...n,
 		...Object.fromEntries([
@@ -20417,21 +20399,21 @@ function ny({ sky: e, caustics: t, floatShadow: n, water: r, absorption: i, refl
 		uSunShadowMatrix: { value: new J() },
 		uCausticStrength: { value: 1 },
 		uFogDensity: { value: 1 / 18e3 }
-	}, { geometry: s } = kv(384), c = new $c({
+	}, { geometry: s } = Ov(384), c = new $c({
 		roughness: .92,
 		metalness: 0,
 		envMapIntensity: .9
 	});
-	$v(c, o, "terrain");
+	Qv(c, o, "terrain");
 	let l = new ba(s, c);
 	l.castShadow = l.receiveShadow = !0;
-	let u = 7, d = () => (u = Math.imul(u, 1664525) + 1013904223 >>> 0) / 4294967296, f = ty(90, d), p = new $c({
+	let u = 7, d = () => (u = Math.imul(u, 1664525) + 1013904223 >>> 0) / 4294967296, f = ey(90, d), p = new $c({
 		roughness: .85,
 		metalness: 0,
 		envMapIntensity: .9
 	});
-	$v(p, o, "rock");
-	let m = new Ka(ey(), p, f.length), h = new J(), g = new hn(), _ = new Zn(), v = new q();
+	Qv(p, o, "rock");
+	let m = new Ka($v(), p, f.length), h = new J(), g = new hn(), _ = new Zn(), v = new q();
 	f.forEach((e, t) => {
 		_.set(d() * .6, d() * Math.PI * 2, d() * .6), v.set(e.s * (.8 + d() * .6), e.s * (.5 + d() * .5), e.s * (.8 + d() * .6)), h.compose(new q(e.x, e.y, e.z), g.setFromEuler(_), v), m.setMatrixAt(t, h);
 	}), m.computeBoundingSphere(), m.castShadow = m.receiveShadow = !0;
@@ -20441,11 +20423,11 @@ function ny({ sky: e, caustics: t, floatShadow: n, water: r, absorption: i, refl
 	return {
 		group: y,
 		uniforms: o,
-		patchProp: (e) => $v(e, o, "prop")
+		patchProp: (e) => Qv(e, o, "prop")
 	};
 }
 // src/engine/PlanarReflection.js
-var ry = new q(0, 1, 0), iy = new q(), ay = new q(), oy = new q(), sy = new J(), cy = new Fi(), ly = new Fn(), uy = new Fn(), dy = class {
+var ny = new q(0, 1, 0), ry = new q(), iy = new q(), ay = new q(), oy = new J(), sy = new Fi(), cy = new Fn(), ly = new Fn(), uy = class {
 	constructor(e = 1) {
 		this.camera = new du(), this.camera.layers.set(e), this.textureMatrix = new J(), this.target = new Ln(1, 1, {
 			type: E,
@@ -20458,31 +20440,31 @@ var ry = new q(0, 1, 0), iy = new q(), ay = new q(), oy = new q(), sy = new J(),
 	}
 	render(e, t, n) {
 		let r = this.camera;
-		iy.setFromMatrixPosition(n.matrixWorld), sy.extractRotation(n.matrixWorld), ay.set(0, 0, -1).applyMatrix4(sy).add(iy), oy.set(ay.x, -ay.y, ay.z), r.position.set(iy.x, -iy.y, iy.z), r.up.set(0, 1, 0).applyMatrix4(sy).reflect(ry), r.lookAt(oy), r.far = n.far, r.updateMatrixWorld(), r.projectionMatrix.copy(n.projectionMatrix), this.textureMatrix.set(.5, 0, 0, .5, 0, .5, 0, .5, 0, 0, .5, .5, 0, 0, 0, 1).multiply(r.projectionMatrix).multiply(r.matrixWorldInverse), cy.setFromNormalAndCoplanarPoint(ry, oy.set(0, 0, 0)).applyMatrix4(r.matrixWorldInverse), ly.set(cy.normal.x, cy.normal.y, cy.normal.z, cy.constant);
+		ry.setFromMatrixPosition(n.matrixWorld), oy.extractRotation(n.matrixWorld), iy.set(0, 0, -1).applyMatrix4(oy).add(ry), ay.set(iy.x, -iy.y, iy.z), r.position.set(ry.x, -ry.y, ry.z), r.up.set(0, 1, 0).applyMatrix4(oy).reflect(ny), r.lookAt(ay), r.far = n.far, r.updateMatrixWorld(), r.projectionMatrix.copy(n.projectionMatrix), this.textureMatrix.set(.5, 0, 0, .5, 0, .5, 0, .5, 0, 0, .5, .5, 0, 0, 0, 1).multiply(r.projectionMatrix).multiply(r.matrixWorldInverse), sy.setFromNormalAndCoplanarPoint(ny, ay.set(0, 0, 0)).applyMatrix4(r.matrixWorldInverse), cy.set(sy.normal.x, sy.normal.y, sy.normal.z, sy.constant);
 		let i = r.projectionMatrix.elements;
-		uy.set((Math.sign(ly.x) + i[8]) / i[0], (Math.sign(ly.y) + i[9]) / i[5], -1, (1 + i[10]) / i[14]), ly.multiplyScalar(2 / ly.dot(uy)), i[2] = ly.x, i[6] = ly.y, i[10] = ly.z + 1, i[14] = ly.w, r.projectionMatrixInverse.copy(r.projectionMatrix).invert(), e.setRenderTarget(this.target), e.setClearColor(0, 0), e.clear(!0, !0, !1), e.render(t, r);
+		ly.set((Math.sign(cy.x) + i[8]) / i[0], (Math.sign(cy.y) + i[9]) / i[5], -1, (1 + i[10]) / i[14]), cy.multiplyScalar(2 / cy.dot(ly)), i[2] = cy.x, i[6] = cy.y, i[10] = cy.z + 1, i[14] = cy.w, r.projectionMatrixInverse.copy(r.projectionMatrix).invert(), e.setRenderTarget(this.target), e.setClearColor(0, 0), e.clear(!0, !0, !1), e.render(t, r);
 	}
-}, fy = 6, py = 32, my = "\nin vec3 position;\nout vec2 vUv;\nvoid main() {\n  vUv = position.xy * 0.5 + 0.5;\n  gl_Position = vec4(position.xy, 0.0, 1.0);\n}", hy = "\nprecision highp float;\nprecision highp sampler2D;\nin vec2 vUv;\nout vec4 fragColor;\n", gy = "\nuniform sampler2D tSrc;\nuniform vec2 uTexel; // source texel size\n#ifdef PREFILTER\nuniform vec4 uCurve; // threshold-knee, 2*knee, 0.25/knee, threshold\nuniform float uClamp;\n#endif\n\nfloat luma(vec3 c) { return dot(c, vec3(0.2126, 0.7152, 0.0722)); }\n\nvec3 tap(vec2 o) {\n  vec3 c = texture(tSrc, vUv + o * uTexel).rgb;\n#ifdef PREFILTER\n  c = max(c, 0.0); // negatives (and NaN on most GPUs) -> 0\n  float l = max(luma(c), 1e-4);\n  c *= min(1.0, uClamp / l);\n  l = min(l, uClamp);\n  float q = clamp(l - uCurve.x, 0.0, uCurve.y);\n  c *= max(uCurve.z * q * q, l - uCurve.w) / l;\n#endif\n  return c;\n}\n\nvoid main() {\n  vec3 a = tap(vec2(-2.0, 2.0)), b = tap(vec2(0.0, 2.0)), c = tap(vec2(2.0, 2.0));\n  vec3 d = tap(vec2(-2.0, 0.0)), e = tap(vec2(0.0, 0.0)), f = tap(vec2(2.0, 0.0));\n  vec3 g = tap(vec2(-2.0, -2.0)), h = tap(vec2(0.0, -2.0)), i = tap(vec2(2.0, -2.0));\n  vec3 j = tap(vec2(-1.0, 1.0)), k = tap(vec2(1.0, 1.0)), l = tap(vec2(-1.0, -1.0)), m = tap(vec2(1.0, -1.0));\n  vec3 g0 = (a + b + d + e) * 0.25, g1 = (b + c + e + f) * 0.25;\n  vec3 g2 = (d + e + g + h) * 0.25, g3 = (e + f + h + i) * 0.25;\n  vec3 g4 = (j + k + l + m) * 0.25;\n#ifdef PREFILTER\n  float w0 = 0.125 / (1.0 + luma(g0)), w1 = 0.125 / (1.0 + luma(g1));\n  float w2 = 0.125 / (1.0 + luma(g2)), w3 = 0.125 / (1.0 + luma(g3));\n  float w4 = 0.5 / (1.0 + luma(g4));\n  vec3 r = (g0 * w0 + g1 * w1 + g2 * w2 + g3 * w3 + g4 * w4) / (w0 + w1 + w2 + w3 + w4);\n#else\n  vec3 r = g4 * 0.5 + (g0 + g1 + g2 + g3) * 0.125;\n#endif\n  fragColor = vec4(r, 1.0);\n}", _y = "\nuniform sampler2D tSrc;\nuniform vec2 uTexel; // source (coarser) texel size\nvoid main() {\n  vec4 d = uTexel.xyxy * vec4(1.0, 1.0, -1.0, 0.0);\n  vec3 s = texture(tSrc, vUv - d.xy).rgb + texture(tSrc, vUv - d.wy).rgb * 2.0 + texture(tSrc, vUv - d.zy).rgb\n    + texture(tSrc, vUv + d.zw).rgb * 2.0 + texture(tSrc, vUv).rgb * 4.0 + texture(tSrc, vUv + d.xw).rgb * 2.0\n    + texture(tSrc, vUv + d.zy).rgb + texture(tSrc, vUv + d.wy).rgb * 2.0 + texture(tSrc, vUv + d.xy).rgb;\n  fragColor = vec4(s * (1.0 / 16.0), 1.0);\n}", vy = `
+}, dy = 6, fy = 32, py = "\nin vec3 position;\nout vec2 vUv;\nvoid main() {\n  vUv = position.xy * 0.5 + 0.5;\n  gl_Position = vec4(position.xy, 0.0, 1.0);\n}", my = "\nprecision highp float;\nprecision highp sampler2D;\nin vec2 vUv;\nout vec4 fragColor;\n", hy = "\nuniform sampler2D tSrc;\nuniform vec2 uTexel; // source texel size\n#ifdef PREFILTER\nuniform vec4 uCurve; // threshold-knee, 2*knee, 0.25/knee, threshold\nuniform float uClamp;\n#endif\n\nfloat luma(vec3 c) { return dot(c, vec3(0.2126, 0.7152, 0.0722)); }\n\nvec3 tap(vec2 o) {\n  vec3 c = texture(tSrc, vUv + o * uTexel).rgb;\n#ifdef PREFILTER\n  c = max(c, 0.0); // negatives (and NaN on most GPUs) -> 0\n  float l = max(luma(c), 1e-4);\n  c *= min(1.0, uClamp / l);\n  l = min(l, uClamp);\n  float q = clamp(l - uCurve.x, 0.0, uCurve.y);\n  c *= max(uCurve.z * q * q, l - uCurve.w) / l;\n#endif\n  return c;\n}\n\nvoid main() {\n  vec3 a = tap(vec2(-2.0, 2.0)), b = tap(vec2(0.0, 2.0)), c = tap(vec2(2.0, 2.0));\n  vec3 d = tap(vec2(-2.0, 0.0)), e = tap(vec2(0.0, 0.0)), f = tap(vec2(2.0, 0.0));\n  vec3 g = tap(vec2(-2.0, -2.0)), h = tap(vec2(0.0, -2.0)), i = tap(vec2(2.0, -2.0));\n  vec3 j = tap(vec2(-1.0, 1.0)), k = tap(vec2(1.0, 1.0)), l = tap(vec2(-1.0, -1.0)), m = tap(vec2(1.0, -1.0));\n  vec3 g0 = (a + b + d + e) * 0.25, g1 = (b + c + e + f) * 0.25;\n  vec3 g2 = (d + e + g + h) * 0.25, g3 = (e + f + h + i) * 0.25;\n  vec3 g4 = (j + k + l + m) * 0.25;\n#ifdef PREFILTER\n  float w0 = 0.125 / (1.0 + luma(g0)), w1 = 0.125 / (1.0 + luma(g1));\n  float w2 = 0.125 / (1.0 + luma(g2)), w3 = 0.125 / (1.0 + luma(g3));\n  float w4 = 0.5 / (1.0 + luma(g4));\n  vec3 r = (g0 * w0 + g1 * w1 + g2 * w2 + g3 * w3 + g4 * w4) / (w0 + w1 + w2 + w3 + w4);\n#else\n  vec3 r = g4 * 0.5 + (g0 + g1 + g2 + g3) * 0.125;\n#endif\n  fragColor = vec4(r, 1.0);\n}", gy = "\nuniform sampler2D tSrc;\nuniform vec2 uTexel; // source (coarser) texel size\nvoid main() {\n  vec4 d = uTexel.xyxy * vec4(1.0, 1.0, -1.0, 0.0);\n  vec3 s = texture(tSrc, vUv - d.xy).rgb + texture(tSrc, vUv - d.wy).rgb * 2.0 + texture(tSrc, vUv - d.zy).rgb\n    + texture(tSrc, vUv + d.zw).rgb * 2.0 + texture(tSrc, vUv).rgb * 4.0 + texture(tSrc, vUv + d.xw).rgb * 2.0\n    + texture(tSrc, vUv + d.zy).rgb + texture(tSrc, vUv + d.wy).rgb * 2.0 + texture(tSrc, vUv + d.xy).rgb;\n  fragColor = vec4(s * (1.0 / 16.0), 1.0);\n}", _y = `
 uniform sampler2D tSrc;
 uniform vec2 uJitter; // [0,1)^2
 void main() {
   float s = 0.0;
   for (int j = 0; j < 4; j++) for (int i = 0; i < 4; i++) {
     vec2 o = (vec2(float(i), float(j)) + uJitter) * 0.25 - 0.5;
-    vec3 c = max(texture(tSrc, vUv + o * ${(1 / py).toFixed(8)}).rgb, 0.0);
+    vec3 c = max(texture(tSrc, vUv + o * ${(1 / fy).toFixed(8)}).rgb, 0.0);
     s += log2(clamp(dot(c, vec3(0.2126, 0.7152, 0.0722)), 1e-4, 64.0));
   }
   fragColor = vec4(s * (1.0 / 16.0), 0.0, 0.0, 1.0);
-}`, yy = "\nuniform sampler2D tSrc;  // metering target, linear filtered\nuniform sampler2D tPrev; // previous 1x1 state\nuniform vec2 uK;         // blend factor when scene brightens (x) / darkens (y); 1 = snap\nuniform vec2 uRange;     // allowed log2 luminance range (from min/max exposure)\nvoid main() {\n  float sum = 0.0;\n  for (int j = 0; j < 16; j++) for (int i = 0; i < 16; i++)\n    sum += texture(tSrc, (vec2(float(i), float(j)) + 0.5) * (1.0 / 16.0)).r;\n  float t = clamp(sum * (1.0 / 256.0), uRange.x, uRange.y);\n  float prev = texelFetch(tPrev, ivec2(0), 0).r;\n  float k = t > prev ? uK.x : uK.y;\n  float s = k >= 1.0 ? t : prev + (t - prev) * k;\n  if (isnan(s)) s = t;\n  fragColor = vec4(s, 0.0, 0.0, 1.0);\n}", by = "\nuniform sampler2D tHdr;\nuniform sampler2D tBloom;\nuniform sampler2D tExp;   // 1x1 adapted log2 average luminance\nuniform float uExposure;  // exposure compensation (auto) or absolute exposure\nuniform float uAuto;      // 1 = auto exposure\nuniform vec3 uExpo;       // keyValue, minExposure, maxExposure\nuniform float uBloom;\nuniform vec2 uLook;       // AgX look: power (contrast), saturation\nuniform float uFrame;     // 0..255, dither seed\nuniform float uDroplets;  // 0..1\nuniform float uTime;      // seconds, wraps at 4096\nuniform float uAspect;    // width / height\nuniform float uResY;      // height in pixels\n\nconst mat3 SRGB_TO_REC2020 = mat3(\n  vec3(0.6274, 0.0691, 0.0164), vec3(0.3293, 0.9195, 0.0880), vec3(0.0433, 0.0113, 0.8956));\nconst mat3 REC2020_TO_SRGB = mat3(\n  vec3(1.6605, -0.1246, -0.0182), vec3(-0.5876, 1.1329, -0.1006), vec3(-0.0728, -0.0083, 1.1187));\nconst mat3 AGX_INSET = mat3(\n  vec3(0.856627153315983, 0.137318972929847, 0.11189821299995),\n  vec3(0.0951212405381588, 0.761241990602591, 0.0767994186031903),\n  vec3(0.0482516061458583, 0.101439036467562, 0.811302368396859));\nconst mat3 AGX_OUTSET = mat3(\n  vec3(1.1271005818144368, -0.1413297634984383, -0.14132976349843826),\n  vec3(-0.11060664309660323, 1.157823702216272, -0.11060664309660294),\n  vec3(-0.016493938717834573, -0.016493938717834257, 1.2519364065950405));\nconst float AGX_MIN_EV = -12.47393;\nconst float AGX_MAX_EV = 4.026069;\n\nvec3 agxContrast(vec3 x) {\n  vec3 x2 = x * x, x4 = x2 * x2;\n  return 15.5 * x4 * x2 - 40.14 * x4 * x + 31.96 * x4 - 6.868 * x2 * x + 0.4298 * x2 + 0.1191 * x - 0.00232;\n}\n\nvec3 agx(vec3 c) {\n  c = AGX_INSET * (SRGB_TO_REC2020 * c);\n  c = clamp((log2(max(c, 1e-10)) - AGX_MIN_EV) / (AGX_MAX_EV - AGX_MIN_EV), 0.0, 1.0);\n  c = agxContrast(c);\n  // AgX \"punchy\"-style look in the encoded domain\n  c = pow(max(c, 0.0), vec3(uLook.x));\n  float l = dot(c, vec3(0.2126, 0.7152, 0.0722));\n  c = l + uLook.y * (c - l);\n  c = AGX_OUTSET * c;\n  return clamp(REC2020_TO_SRGB * pow(max(c, 0.0), vec3(2.2)), 0.0, 1.0);\n}\n\n// Dave Hoskins hash without sine\nvec3 hash33(vec3 p) {\n  p = fract(p * vec3(0.1031, 0.1030, 0.0973));\n  p += dot(p, p.yxz + 33.33);\n  return fract((p.xxy + p.yxx) * p.zyx);\n}\n\n// ---- lens droplets (only evaluated when uDroplets > 0) -----------------------------------------\n// All lengths are in screen-height units (p = vUv * vec2(aspect, 1)). Each drop is a tiny lens: the\n// image under it is sampled from the mirrored side of its centre, sample = centre - (K-1) * d, so it\n// looks inverted and slightly magnified, with a faint dark rim.\nconst float DROP_K = 1.8;\n\n// d: pixel - drop centre, r: radius. Returns (uv offset, darkening).\nvec3 lensDrop(vec2 d, float r) {\n  float dist = length(d);\n  float cov = clamp((r - dist) * uResY + 0.5, 0.0, 1.0); // 1px AA\n  if (cov <= 0.0) return vec3(0.0);\n  return vec3(-d * DROP_K * cov, 0.22 * smoothstep(0.6, 1.0, dist / r) * cov);\n}\n\n// One drop (at most) per grid cell, kept inside its cell so only the own cell is tested.\nvec3 dropLayer(vec2 p, float scale, float density, float seed) {\n  vec2 q = p * scale + seed * 17.31;\n  vec2 id = floor(q);\n  vec3 h = hash33(vec3(id, seed)), g = hash33(vec3(id + 57.0, seed));\n  if (h.x > density) return vec3(0.0);\n  float fade = clamp((uDroplets - g.x * 0.8) * 6.0, 0.0, 1.0); // drops dry up one by one (order = g.x)\n  float rf = mix(0.10, 0.24, h.y * h.y);                          // radius, cell units\n  vec2 c = rf + vec2(h.z, g.y) * (1.0 - 2.0 * rf);\n  return lensDrop((fract(q) - c) / scale, rf * fade / scale);\n}\n\n// A drop sliding down the lens, leaving a thin wet trail above it. speed in cycles/s.\n// Head enters above the screen and leaves below with its trail fully off-screen, so the wrap never pops.\nvec3 streak(vec2 p, float id, float speed, float amp) {\n  const float R = 0.016, L = 0.45, W = 0.0035;\n  float u = uTime * speed + id * 0.37;\n  float cyc = mod(floor(u), 128.0), f = fract(u);\n  f += 0.012 * sin(f * 47.0); // stick-slip\n  vec3 h = hash33(vec3(id, cyc, 5.1));\n  float x0 = (0.08 + 0.84 * h.x) * uAspect;\n  float hy = mix(1.0 + R, -R - L, f);\n  float hx = x0 + 0.006 * sin(hy * 14.0 + h.y * 6.28);\n  vec3 o = lensDrop(p - vec2(hx, hy), R * amp);\n  float ty = p.y - hy;\n  if (ty > 0.0 && ty < L) {\n    float a = smoothstep(0.0, 0.03, ty) * (1.0 - ty / L) * amp;\n    float tx = (p.x - x0 - 0.006 * sin(p.y * 14.0 + h.y * 6.28)) / W;\n    float cov = clamp((1.0 - abs(tx)) * W * uResY + 0.5, 0.0, 1.0) * a;\n    o += vec3(-tx * W * DROP_K * cov, 0.0, 0.12 * smoothstep(0.5, 1.0, abs(tx)) * cov);\n  }\n  return o;\n}\n\n// Returns (uv offset, darkening).\nvec3 droplets() {\n  vec2 p = vUv * vec2(uAspect, 1.0);\n  float sa = smoothstep(0.0, 0.4, uDroplets);\n  vec3 a = dropLayer(p, 6.0, 0.30, 0.0) + dropLayer(p, 10.0, 0.20, 1.0) + dropLayer(p, 17.0, 0.06, 2.0)\n    + streak(p, 0.0, 0.0625, sa) + streak(p, 1.0, 0.03125, sa);\n  return vec3(a.xy / vec2(uAspect, 1.0), min(a.z, 0.5));\n}\n\nvoid main() {\n  float ex = uExposure;\n  if (uAuto > 0.5) ex *= clamp(uExpo.x * exp2(-texelFetch(tExp, ivec2(0), 0).r), uExpo.y, uExpo.z);\n\n  vec2 uv = vUv;\n  float dark = 0.0;\n  if (uDroplets > 0.001) {\n    vec3 dr = droplets();\n    uv += dr.xy;\n    dark = dr.z;\n  }\n\n  vec3 c = (texture(tHdr, uv).rgb + texture(tBloom, uv).rgb * uBloom) * (ex * (1.0 - dark));\n  vec2 d = (vUv - 0.5) * 1.41421356; // |d|^2 = 1 at corners\n  c = agx(c) * (1.0 - 0.08 * dot(d, d));\n  vec3 o = mix(pow(c, vec3(1.0 / 2.4)) * 1.055 - 0.055, c * 12.92, vec3(lessThanEqual(c, vec3(0.0031308))));\n\n  // TPDF dither, +-1/255, after sRGB encoding and before the 8-bit store\n  vec3 n = hash33(vec3(gl_FragCoord.xy, uFrame)) + hash33(vec3(gl_FragCoord.xy, uFrame + 17.0));\n  fragColor = vec4(o + (n - 1.0) * (1.0 / 255.0), 1.0);\n}", xy = (e, t, n = {}, r = {}) => new Qc({
+}`, vy = "\nuniform sampler2D tSrc;  // metering target, linear filtered\nuniform sampler2D tPrev; // previous 1x1 state\nuniform vec2 uK;         // blend factor when scene brightens (x) / darkens (y); 1 = snap\nuniform vec2 uRange;     // allowed log2 luminance range (from min/max exposure)\nvoid main() {\n  float sum = 0.0;\n  for (int j = 0; j < 16; j++) for (int i = 0; i < 16; i++)\n    sum += texture(tSrc, (vec2(float(i), float(j)) + 0.5) * (1.0 / 16.0)).r;\n  float t = clamp(sum * (1.0 / 256.0), uRange.x, uRange.y);\n  float prev = texelFetch(tPrev, ivec2(0), 0).r;\n  float k = t > prev ? uK.x : uK.y;\n  float s = k >= 1.0 ? t : prev + (t - prev) * k;\n  if (isnan(s)) s = t;\n  fragColor = vec4(s, 0.0, 0.0, 1.0);\n}", yy = "\nuniform sampler2D tHdr;\nuniform sampler2D tBloom;\nuniform sampler2D tExp;   // 1x1 adapted log2 average luminance\nuniform float uExposure;  // exposure compensation (auto) or absolute exposure\nuniform float uAuto;      // 1 = auto exposure\nuniform vec3 uExpo;       // keyValue, minExposure, maxExposure\nuniform float uBloom;\nuniform vec2 uLook;       // AgX look: power (contrast), saturation\nuniform float uFrame;     // 0..255, dither seed\nuniform float uDroplets;  // 0..1\nuniform float uTime;      // seconds, wraps at 4096\nuniform float uAspect;    // width / height\nuniform float uResY;      // height in pixels\n\nconst mat3 SRGB_TO_REC2020 = mat3(\n  vec3(0.6274, 0.0691, 0.0164), vec3(0.3293, 0.9195, 0.0880), vec3(0.0433, 0.0113, 0.8956));\nconst mat3 REC2020_TO_SRGB = mat3(\n  vec3(1.6605, -0.1246, -0.0182), vec3(-0.5876, 1.1329, -0.1006), vec3(-0.0728, -0.0083, 1.1187));\nconst mat3 AGX_INSET = mat3(\n  vec3(0.856627153315983, 0.137318972929847, 0.11189821299995),\n  vec3(0.0951212405381588, 0.761241990602591, 0.0767994186031903),\n  vec3(0.0482516061458583, 0.101439036467562, 0.811302368396859));\nconst mat3 AGX_OUTSET = mat3(\n  vec3(1.1271005818144368, -0.1413297634984383, -0.14132976349843826),\n  vec3(-0.11060664309660323, 1.157823702216272, -0.11060664309660294),\n  vec3(-0.016493938717834573, -0.016493938717834257, 1.2519364065950405));\nconst float AGX_MIN_EV = -12.47393;\nconst float AGX_MAX_EV = 4.026069;\n\nvec3 agxContrast(vec3 x) {\n  vec3 x2 = x * x, x4 = x2 * x2;\n  return 15.5 * x4 * x2 - 40.14 * x4 * x + 31.96 * x4 - 6.868 * x2 * x + 0.4298 * x2 + 0.1191 * x - 0.00232;\n}\n\nvec3 agx(vec3 c) {\n  c = AGX_INSET * (SRGB_TO_REC2020 * c);\n  c = clamp((log2(max(c, 1e-10)) - AGX_MIN_EV) / (AGX_MAX_EV - AGX_MIN_EV), 0.0, 1.0);\n  c = agxContrast(c);\n  // AgX \"punchy\"-style look in the encoded domain\n  c = pow(max(c, 0.0), vec3(uLook.x));\n  float l = dot(c, vec3(0.2126, 0.7152, 0.0722));\n  c = l + uLook.y * (c - l);\n  c = AGX_OUTSET * c;\n  return clamp(REC2020_TO_SRGB * pow(max(c, 0.0), vec3(2.2)), 0.0, 1.0);\n}\n\n// Dave Hoskins hash without sine\nvec3 hash33(vec3 p) {\n  p = fract(p * vec3(0.1031, 0.1030, 0.0973));\n  p += dot(p, p.yxz + 33.33);\n  return fract((p.xxy + p.yxx) * p.zyx);\n}\n\n// ---- lens droplets (only evaluated when uDroplets > 0) -----------------------------------------\n// All lengths are in screen-height units (p = vUv * vec2(aspect, 1)). Each drop is a tiny lens: the\n// image under it is sampled from the mirrored side of its centre, sample = centre - (K-1) * d, so it\n// looks inverted and slightly magnified, with a faint dark rim.\nconst float DROP_K = 1.8;\n\n// d: pixel - drop centre, r: radius. Returns (uv offset, darkening).\nvec3 lensDrop(vec2 d, float r) {\n  float dist = length(d);\n  float cov = clamp((r - dist) * uResY + 0.5, 0.0, 1.0); // 1px AA\n  if (cov <= 0.0) return vec3(0.0);\n  return vec3(-d * DROP_K * cov, 0.22 * smoothstep(0.6, 1.0, dist / r) * cov);\n}\n\n// One drop (at most) per grid cell, kept inside its cell so only the own cell is tested.\nvec3 dropLayer(vec2 p, float scale, float density, float seed) {\n  vec2 q = p * scale + seed * 17.31;\n  vec2 id = floor(q);\n  vec3 h = hash33(vec3(id, seed)), g = hash33(vec3(id + 57.0, seed));\n  if (h.x > density) return vec3(0.0);\n  float fade = clamp((uDroplets - g.x * 0.8) * 6.0, 0.0, 1.0); // drops dry up one by one (order = g.x)\n  float rf = mix(0.10, 0.24, h.y * h.y);                          // radius, cell units\n  vec2 c = rf + vec2(h.z, g.y) * (1.0 - 2.0 * rf);\n  return lensDrop((fract(q) - c) / scale, rf * fade / scale);\n}\n\n// A drop sliding down the lens, leaving a thin wet trail above it. speed in cycles/s.\n// Head enters above the screen and leaves below with its trail fully off-screen, so the wrap never pops.\nvec3 streak(vec2 p, float id, float speed, float amp) {\n  const float R = 0.016, L = 0.45, W = 0.0035;\n  float u = uTime * speed + id * 0.37;\n  float cyc = mod(floor(u), 128.0), f = fract(u);\n  f += 0.012 * sin(f * 47.0); // stick-slip\n  vec3 h = hash33(vec3(id, cyc, 5.1));\n  float x0 = (0.08 + 0.84 * h.x) * uAspect;\n  float hy = mix(1.0 + R, -R - L, f);\n  float hx = x0 + 0.006 * sin(hy * 14.0 + h.y * 6.28);\n  vec3 o = lensDrop(p - vec2(hx, hy), R * amp);\n  float ty = p.y - hy;\n  if (ty > 0.0 && ty < L) {\n    float a = smoothstep(0.0, 0.03, ty) * (1.0 - ty / L) * amp;\n    float tx = (p.x - x0 - 0.006 * sin(p.y * 14.0 + h.y * 6.28)) / W;\n    float cov = clamp((1.0 - abs(tx)) * W * uResY + 0.5, 0.0, 1.0) * a;\n    o += vec3(-tx * W * DROP_K * cov, 0.0, 0.12 * smoothstep(0.5, 1.0, abs(tx)) * cov);\n  }\n  return o;\n}\n\n// Returns (uv offset, darkening).\nvec3 droplets() {\n  vec2 p = vUv * vec2(uAspect, 1.0);\n  float sa = smoothstep(0.0, 0.4, uDroplets);\n  vec3 a = dropLayer(p, 6.0, 0.30, 0.0) + dropLayer(p, 10.0, 0.20, 1.0) + dropLayer(p, 17.0, 0.06, 2.0)\n    + streak(p, 0.0, 0.0625, sa) + streak(p, 1.0, 0.03125, sa);\n  return vec3(a.xy / vec2(uAspect, 1.0), min(a.z, 0.5));\n}\n\nvoid main() {\n  float ex = uExposure;\n  if (uAuto > 0.5) ex *= clamp(uExpo.x * exp2(-texelFetch(tExp, ivec2(0), 0).r), uExpo.y, uExpo.z);\n\n  vec2 uv = vUv;\n  float dark = 0.0;\n  if (uDroplets > 0.001) {\n    vec3 dr = droplets();\n    uv += dr.xy;\n    dark = dr.z;\n  }\n\n  vec3 c = (texture(tHdr, uv).rgb + texture(tBloom, uv).rgb * uBloom) * (ex * (1.0 - dark));\n  vec2 d = (vUv - 0.5) * 1.41421356; // |d|^2 = 1 at corners\n  c = agx(c) * (1.0 - 0.08 * dot(d, d));\n  vec3 o = mix(pow(c, vec3(1.0 / 2.4)) * 1.055 - 0.055, c * 12.92, vec3(lessThanEqual(c, vec3(0.0031308))));\n\n  // TPDF dither, +-1/255, after sRGB encoding and before the 8-bit store\n  vec3 n = hash33(vec3(gl_FragCoord.xy, uFrame)) + hash33(vec3(gl_FragCoord.xy, uFrame + 17.0));\n  fragColor = vec4(o + (n - 1.0) * (1.0 / 255.0), 1.0);\n}", by = (e, t, n = {}, r = {}) => new Qc({
 	glslVersion: vt,
-	vertexShader: my,
-	fragmentShader: hy + e,
+	vertexShader: py,
+	fragmentShader: my + e,
 	uniforms: t,
 	defines: n,
 	depthTest: !1,
 	depthWrite: !1,
 	...r
-}), Sy = class {
+}), xy = class {
 	params = {
 		exposure: 1,
 		autoExposure: !0,
@@ -20514,24 +20496,24 @@ void main() {
 			tSrc: { value: null },
 			uTexel: { value: null }
 		});
-		this.matPre = xy(gy, {
+		this.matPre = by(hy, {
 			...t(),
 			uCurve: { value: new Fn() },
 			uClamp: { value: 64 }
-		}, { PREFILTER: 1 }), this.matDown = xy(gy, t()), this.matUp = xy(_y, t(), {}, {
+		}, { PREFILTER: 1 }), this.matDown = by(hy, t()), this.matUp = by(gy, t(), {}, {
 			blending: 5,
 			blendEquation: 100,
 			blendSrc: 201,
 			blendDst: 201
-		}), this.matMeter = xy(vy, {
+		}), this.matMeter = by(_y, {
 			tSrc: { value: null },
 			uJitter: { value: new K() }
-		}), this.matAdapt = xy(yy, {
+		}), this.matAdapt = by(vy, {
 			tSrc: { value: null },
 			tPrev: { value: null },
 			uK: { value: new K(1, 1) },
 			uRange: { value: new K(-8, 4) }
-		}), this.matComp = xy(by, {
+		}), this.matComp = by(yy, {
 			tHdr: { value: null },
 			tBloom: { value: null },
 			tExp: { value: null },
@@ -20546,7 +20528,7 @@ void main() {
 			uAspect: { value: 1 },
 			uResY: { value: 1 }
 		}), this.levels = [], this.texel = [new K()];
-		for (let e = 0; e < fy; e++) this.levels.push(new Ln(1, 1, {
+		for (let e = 0; e < dy; e++) this.levels.push(new Ln(1, 1, {
 			type: E,
 			format: N,
 			minFilter: m,
@@ -20557,7 +20539,7 @@ void main() {
 			stencilBuffer: !1,
 			generateMipmaps: !1
 		})), this.texel.push(new K());
-		this.meterRT = new Ln(py, py, {
+		this.meterRT = new Ln(fy, fy, {
 			type: E,
 			format: N,
 			minFilter: m,
@@ -20582,7 +20564,7 @@ void main() {
 	setSize(e, t) {
 		let n = Math.max(1, Math.floor(e)), r = Math.max(1, Math.floor(t));
 		this.matComp.uniforms.uAspect.value = n / r, this.matComp.uniforms.uResY.value = r, this._snap = !0, this.texel[0].set(1 / n, 1 / r);
-		for (let e = 0; e < fy; e++) n = Math.max(1, Math.floor(n / 2)), r = Math.max(1, Math.floor(r / 2)), this.levels[e].setSize(n, r), this.texel[e + 1].set(1 / n, 1 / r);
+		for (let e = 0; e < dy; e++) n = Math.max(1, Math.floor(n / 2)), r = Math.max(1, Math.floor(r / 2)), this.levels[e].setSize(n, r), this.texel[e + 1].set(1 / n, 1 / r);
 	}
 	_pass(e, t) {
 		this.mesh.material = e, this.renderer.setRenderTarget(t), this.renderer.render(this.mesh, this.camera);
@@ -20604,7 +20586,7 @@ void main() {
 		let l = r.bloomThreshold, u = Math.max(l * .5, 1e-4), d = this.matPre.uniforms;
 		if (d.uCurve.value.set(l - u, 2 * u, .25 / u, l), d.uClamp.value = r.bloomClamp, r.bloomStrength > 0) {
 			this._blit(this.matPre, e, a[0], i[0]);
-			for (let e = 1; e < fy; e++) this._blit(this.matDown, i[e - 1].texture, a[e], i[e]);
+			for (let e = 1; e < dy; e++) this._blit(this.matDown, i[e - 1].texture, a[e], i[e]);
 			for (let e = 4; e >= 0; e--) this._blit(this.matUp, i[e + 1].texture, a[e + 2], i[e]);
 		}
 		let f = this.matComp.uniforms;
@@ -20624,7 +20606,7 @@ void main() {
 		]) e.dispose();
 		this.geometry.dispose();
 	}
-}, Cy = class {
+}, Sy = class {
 	constructor(e) {
 		this.gl = e, this.ext = e.getExtension("EXT_disjoint_timer_query_webgl2"), this.pending = [], this.current = null, this.frame = null, this.ms = {}, this.total = 0;
 	}
@@ -20669,7 +20651,7 @@ void main() {
 		for (let e in t) t[e] /= n;
 		return t;
 	}
-}, wy = `
+}, Cy = `
 precision highp float;
 precision highp int;
 ${p_}
@@ -20679,7 +20661,7 @@ void main() {
   vec2 q = texelFetch(uQueries, ivec2(gl_FragCoord.xy), 0).xy;
   vec3 d = waterAt(q, vec3(0.0));
   outColor = vec4(d.y, d.x, d.z, 1.0);
-}`, Ty = class {
+}`, wy = class {
 	constructor(e, t, n = 256) {
 		this.renderer = e, this.capacity = n, this.input = new Pa(new Float32Array(n * 4), n, 1, N, T), this.target = new Ln(n, 1, {
 			type: T,
@@ -20687,7 +20669,7 @@ void main() {
 			magFilter: l,
 			depthBuffer: !1,
 			generateMipmaps: !1
-		}), this.quad = new Hg(Vg(wy, {
+		}), this.quad = new Hg(Vg(Cy, {
 			...t.uniforms,
 			uQueries: { value: this.input }
 		})), this.inFlight = 0, this.result = new Float32Array(n * 4), this.resultCount = 0, this.resultTag = -1, this.resultTime = 0;
@@ -20705,7 +20687,7 @@ void main() {
 			this.inFlight--;
 		});
 	}
-}, Ey = `
+}, Ty = `
 precision highp float;
 precision highp int;
 precision highp sampler2DShadow;
@@ -20716,7 +20698,7 @@ vec3 viewPos(vec2 uv, float ndcZ) {
   vec4 v = uInvProj * vec4(uv * 2.0 - 1.0, ndcZ, 1.0);
   return v.xyz / v.w;
 }
-`, Dy = Ey + "\nin vec2 vUv;\nout vec4 outColor;\nvoid main() {\n  vec3 nearW = (uCamWorld * vec4(viewPos(vUv, -1.0), 1.0)).xyz;\n  outColor = vec4(waterAt(nearW.xz, vec3(0.0)).y - nearW.y, 0.0, 0.0, 1.0);\n}", Oy = Ey + Vv + n_ + "\nuniform highp sampler2D tDepth;\nuniform highp sampler2DShadow uShadowMap;\nuniform mat4 uShadowMatrix;\nuniform float uShadowBias;\nuniform vec3 uAbsorption;\nuniform vec3 uSunDir;\nuniform vec4 uUnder;   // scattering coefficient (1/m), shaft strength, shaft range (m), -\nuniform float uFrame;  // frame index mod 64, rotates the jitter\nin vec2 vUv;\nout vec4 outColor;\n\n// light reaching a point in the water came through the surface at entry; it is lit if\n// the entry point is (terrain and floater shadows, as seen on the water surface)\nfloat lightAt(vec2 entry) {\n  vec3 e = vec3(entry.x, 0.0, entry.y);\n  vec4 sc = uShadowMatrix * vec4(e, 1.0);\n  float s = 1.0;\n  if (all(greaterThan(sc.xy, vec2(0.0))) && all(lessThan(sc.xyz, vec3(1.0)))) s = texture(uShadowMap, vec3(sc.xy, sc.z - uShadowBias));\n  return min(s, floatShadow(e));\n}\n\n// per half-res pixel: in-scattered sun along the view ray (without the sun colour and\n// strength), and the distance the composite uses to upsample without halos\nvoid main() {\n  float z = texture(tDepth, vUv).r;\n  vec3 hitV = viewPos(vUv, z * 2.0 - 1.0);\n  float dist = z > 0.999999 ? 1e5 : length(hitV);\n  vec3 dir = normalize(mat3(uCamWorld) * hitV);\n  vec3 camPos = uCamWorld[3].xyz;\n  vec3 sigT = uAbsorption + uUnder.x;\n  vec3 rs = refract(-uSunDir, vec3(0.0, 1.0, 0.0), 1.0 / 1.33);\n  vec3 acc = vec3(0.0);\n  if (rs.y < -0.05) {\n    float range = min(dist, uUnder.z);\n    const int STEPS = 24;\n    float stepL = range / float(STEPS);\n    // interleaved gradient noise, shifted by the golden ratio each frame\n    float jit = fract(52.9829189 * fract(dot(gl_FragCoord.xy, vec2(0.06711056, 0.00583715))) + uFrame * 0.618034);\n    float mu = dot(dir, -rs);\n    const float g = 0.7;\n    float phase = (1.0 - g * g) / (4.0 * PI * pow(1.0 + g * g - 2.0 * g * mu, 1.5)) + 0.04;\n    // prefilter along the ray: mip from how far one step moves through the 12 m pattern\n    // (rays sweeping across the caustics average to haze, rays along the light keep shafts)\n    vec2 dbase = dir.xz - rs.xz / rs.y * dir.y;\n    float lod = max(log2(max(length(dbase) * stepL * CAUSTIC_TEXELS_PER_M, 1.0)), 1.0);\n    for (int i = 0; i < STEPS; i++) {\n      float s = (float(i) + jit) * stepL;\n      vec3 p = camPos + dir * s;\n      float pd = -p.y;\n      if (pd <= 0.0) continue;\n      vec2 entry = p.xz + rs.xz / rs.y * pd;\n      acc += waveCaustic(entry, pd, lod) * lightAt(entry) * exp(-sigT * (s + pd / -rs.y)) * smoothstep(0.0, 0.6, pd);\n    }\n    acc *= phase * stepL;\n  }\n  outColor = vec4(acc, dist);\n}", ky = Ey + "\nuniform sampler2D tColor;\nuniform highp sampler2D tDepth;\nuniform sampler2D tLens;\nuniform highp sampler2D tShafts;\nuniform samplerCube uSkyCube;\nuniform float uSkyMaxLod;\nuniform vec3 uAbsorption;\nuniform vec3 uScatterColor;\nuniform vec3 uSunDir;\nuniform vec3 uSunColor;\nuniform vec4 uUnder;   // scattering coefficient (1/m), shaft strength, shaft range (m), meniscus darkening\nuniform float uFull;   // 1: camera deep enough that the whole near plane is submerged\nin vec2 vUv;\nout vec4 outColor;\n\n// alpha tag from the water pass: 0 underside, 1 no water, 2 top (edges average between)\nfloat isFront(float a) { return step(1.5, a); }\nfloat isBack(float a) { return step(a, 0.5); }\n\n// half-res shafts back to full res, weighting the 4 nearest by distance agreement so\n// shafts in front of an object don't bleed onto it\nvec3 shafts(vec2 uv, float dist) {\n  vec2 hs = vec2(textureSize(tShafts, 0));\n  vec2 st = uv * hs - 0.5;\n  vec2 f = fract(st);\n  ivec2 i0 = ivec2(floor(st));\n  vec3 sum = vec3(0.0);\n  float wsum = 1e-5;\n  for (int k = 0; k < 4; k++) {\n    ivec2 o = ivec2(k & 1, k >> 1);\n    vec4 t = texelFetch(tShafts, clamp(i0 + o, ivec2(0), ivec2(hs) - 1), 0);\n    float w = (o.x == 1 ? f.x : 1.0 - f.x) * (o.y == 1 ? f.y : 1.0 - f.y)\n            / (1e-3 + abs(t.a - dist) / max(dist, 0.5));\n    sum += t.rgb * w;\n    wsum += w;\n  }\n  return sum / wsum;\n}\n\nvoid main() {\n  float d = uFull > 0.5 ? 10.0 : texture(tLens, vUv).r;   // lens depth\n\n  // where the pixel sees the water surface, its facing decides; elsewhere the lens\n  // test. That keeps the split consistent with the mesh even where its coarse fan\n  // around the lens disagrees with the exact height.\n  vec4 src = texture(tColor, vUv);\n  bool under = isBack(src.a) > 0.5 || (isFront(src.a) < 0.5 && d > 0.0);\n\n  // meniscus: a dark line where the top of the surface meets its underside on screen\n  float meniscus = 1.0;\n  if (uFull < 0.5) {\n    vec2 px = 2.0 / vec2(textureSize(tColor, 0));\n    float f = 0.0, b = 0.0;\n    for (int i = 0; i < 4; i++) {\n      vec2 o = vec2(i == 0 ? px.x : i == 1 ? -px.x : 0.0, i == 2 ? px.y : i == 3 ? -px.y : 0.0);\n      float a = texture(tColor, vUv + o).a;\n      f += isFront(a);\n      b += isBack(a);\n    }\n    // only near the lens: far front/back boundaries are folded crests, not the waterline\n    meniscus -= uUnder.w * max(isFront(src.a) * min(b, 1.0), isBack(src.a) * min(f, 1.0))\n              * smoothstep(0.35, 0.1, abs(d));\n  }\n  if (!under) {\n    outColor = vec4(src.rgb * meniscus, 1.0);\n    return;\n  }\n  d = max(d, 0.0);\n\n  // slight refractive wobble of the whole image\n  vec2 uv = vUv + vec2(sin(vUv.y * 37.0 + uTime * 1.9), cos(vUv.x * 29.0 + uTime * 1.6)) * 0.0012;\n  vec3 col = texture(tColor, uv).rgb;\n  float z = texture(tDepth, uv).r;\n  vec3 hitV = viewPos(uv, z * 2.0 - 1.0);\n  float dist = z > 0.999999 ? 1e5 : length(hitV);\n  vec3 dir = normalize(mat3(uCamWorld) * hitV);\n\n  vec3 sigT = uAbsorption + uUnder.x;\n  // in-scatter: the surface underside's deep-water colour, darker with depth and\n  // brighter looking up towards the light\n  vec3 ambient = textureLod(uSkyCube, vec3(0.0, 1.0, 0.0), uSkyMaxLod).rgb;\n  vec3 fogCol = uScatterColor * (ambient + uSunColor * max(uSunDir.y, 0.0))\n              * exp(-uAbsorption * d * 0.5) * mix(0.55, 1.35, dir.y * 0.5 + 0.5);\n  vec3 T = exp(-sigT * dist);\n  col = col * T + fogCol * (1.0 - T);\n  if (uUnder.y > 0.0) col += uSunColor * shafts(uv, dist) * (uUnder.x * uUnder.y);\n\n  outColor = vec4(col * meniscus, 1.0);\n}", Ay = class {
+`, Ey = Ty + "\nin vec2 vUv;\nout vec4 outColor;\nvoid main() {\n  vec3 nearW = (uCamWorld * vec4(viewPos(vUv, -1.0), 1.0)).xyz;\n  outColor = vec4(waterAt(nearW.xz, vec3(0.0)).y - nearW.y, 0.0, 0.0, 1.0);\n}", Dy = Ty + Bv + n_ + "\nuniform highp sampler2D tDepth;\nuniform highp sampler2DShadow uShadowMap;\nuniform mat4 uShadowMatrix;\nuniform float uShadowBias;\nuniform vec3 uAbsorption;\nuniform vec3 uSunDir;\nuniform vec4 uUnder;   // scattering coefficient (1/m), shaft strength, shaft range (m), -\nuniform float uFrame;  // frame index mod 64, rotates the jitter\nin vec2 vUv;\nout vec4 outColor;\n\n// light reaching a point in the water came through the surface at entry; it is lit if\n// the entry point is (terrain and floater shadows, as seen on the water surface)\nfloat lightAt(vec2 entry) {\n  vec3 e = vec3(entry.x, 0.0, entry.y);\n  vec4 sc = uShadowMatrix * vec4(e, 1.0);\n  float s = 1.0;\n  if (all(greaterThan(sc.xy, vec2(0.0))) && all(lessThan(sc.xyz, vec3(1.0)))) s = texture(uShadowMap, vec3(sc.xy, sc.z - uShadowBias));\n  return min(s, floatShadow(e));\n}\n\n// per half-res pixel: in-scattered sun along the view ray (without the sun colour and\n// strength), and the distance the composite uses to upsample without halos\nvoid main() {\n  float z = texture(tDepth, vUv).r;\n  vec3 hitV = viewPos(vUv, z * 2.0 - 1.0);\n  float dist = z > 0.999999 ? 1e5 : length(hitV);\n  vec3 dir = normalize(mat3(uCamWorld) * hitV);\n  vec3 camPos = uCamWorld[3].xyz;\n  vec3 sigT = uAbsorption + uUnder.x;\n  vec3 rs = refract(-uSunDir, vec3(0.0, 1.0, 0.0), 1.0 / 1.33);\n  vec3 acc = vec3(0.0);\n  if (rs.y < -0.05) {\n    float range = min(dist, uUnder.z);\n    const int STEPS = 24;\n    float stepL = range / float(STEPS);\n    // interleaved gradient noise, shifted by the golden ratio each frame\n    float jit = fract(52.9829189 * fract(dot(gl_FragCoord.xy, vec2(0.06711056, 0.00583715))) + uFrame * 0.618034);\n    float mu = dot(dir, -rs);\n    const float g = 0.7;\n    float phase = (1.0 - g * g) / (4.0 * PI * pow(1.0 + g * g - 2.0 * g * mu, 1.5)) + 0.04;\n    // prefilter along the ray: mip from how far one step moves through the 12 m pattern\n    // (rays sweeping across the caustics average to haze, rays along the light keep shafts)\n    vec2 dbase = dir.xz - rs.xz / rs.y * dir.y;\n    float lod = max(log2(max(length(dbase) * stepL * CAUSTIC_TEXELS_PER_M, 1.0)), 1.0);\n    for (int i = 0; i < STEPS; i++) {\n      float s = (float(i) + jit) * stepL;\n      vec3 p = camPos + dir * s;\n      float pd = -p.y;\n      if (pd <= 0.0) continue;\n      vec2 entry = p.xz + rs.xz / rs.y * pd;\n      acc += waveCaustic(entry, pd, lod) * lightAt(entry) * exp(-sigT * (s + pd / -rs.y)) * smoothstep(0.0, 0.6, pd);\n    }\n    acc *= phase * stepL;\n  }\n  outColor = vec4(acc, dist);\n}", Oy = Ty + "\nuniform sampler2D tColor;\nuniform highp sampler2D tDepth;\nuniform sampler2D tLens;\nuniform highp sampler2D tShafts;\nuniform samplerCube uSkyCube;\nuniform float uSkyMaxLod;\nuniform vec3 uAbsorption;\nuniform vec3 uScatterColor;\nuniform vec3 uSunDir;\nuniform vec3 uSunColor;\nuniform vec4 uUnder;   // scattering coefficient (1/m), shaft strength, shaft range (m), meniscus darkening\nuniform float uFull;   // 1: camera deep enough that the whole near plane is submerged\nin vec2 vUv;\nout vec4 outColor;\n\n// alpha tag from the water pass: 0 underside, 1 no water, 2 top (edges average between)\nfloat isFront(float a) { return step(1.5, a); }\nfloat isBack(float a) { return step(a, 0.5); }\n\n// half-res shafts back to full res, weighting the 4 nearest by distance agreement so\n// shafts in front of an object don't bleed onto it\nvec3 shafts(vec2 uv, float dist) {\n  vec2 hs = vec2(textureSize(tShafts, 0));\n  vec2 st = uv * hs - 0.5;\n  vec2 f = fract(st);\n  ivec2 i0 = ivec2(floor(st));\n  vec3 sum = vec3(0.0);\n  float wsum = 1e-5;\n  for (int k = 0; k < 4; k++) {\n    ivec2 o = ivec2(k & 1, k >> 1);\n    vec4 t = texelFetch(tShafts, clamp(i0 + o, ivec2(0), ivec2(hs) - 1), 0);\n    float w = (o.x == 1 ? f.x : 1.0 - f.x) * (o.y == 1 ? f.y : 1.0 - f.y)\n            / (1e-3 + abs(t.a - dist) / max(dist, 0.5));\n    sum += t.rgb * w;\n    wsum += w;\n  }\n  return sum / wsum;\n}\n\nvoid main() {\n  float d = uFull > 0.5 ? 10.0 : texture(tLens, vUv).r;   // lens depth\n\n  // where the pixel sees the water surface, its facing decides; elsewhere the lens\n  // test. That keeps the split consistent with the mesh even where its coarse fan\n  // around the lens disagrees with the exact height.\n  vec4 src = texture(tColor, vUv);\n  bool under = isBack(src.a) > 0.5 || (isFront(src.a) < 0.5 && d > 0.0);\n\n  // meniscus: a dark line where the top of the surface meets its underside on screen\n  float meniscus = 1.0;\n  if (uFull < 0.5) {\n    vec2 px = 2.0 / vec2(textureSize(tColor, 0));\n    float f = 0.0, b = 0.0;\n    for (int i = 0; i < 4; i++) {\n      vec2 o = vec2(i == 0 ? px.x : i == 1 ? -px.x : 0.0, i == 2 ? px.y : i == 3 ? -px.y : 0.0);\n      float a = texture(tColor, vUv + o).a;\n      f += isFront(a);\n      b += isBack(a);\n    }\n    // only near the lens: far front/back boundaries are folded crests, not the waterline\n    meniscus -= uUnder.w * max(isFront(src.a) * min(b, 1.0), isBack(src.a) * min(f, 1.0))\n              * smoothstep(0.35, 0.1, abs(d));\n  }\n  if (!under) {\n    outColor = vec4(src.rgb * meniscus, 1.0);\n    return;\n  }\n  d = max(d, 0.0);\n\n  // slight refractive wobble of the whole image\n  vec2 uv = vUv + vec2(sin(vUv.y * 37.0 + uTime * 1.9), cos(vUv.x * 29.0 + uTime * 1.6)) * 0.0012;\n  vec3 col = texture(tColor, uv).rgb;\n  float z = texture(tDepth, uv).r;\n  vec3 hitV = viewPos(uv, z * 2.0 - 1.0);\n  float dist = z > 0.999999 ? 1e5 : length(hitV);\n  vec3 dir = normalize(mat3(uCamWorld) * hitV);\n\n  vec3 sigT = uAbsorption + uUnder.x;\n  // in-scatter: the surface underside's deep-water colour, darker with depth and\n  // brighter looking up towards the light\n  vec3 ambient = textureLod(uSkyCube, vec3(0.0, 1.0, 0.0), uSkyMaxLod).rgb;\n  vec3 fogCol = uScatterColor * (ambient + uSunColor * max(uSunDir.y, 0.0))\n              * exp(-uAbsorption * d * 0.5) * mix(0.55, 1.35, dir.y * 0.5 + 0.5);\n  vec3 T = exp(-sigT * dist);\n  col = col * T + fogCol * (1.0 - T);\n  if (uUnder.y > 0.0) col += uSunColor * shafts(uv, dist) * (uUnder.x * uUnder.y);\n\n  outColor = vec4(col * meniscus, 1.0);\n}", ky = class {
 	constructor(e, t, n) {
 		this.params = {
 			scattering: .03,
@@ -20735,7 +20717,7 @@ vec3 viewPos(vec2 uv, float ndcZ) {
 			uUnder: { value: new Fn() },
 			uFull: { value: 0 },
 			uFrame: { value: 0 }
-		}, this.quad = new Hg(Vg(ky, this.uniforms)), this.shaftQuad = new Hg(Vg(Oy, this.uniforms)), this.lensQuad = new Hg(Vg(Dy, this.uniforms));
+		}, this.quad = new Hg(Vg(Oy, this.uniforms)), this.shaftQuad = new Hg(Vg(Dy, this.uniforms)), this.lensQuad = new Hg(Vg(Ey, this.uniforms));
 		let r = {
 			type: T,
 			minFilter: l,
@@ -20761,7 +20743,7 @@ vec3 viewPos(vec2 uv, float ndcZ) {
 		let r = this.uniforms, i = this.params;
 		return r.tColor.value = t.texture, r.tDepth.value = t.depthTexture, r.uUnder.value.set(i.scattering, i.shafts, i.shaftRange, i.meniscus), r.uFull.value = +!!n, r.uFrame.value = (r.uFrame.value + 1) % 64, n || this.lensQuad.render(e, this.lens), i.shafts > 0 && this.shaftQuad.render(e, this.shaftRT), this.quad.render(e, this.target), this.target.texture;
 	}
-}, jy = `
+}, Ay = `
 precision highp float;
 ${p_}
 uniform vec3 uSunDir;
@@ -20790,8 +20772,8 @@ void billboard(vec3 p, float size) {
   vec3 sky = textureLod(uSkyCube, vec3(0.0, 1.0, 0.0), uSkyMaxLod).rgb;
   vLight = 0.9 * (uSunColor * (0.25 + 1.6 * phase) + sky * 1.1);
 }
-`, My = jy + "\nin vec4 aEmit;              // emitter xz, two randoms\n\nvoid main() {\n  vAlpha = 0.0;\n  gl_Position = vec4(2.0, 2.0, 2.0, 1.0);   // dead instances fall outside the clip volume\n  vec2 e = aEmit.xy;\n  float r1 = aEmit.z, r2 = aEmit.w;\n  vec2 toE = e - cameraPosition.xz;\n  if (dot(toE, toE) > uSpray.z * uSpray.z) return;\n\n  Shore s = shoreWaves(e, shoreSample(e));\n  float a = s.wave0.x, k = s.wave0.y, w = s.wave0.z;\n  float strength = s.breaking0 * smoothstep(0.08, 0.35, a);\n  if (strength <= 0.01) return;\n  // seconds since the crest passed this emitter, staggered per particle\n  float psi = mod(s.wave0.w + PI, 2.0 * PI) - PI;\n  float age = psi / w - r1 * 0.3;\n  float life = 0.9 + 1.5 * r2;\n  if (age < 0.0 || age > life) return;\n\n  // thrown with the crest (towards the beach) and up, slowed by air drag\n  const float KD = 1.7, G = 9.81;\n  float ex = (1.0 - exp(-KD * age)) / KD;\n  float c = w / k;\n  vec2 side = vec2(-s.dir.y, s.dir.x) * (fract(r1 * 31.7) - 0.5) * 1.6;\n  vec2 xz = e + side + s.dir * c * (0.25 + 0.45 * fract(r2 * 17.3)) * ex;\n  float vy = (1.2 + 3.2 * fract(r1 * 7.9)) * sqrt(a);\n  float y = 1.1 * a + (vy + G / KD) * ex - G * age / KD;\n  if (y < -0.3) return;\n\n  float size = (0.1 + 0.6 * age) * (0.6 + 0.8 * fract(r2 * 5.3)) * uSpray.y * sqrt(a / 0.5);\n  billboard(vec3(xz.x, y, xz.y), size);\n  vSeed = r1;\n  vAlpha = strength * uSpray.x * smoothstep(0.0, 0.12, age) * pow(1.0 - age / life, 1.5)\n         * smoothstep(-0.3, 0.2, y) * smoothstep(uSpray.z, uSpray.z * 0.7, sqrt(dot(toE, toE)))\n         * smoothstep(2.5, 10.0, vViewZ);   // no giant blobs on the lens\n}", Ny = jy + "\nvoid main() {\n  vAlpha = 0.0;\n  gl_Position = vec4(2.0, 2.0, 2.0, 1.0);\n  vec4 e = uImpact[gl_InstanceID % 8];\n  float L = uImpactSize[gl_InstanceID % 8];\n  float r1 = hash12(vec2(float(gl_InstanceID), 1.7)), r2 = hash12(vec2(float(gl_InstanceID), 8.3));\n  float r3 = hash12(vec2(float(gl_InstanceID), 4.1));\n  float life = 0.5 + 1.1 * r2;\n  float age = e.z;\n  if (e.w <= 0.0 || age > life) return;\n  const float KD = 1.2, G = 9.81;\n  float ex = (1.0 - exp(-KD * age)) / KD;\n  float ang = r1 * 2.0 * PI;\n  vec2 out_ = vec2(cos(ang), sin(ang));\n  float strength = sqrt(e.w / 0.2);\n  float vy = (1.5 + 4.0 * r3 * r3) * strength;\n  vec2 xz = e.xy + out_ * (L * (0.6 + 0.5 * r2) + (0.5 + 2.0 * r3) * strength * ex);\n  float y = (vy + G / KD) * ex - G * age / KD;\n  if (y < -0.2) return;\n  billboard(vec3(xz.x, y, xz.y), (0.05 + 0.25 * age) * (0.5 + r2) * uSpray.y);\n  vSeed = r1;\n  vAlpha = uSpray.x * 0.6 * smoothstep(0.0, 0.05, age) * pow(1.0 - age / life, 1.5)\n         * smoothstep(-0.2, 0.1, y) * smoothstep(1.0, 4.0, vViewZ);\n}", Py = "\nprecision highp float;\nuniform sampler2D uSceneDepth;\nuniform sampler2D uFoamTex;\nuniform vec2 uResolution;\nuniform vec2 uNearFar;\nin vec2 vUv;\nin float vAlpha;\nin vec3 vLight;\nin float vSeed;\nin float vViewZ;\nout vec4 fragColor;\n\nvoid main() {\n  float r = length(vUv);\n  if (vAlpha <= 0.0 || r > 1.0) discard;\n  // soft gaussian puff, broken up only at low frequency so it reads as mist\n  float n = texture(uFoamTex, vUv * 0.08 + vSeed * 17.0).r;\n  float a = vAlpha * exp(-3.5 * r * r) * (0.5 + n);\n  // soft against the opaque scene (the water surface itself is handled by the depth test)\n  float d = texelFetch(uSceneDepth, ivec2(gl_FragCoord.xy), 0).r * 2.0 - 1.0;\n  float sceneZ = 2.0 * uNearFar.x * uNearFar.y / (uNearFar.y + uNearFar.x - d * (uNearFar.y - uNearFar.x));\n  a *= clamp((sceneZ - vViewZ) / 0.8, 0.0, 1.0);\n  fragColor = vec4(vLight * a, a);\n}";
-function Fy(e, t) {
+`, jy = Ay + "\nin vec4 aEmit;              // emitter xz, two randoms\n\nvoid main() {\n  vAlpha = 0.0;\n  gl_Position = vec4(2.0, 2.0, 2.0, 1.0);   // dead instances fall outside the clip volume\n  vec2 e = aEmit.xy;\n  float r1 = aEmit.z, r2 = aEmit.w;\n  vec2 toE = e - cameraPosition.xz;\n  if (dot(toE, toE) > uSpray.z * uSpray.z) return;\n\n  Shore s = shoreWaves(e, shoreSample(e));\n  float a = s.wave0.x, k = s.wave0.y, w = s.wave0.z;\n  float strength = s.breaking0 * smoothstep(0.08, 0.35, a);\n  if (strength <= 0.01) return;\n  // seconds since the crest passed this emitter, staggered per particle\n  float psi = mod(s.wave0.w + PI, 2.0 * PI) - PI;\n  float age = psi / w - r1 * 0.3;\n  float life = 0.9 + 1.5 * r2;\n  if (age < 0.0 || age > life) return;\n\n  // thrown with the crest (towards the beach) and up, slowed by air drag\n  const float KD = 1.7, G = 9.81;\n  float ex = (1.0 - exp(-KD * age)) / KD;\n  float c = w / k;\n  vec2 side = vec2(-s.dir.y, s.dir.x) * (fract(r1 * 31.7) - 0.5) * 1.6;\n  vec2 xz = e + side + s.dir * c * (0.25 + 0.45 * fract(r2 * 17.3)) * ex;\n  float vy = (1.2 + 3.2 * fract(r1 * 7.9)) * sqrt(a);\n  float y = 1.1 * a + (vy + G / KD) * ex - G * age / KD;\n  if (y < -0.3) return;\n\n  float size = (0.1 + 0.6 * age) * (0.6 + 0.8 * fract(r2 * 5.3)) * uSpray.y * sqrt(a / 0.5);\n  billboard(vec3(xz.x, y, xz.y), size);\n  vSeed = r1;\n  vAlpha = strength * uSpray.x * smoothstep(0.0, 0.12, age) * pow(1.0 - age / life, 1.5)\n         * smoothstep(-0.3, 0.2, y) * smoothstep(uSpray.z, uSpray.z * 0.7, sqrt(dot(toE, toE)))\n         * smoothstep(2.5, 10.0, vViewZ);   // no giant blobs on the lens\n}", My = Ay + "\nvoid main() {\n  vAlpha = 0.0;\n  gl_Position = vec4(2.0, 2.0, 2.0, 1.0);\n  vec4 e = uImpact[gl_InstanceID % 8];\n  float L = uImpactSize[gl_InstanceID % 8];\n  float r1 = hash12(vec2(float(gl_InstanceID), 1.7)), r2 = hash12(vec2(float(gl_InstanceID), 8.3));\n  float r3 = hash12(vec2(float(gl_InstanceID), 4.1));\n  float life = 0.5 + 1.1 * r2;\n  float age = e.z;\n  if (e.w <= 0.0 || age > life) return;\n  const float KD = 1.2, G = 9.81;\n  float ex = (1.0 - exp(-KD * age)) / KD;\n  float ang = r1 * 2.0 * PI;\n  vec2 out_ = vec2(cos(ang), sin(ang));\n  float strength = sqrt(e.w / 0.2);\n  float vy = (1.5 + 4.0 * r3 * r3) * strength;\n  vec2 xz = e.xy + out_ * (L * (0.6 + 0.5 * r2) + (0.5 + 2.0 * r3) * strength * ex);\n  float y = (vy + G / KD) * ex - G * age / KD;\n  if (y < -0.2) return;\n  billboard(vec3(xz.x, y, xz.y), (0.05 + 0.25 * age) * (0.5 + r2) * uSpray.y);\n  vSeed = r1;\n  vAlpha = uSpray.x * 0.6 * smoothstep(0.0, 0.05, age) * pow(1.0 - age / life, 1.5)\n         * smoothstep(-0.2, 0.1, y) * smoothstep(1.0, 4.0, vViewZ);\n}", Ny = "\nprecision highp float;\nuniform sampler2D uSceneDepth;\nuniform sampler2D uFoamTex;\nuniform vec2 uResolution;\nuniform vec2 uNearFar;\nin vec2 vUv;\nin float vAlpha;\nin vec3 vLight;\nin float vSeed;\nin float vViewZ;\nout vec4 fragColor;\n\nvoid main() {\n  float r = length(vUv);\n  if (vAlpha <= 0.0 || r > 1.0) discard;\n  // soft gaussian puff, broken up only at low frequency so it reads as mist\n  float n = texture(uFoamTex, vUv * 0.08 + vSeed * 17.0).r;\n  float a = vAlpha * exp(-3.5 * r * r) * (0.5 + n);\n  // soft against the opaque scene (the water surface itself is handled by the depth test)\n  float d = texelFetch(uSceneDepth, ivec2(gl_FragCoord.xy), 0).r * 2.0 - 1.0;\n  float sceneZ = 2.0 * uNearFar.x * uNearFar.y / (uNearFar.y + uNearFar.x - d * (uNearFar.y - uNearFar.x));\n  a *= clamp((sceneZ - vViewZ) / 0.8, 0.0, 1.0);\n  fragColor = vec4(vLight * a, a);\n}";
+function Py(e, t) {
 	let { data: n, size: r, extent: i } = e, a = new Float32Array(t * 4), o = 11, s = 0, c = () => (o = Math.imul(o, 1664525) + 1013904223 >>> 0) / 4294967296;
 	for (let e = 0; s < t && e < t * 400; e++) {
 		let e = Math.floor(c() * r), t = Math.floor(c() * r), o = (t * r + e) * 4, l = -n[o], u = n[o + 1];
@@ -20807,7 +20789,7 @@ function Fy(e, t) {
 		count: s
 	};
 }
-function Iy(e) {
+function Fy(e) {
 	let t = new Eu();
 	return t.setAttribute("position", new X([
 		-1,
@@ -20831,9 +20813,9 @@ function Iy(e) {
 		3
 	]), t.instanceCount = e, t;
 }
-var Ly = class {
+var Iy = class {
 	constructor(e, t, n = 15e4) {
-		let r = Fy(t, n), i = Iy(r.count);
+		let r = Py(t, n), i = Fy(r.count);
 		i.setAttribute("aEmit", new Ra(r.data, 4)), this.params = {
 			amount: 1,
 			size: 1,
@@ -20845,7 +20827,7 @@ var Ly = class {
 		let a = (e) => new Zc({
 			glslVersion: vt,
 			vertexShader: e,
-			fragmentShader: Py,
+			fragmentShader: Ny,
 			uniforms: this.uniforms,
 			transparent: !0,
 			depthWrite: !1,
@@ -20855,13 +20837,13 @@ var Ly = class {
 			blendSrcAlpha: 200,
 			blendDstAlpha: 201
 		});
-		this.mesh = new ba(i, a(My)), this.mesh.frustumCulled = !1, this.splash = new ba(Iy(1280), a(Ny)), this.splash.frustumCulled = !1;
+		this.mesh = new ba(i, a(jy)), this.mesh.frustumCulled = !1, this.splash = new ba(Fy(1280), a(My)), this.splash.frustumCulled = !1;
 	}
 	update() {
 		let e = this.params;
 		this.uniforms.uSpray.value.set(e.amount, e.size, e.distance), this.mesh.visible = this.splash.visible = e.amount > 0;
 	}
-}, Ry = 24, zy = `
+}, Ly = 24, Ry = `
 in vec3 aSeed;
 uniform float uTime;
 uniform vec3 uScatterColor;
@@ -20871,9 +20853,9 @@ uniform float uPx;      // pixels per metre at 1 m (projection scale)
 out vec3 vCol;
 void main() {
   // slow drift + wobble, wrapped into a box centred on the camera
-  vec3 p = aSeed * ${Ry.toFixed(1)} + vec3(0.11, -0.03, 0.07) * uTime
+  vec3 p = aSeed * ${Ly.toFixed(1)} + vec3(0.11, -0.03, 0.07) * uTime
          + 0.3 * sin(uTime * (0.3 + aSeed.yzx) + aSeed.zxy * 40.0);
-  p = cameraPosition + mod(p - cameraPosition + ${(Ry / 2).toFixed(1)}, ${Ry.toFixed(1)}) - ${(Ry / 2).toFixed(1)};
+  p = cameraPosition + mod(p - cameraPosition + ${(Ly / 2).toFixed(1)}, ${Ly.toFixed(1)}) - ${(Ly / 2).toFixed(1)};
   vec4 view = viewMatrix * vec4(p, 1.0);
   gl_Position = projectionMatrix * view;
   float size = (0.004 + 0.01 * fract(aSeed.x * 91.7)) * uPx / max(-view.z, 0.1);
@@ -20881,7 +20863,7 @@ void main() {
   vCol = uScatterColor * (uSunColor * max(uSunDir.y, 0.0) + 1.0) * 4.0 * (0.4 + fract(aSeed.y * 37.1));
   // too close to the lens: skip
   if (-view.z < 0.4 || p.y > 0.0) gl_Position = vec4(2.0, 2.0, 2.0, 1.0);
-}`, By = "\nprecision highp float;\nin vec3 vCol;\nout vec4 fragColor;\nvoid main() {\n  if (length(gl_PointCoord - 0.5) > 0.5) discard;\n  fragColor = vec4(vCol, 1.0);\n}", Vy = class {
+}`, zy = "\nprecision highp float;\nin vec3 vCol;\nout vec4 fragColor;\nvoid main() {\n  if (length(gl_PointCoord - 0.5) > 0.5) discard;\n  fragColor = vec4(vCol, 1.0);\n}", By = class {
 	constructor(e, t = 6e3) {
 		let n = new Float32Array(t * 3), r = 3;
 		for (let e = 0; e < n.length; e++) n[e] = (r = Math.imul(r, 1664525) + 1013904223 >>> 0) / 4294967296;
@@ -20896,28 +20878,28 @@ void main() {
 			uPx: { value: 1e3 }
 		}, this.mesh = new Ro(i, new Zc({
 			glslVersion: vt,
-			vertexShader: zy,
-			fragmentShader: By,
+			vertexShader: Ry,
+			fragmentShader: zy,
 			uniforms: this.uniforms
 		})), this.mesh.frustumCulled = !1, this.mesh.renderOrder = 1;
 	}
 	update(e, t, n) {
 		this.mesh.visible = n, this.uniforms.uPx.value = t / (2 * Math.tan(mn.degToRad(e.fov) / 2));
 	}
-}, Hy = [
+}, Vy = [
 	"crate",
 	"barrel",
 	"buoy",
 	"boat"
-], Uy = (e, t = 1) => new Y(e).multiplyScalar(t);
-function Wy(e) {
+], Hy = (e, t = 1) => new Y(e).multiplyScalar(t);
+function Uy(e) {
 	return () => {
 		e = e + 1831565813 | 0;
 		let t = Math.imul(e ^ e >>> 15, 1 | e);
 		return t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t, ((t ^ t >>> 14) >>> 0) / 4294967296;
 	};
 }
-function Gy(e, t) {
+function Wy(e, t) {
 	let n = new Float32Array(e * 3);
 	for (let r = 0; r < e; r++) {
 		let e = t(r);
@@ -20925,8 +20907,8 @@ function Gy(e, t) {
 	}
 	return new li(n, 3);
 }
-var Ky = (e, t) => e.setAttribute("color", Gy(e.attributes.position.count, () => t)), qy = (e, t, n, r, i, a, o) => Ky(new Qo(e, t, n).translate(r, i, a), o);
-function Jy(e) {
+var Gy = (e, t) => e.setAttribute("color", Wy(e.attributes.position.count, () => t)), Ky = (e, t, n, r, i, a, o) => Gy(new Qo(e, t, n).translate(r, i, a), o);
+function qy(e) {
 	let t = 0;
 	for (let n = 1; n < e.length; n++) {
 		let r = e[n - 1], i = e[n];
@@ -20934,7 +20916,7 @@ function Jy(e) {
 	}
 	return t;
 }
-function Yy(e) {
+function Jy(e) {
 	let t = e.attributes.position, n = new q(), r = new q(), i = new q(), a = 0, o = 0;
 	for (let e = 0; e < t.count; e += 3) {
 		n.fromBufferAttribute(t, e), r.fromBufferAttribute(t, e + 1), i.fromBufferAttribute(t, e + 2);
@@ -20946,8 +20928,8 @@ function Yy(e) {
 		cx: o / a
 	};
 }
-function Xy() {
-	let e = Wy(11), t = .9, n = .09, r = .45 - n / 2, i = [qy(.84, .84, .84, 0, 0, 0, Uy(3023127))];
+function Yy() {
+	let e = Uy(11), t = .9, n = .09, r = .45 - n / 2, i = [Ky(.84, .84, .84, 0, 0, 0, Hy(3023127))];
 	for (let a = 0; a < 3; a++) for (let o of [-1, 1]) for (let s of [-1, 1]) {
 		let c = [
 			n,
@@ -20958,7 +20940,7 @@ function Xy() {
 			0,
 			0
 		];
-		c[a] = t, l[(a + 1) % 3] = o * r, l[(a + 2) % 3] = s * r, i.push(qy(...c, ...l, Uy(7228719, .9 + .2 * e())));
+		c[a] = t, l[(a + 1) % 3] = o * r, l[(a + 2) % 3] = s * r, i.push(Ky(...c, ...l, Hy(7228719, .9 + .2 * e())));
 	}
 	for (let t = 0; t < 3; t++) for (let n of [-1, 1]) {
 		let r = (t + 1) % 3, a = (t + 2) % 3;
@@ -20972,7 +20954,7 @@ function Xy() {
 				0,
 				0
 			];
-			s[t] = .04, s[r] = .78, s[a] = .13599999999999998, c[t] = n * .41000000000000003, c[a] = (o + .5 - 5 / 2) * .144, i.push(qy(...s, ...c, Uy(11041611, .85 + .3 * e())));
+			s[t] = .04, s[r] = .78, s[a] = .13599999999999998, c[t] = n * .41000000000000003, c[a] = (o + .5 - 5 / 2) * .144, i.push(Ky(...s, ...c, Hy(11041611, .85 + .3 * e())));
 		}
 	}
 	let a = t / 4, o = [];
@@ -20987,7 +20969,7 @@ function Xy() {
 		cellHeight: t / 2
 	};
 }
-function Zy() {
+function Xy() {
 	let e = .95, t = .27, n = [
 		[-.44, -.375],
 		[-.22, -.17],
@@ -20998,11 +20980,11 @@ function Zy() {
 	for (let t = 0; t <= 40; t++) i.push(-.95 / 2 + e * t / 40);
 	for (let [e, t] of n) i.push(e - .0015, e + .0015, t - .0015, t + .0015);
 	i.sort((e, t) => e - t);
-	let a = i.map((n) => new K(t + .04999999999999999 * (1 - (2 * n / e) ** 2) + (r(n) ? .012 : 0), n)), o = new Oc(a, 24), s = Wy(5), c = Array.from({ length: 24 }, () => .85 + .3 * s()), l = Uy(9255725), u = Uy(2764082), d = o.attributes.position;
-	o.setAttribute("color", Gy(d.count, (e) => r(d.getY(e)) ? u : l.clone().multiplyScalar(c[Math.floor(e / a.length) % 24]))), o.rotateZ(Math.PI / 2);
-	let f = [Uy(10252872), Uy(7294511)], p = [-1, 1].map((n) => {
+	let a = i.map((n) => new K(t + .04999999999999999 * (1 - (2 * n / e) ** 2) + (r(n) ? .012 : 0), n)), o = new Oc(a, 24), s = Uy(5), c = Array.from({ length: 24 }, () => .85 + .3 * s()), l = Hy(9255725), u = Hy(2764082), d = o.attributes.position;
+	o.setAttribute("color", Wy(d.count, (e) => r(d.getY(e)) ? u : l.clone().multiplyScalar(c[Math.floor(e / a.length) % 24]))), o.rotateZ(Math.PI / 2);
+	let f = [Hy(10252872), Hy(7294511)], p = [-1, 1].map((n) => {
 		let r = new es(t, 24).rotateY(n * Math.PI / 2).translate(n * e / 2, 0, 0);
-		return r.setAttribute("color", Gy(r.attributes.position.count, (e) => f[+!!e]));
+		return r.setAttribute("color", Wy(r.attributes.position.count, (e) => f[+!!e]));
 	}), m = [];
 	for (let t of [
 		-3 * e / 8,
@@ -21014,13 +20996,13 @@ function Zy() {
 		geo: vv([o, ...p]),
 		rough: .7,
 		metal: .1,
-		volume: Jy(a),
+		volume: qy(a),
 		density: 420,
 		samples: m,
 		cellHeight: .32
 	};
 }
-function Qy() {
+function Zy() {
 	let e = .5, t = .1, n = .06, r = .11, i = Math.sqrt(e * e - t * t), a = Math.asin(i / e), o = [];
 	for (let t = 0; t <= 40; t++) o.push(e * Math.sin(-a + 2 * a * t / 40));
 	for (let e of [-.11, r]) o.push(e - .003, e + .003);
@@ -21031,20 +21013,20 @@ function Qy() {
 		...o.map((t) => new K(Math.sqrt(e * e - t * t), t)),
 		new K(t, .56),
 		new K(0, .56)
-	], c = Uy(12855838), l = Uy(15262936), u = Uy(2764082), d = new Oc(s, 28), f = d.attributes.position;
-	d.setAttribute("color", Gy(f.count, (e) => {
+	], c = Hy(12855838), l = Hy(15262936), u = Hy(2764082), d = new Oc(s, 28), f = d.attributes.position;
+	d.setAttribute("color", Wy(f.count, (e) => {
 		let t = f.getY(e);
 		return t < -i + 1e-4 || t > i - 1e-4 ? u : Math.abs(t) <= r ? l : c;
 	}));
 	let p = [
 		d,
-		Ky(new ts(.022, .028, .45, 8).translate(0, .775, 0), Uy(8093831)),
-		Ky(new ts(.1, .1, .016, 12).translate(0, 1, 0), u),
-		Ky(new ns(.1, .15, 12).translate(0, 1.225, 0), c)
+		Gy(new ts(.022, .028, .45, 8).translate(0, .775, 0), Hy(8093831)),
+		Gy(new ts(.1, .1, .016, 12).translate(0, 1, 0), u),
+		Gy(new ns(.1, .15, 12).translate(0, 1.225, 0), c)
 	];
 	for (let e = 0; e < 4; e++) {
 		let t = Math.PI / 4 + e * Math.PI / 2;
-		p.push(Ky(new ts(.008, .008, .15, 4).translate(.085 * Math.cos(t), 1.083, .085 * Math.sin(t)), u));
+		p.push(Gy(new ts(.008, .008, .15, 4).translate(.085 * Math.cos(t), 1.083, .085 * Math.sin(t)), u));
 	}
 	p.forEach((e) => e.translate(0, n, 0));
 	let m = .19, h = [];
@@ -21053,26 +21035,26 @@ function Qy() {
 		geo: vv(p),
 		rough: .45,
 		metal: .05,
-		volume: Jy(s),
+		volume: qy(s),
 		density: 300,
 		samples: h,
 		cellHeight: e
 	};
 }
-function $y() {
+function Qy() {
 	let e = (e, t, n, r) => {
 		let i = e + .5, a = Math.abs(2 * n), o = t + .5, s = i < .4 ? .62 + .38 * Math.sin(i / .4 * Math.PI / 2) : Math.max(.02, 1 - ((i - .4) / .6) ** 1.8), c = Math.max(0, (i - .3) / .7), l = Math.max(0, (.3 - i) / .3), u = .4 + .22 * c * c + .05 * l * l, d = -.2 + .2 * Math.max(0, (i - .5) / .5) ** 1.6 + .05 * (1 - i) ** 2 + .2 * a ** 1.5;
 		return r.set(e * 3.6, d + (u - d) * o, 2 * n * .65 * s * (.8 + .2 * o));
 	}, t = new Qo(1, 1, 1, 24, 5, 8), n = t.attributes.position, r = t.index, i = n.array.slice(), a = new q();
 	for (let t = 0; t < n.count; t++) e(i[t * 3], i[t * 3 + 1], i[t * 3 + 2], a), n.setXYZ(t, a.x, a.y, a.z);
 	t.computeVertexNormals();
-	let o = Wy(3), s = Uy(1850948), c = Uy(2789260), l = Uy(15328988), u = Uy(4861984), d = [
+	let o = Uy(3), s = Hy(1850948), c = Hy(2789260), l = Hy(15328988), u = Hy(4861984), d = [
 		s,
 		s,
 		c,
 		l,
 		u
-	], f = Array.from({ length: 8 }, (e, t) => t === 0 || t === 7 ? u : Uy(11568725, .9 + .2 * o())), p = [];
+	], f = Array.from({ length: 8 }, (e, t) => t === 0 || t === 7 ? u : Hy(11568725, .9 + .2 * o())), p = [];
 	for (let { start: e, count: n, materialIndex: a } of t.groups) for (let t = e; t < e + n; t += 3) {
 		let e = 0, n = 0;
 		for (let a = 0; a < 3; a++) {
@@ -21082,9 +21064,9 @@ function $y() {
 		e = e / 3 + .5, n = n / 3 + .5, p[t / 3] = a === 3 ? s : a === 2 ? f[Math.floor(n * 8)] : d[Math.floor(e * 5)];
 	}
 	let m = t.toNonIndexed();
-	m.setAttribute("color", Gy(m.attributes.position.count, (e) => p[Math.floor(e / 3)]));
-	let { vol: h, cx: g } = Yy(m), _ = [m];
-	for (let t of [-.1, .12]) e(t, .5, .5, a), _.push(qy(.26, .045, a.z * 2 * .76, a.x, a.y + .0125, 0, Uy(11897432)).toNonIndexed());
+	m.setAttribute("color", Wy(m.attributes.position.count, (e) => p[Math.floor(e / 3)]));
+	let { vol: h, cx: g } = Jy(m), _ = [m];
+	for (let t of [-.1, .12]) e(t, .5, .5, a), _.push(Ky(.26, .045, a.z * 2 * .76, a.x, a.y + .0125, 0, Hy(11897432)).toNonIndexed());
 	let v = [];
 	for (let t = 0; t < 4; t++) for (let n of [-.25, .25]) for (let r of [-.25, .25]) v.push(e((t + .5) / 4 - .5, n, r, new q()));
 	let y = vv(_).translate(-g, 0, 0);
@@ -21098,14 +21080,14 @@ function $y() {
 		cellHeight: .3
 	};
 }
-var eb = {
-	crate: Xy,
-	barrel: Zy,
-	buoy: Qy,
-	boat: $y
+var $y = {
+	crate: Yy,
+	barrel: Xy,
+	buoy: Zy,
+	boat: Qy
 };
-function tb(e, t) {
-	let n = eb[e];
+function eb(e, t) {
+	let n = $y[e];
 	if (!n) throw Error(`unknown floater kind: ${e}`);
 	let { geo: r, rough: i, metal: a, ...o } = n(), s = new $c({
 		vertexColors: !0,
@@ -21125,7 +21107,7 @@ function tb(e, t) {
 	};
 }
 // src/scene/floaters.js
-var nb = 1025, rb = 9.81, ib = 1 / 240, ab = 28, ob = new q(), sb = new q(), cb = new q(), lb = new q(), ub = new q(), db = new vn(), fb = new vn(), pb = new hn(), mb = new q(), hb = new q(), gb = new J(), _b = class {
+var tb = 1025, nb = 9.81, rb = 1 / 240, ib = 28, ab = new q(), ob = new q(), sb = new q(), cb = new q(), lb = new q(), ub = new vn(), db = new vn(), fb = new hn(), pb = new q(), mb = new q(), hb = new J(), gb = class {
 	constructor(e) {
 		this.desc = e, this.object = e.object, this.mass = e.density * e.volume;
 		let t = e.size, n = this.mass;
@@ -21134,12 +21116,12 @@ var nb = 1025, rb = 9.81, ib = 1 / 240, ab = 28, ob = new q(), sb = new q(), cb 
 		this.cellVolume = e.volume / r, this.cellMass = n / r, this.world = e.samples.map(() => new q()), this.water = new Float32Array(r * 4), this.lastDisp = new Float32Array(r * 3).fill(NaN);
 	}
 	place(e, t) {
-		this.pos.copy(e), this.vel.set(0, 0, 0), this.angVel.set(0, 0, 0), this.quat.setFromAxisAngle(ob.set(0, 1, 0), t), this.water.fill(0), this.lastDisp.fill(NaN), this.updateWorld();
+		this.pos.copy(e), this.vel.set(0, 0, 0), this.angVel.set(0, 0, 0), this.quat.setFromAxisAngle(ab.set(0, 1, 0), t), this.water.fill(0), this.lastDisp.fill(NaN), this.updateWorld();
 	}
 	updateWorld() {
 		for (let e = 0; e < this.world.length; e++) this.world[e].copy(this.desc.samples[e]).applyQuaternion(this.quat).add(this.pos);
 	}
-}, vb = class {
+}, _b = class {
 	constructor({ scene: e, heightAt: t, patchMaterial: n }) {
 		this.scene = new Tr(), e.add(this.scene), this.heightAt = t, this.patchMaterial = n, this.bodies = [], this.layout = 0, this.points = /* @__PURE__ */ new Float32Array(1024), this.count = 0, this.params = {
 			drag: 1.6,
@@ -21148,11 +21130,11 @@ var nb = 1025, rb = 9.81, ib = 1 / 240, ab = 28, ob = new q(), sb = new q(), cb 
 		}, this.time = 0, this.impacts = [];
 	}
 	add(e, t, n = Math.random() * Math.PI * 2) {
-		if (this.bodies.length >= ab) {
+		if (this.bodies.length >= ib) {
 			let e = this.bodies.shift();
 			this.scene.remove(e.object);
 		}
-		let r = new _b(tb(e, this.patchMaterial));
+		let r = new gb(eb(e, this.patchMaterial));
 		return r.place(t, n), this.scene.add(r.object), this.bodies.push(r), this.layout++, r;
 	}
 	clear() {
@@ -21161,7 +21143,7 @@ var nb = 1025, rb = 9.81, ib = 1 / 240, ab = 28, ob = new q(), sb = new q(), cb 
 	}
 	spawn(e, t) {
 		this.clear();
-		let n = cb.copy(t).setY(0).normalize(), r = new q(-n.z, 0, n.x), i = (t, i) => new q().copy(e).addScaledVector(n, t).addScaledVector(r, i).setY(.2);
+		let n = sb.copy(t).setY(0).normalize(), r = new q(-n.z, 0, n.x), i = (t, i) => new q().copy(e).addScaledVector(n, t).addScaledVector(r, i).setY(.2);
 		this.add("boat", i(22, -4), Math.atan2(n.x, n.z) + 1.2), this.add("buoy", i(38, 9)), [
 			[12, 3],
 			[16, -9],
@@ -21197,26 +21179,26 @@ var nb = 1025, rb = 9.81, ib = 1 / 240, ab = 28, ob = new q(), sb = new q(), cb 
 	}
 	step(e) {
 		e = Math.min(e, 1 / 20), this.time += e;
-		let t = Math.max(1, Math.ceil(e / ib)), n = e / t;
+		let t = Math.max(1, Math.ceil(e / rb)), n = e / t;
 		for (let e = 0; e < t; e++) for (let e of this.bodies) this.integrate(e, n);
 		for (let e of this.bodies) e.object.position.copy(e.pos), e.object.quaternion.copy(e.quat);
 	}
 	integrate(e, t) {
-		let n = this.params, r = cb.set(0, -e.mass * rb, 0), i = ub.set(0, 0, 0), a = e.desc.cellHeight, o = !1;
+		let n = this.params, r = sb.set(0, -e.mass * nb, 0), i = lb.set(0, 0, 0), a = e.desc.cellHeight, o = !1;
 		e.updateWorld();
 		for (let t = 0; t < e.world.length; t++) {
 			let s = e.world[t], c = e.water;
-			sb.subVectors(s, e.pos), lb.copy(e.angVel).cross(sb).add(e.vel);
+			ob.subVectors(s, e.pos), cb.copy(e.angVel).cross(ob).add(e.vel);
 			let l = mn.clamp((c[t * 4] - s.y) / a + .5, 0, 1);
 			if (l > 0) {
-				o = !0, ob.set(0, nb * rb * e.cellVolume * l * n.buoyancy, 0);
+				o = !0, ab.set(0, tb * nb * e.cellVolume * l * n.buoyancy, 0);
 				let a = n.drag * e.cellMass * l;
-				ob.x -= (lb.x - c[t * 4 + 1]) * a, ob.y -= (lb.y - c[t * 4 + 2]) * a * 1.5, ob.z -= (lb.z - c[t * 4 + 3]) * a, r.add(ob), i.add(hb.copy(sb).cross(ob));
+				ab.x -= (cb.x - c[t * 4 + 1]) * a, ab.y -= (cb.y - c[t * 4 + 2]) * a * 1.5, ab.z -= (cb.z - c[t * 4 + 3]) * a, r.add(ab), i.add(mb.copy(ob).cross(ab));
 			}
 			let u = this.heightAt(s.x, s.z) - s.y;
 			if (u > 0) {
 				let t = e.cellMass * 900;
-				ob.set(-lb.x * e.cellMass * 6, u * t - lb.y * e.cellMass * 40, -lb.z * e.cellMass * 6), r.add(ob), i.add(hb.copy(sb).cross(ob));
+				ab.set(-cb.x * e.cellMass * 6, u * t - cb.y * e.cellMass * 40, -cb.z * e.cellMass * 6), r.add(ab), i.add(mb.copy(ob).cross(ab));
 			}
 		}
 		if (o && !e.wet && e.vel.y < -1.5) {
@@ -21229,27 +21211,27 @@ var nb = 1025, rb = 9.81, ib = 1 / 240, ab = 28, ob = new q(), sb = new q(), cb 
 				size: Math.max(t.x, t.z) * .5
 			}), this.impacts.length > 8 && this.impacts.shift();
 		}
-		e.wet = o, e.vel.addScaledVector(r, t / e.mass), e.pos.addScaledVector(e.vel, t), db.setFromMatrix4(gb.makeRotationFromQuaternion(e.quat)), fb.copy(db).transpose(), mb.copy(i).applyMatrix3(fb).multiply(e.invInertia).applyMatrix3(db), e.angVel.addScaledVector(mb, t), e.angVel.multiplyScalar(Math.exp(-n.angularDrag * t));
+		e.wet = o, e.vel.addScaledVector(r, t / e.mass), e.pos.addScaledVector(e.vel, t), ub.setFromMatrix4(hb.makeRotationFromQuaternion(e.quat)), db.copy(ub).transpose(), pb.copy(i).applyMatrix3(db).multiply(e.invInertia).applyMatrix3(ub), e.angVel.addScaledVector(pb, t), e.angVel.multiplyScalar(Math.exp(-n.angularDrag * t));
 		let s = e.angVel.length();
-		s > 1e-6 && (pb.setFromAxisAngle(ob.copy(e.angVel).divideScalar(s), s * t), e.quat.premultiply(pb).normalize());
+		s > 1e-6 && (fb.setFromAxisAngle(ab.copy(e.angVel).divideScalar(s), s * t), e.quat.premultiply(fb).normalize());
 	}
-}, yb = Object.freeze, bb = 115792089237316195423570985008687907853269984665640564039457584007908834671663n, xb = 115792089237316195423570985008687907852837564279074904382605163141518161494337n, Sb = 55066263022277343669578718895168534326250603453777594175500187360389116729240n, Cb = 32670510020758816978083085130507043184471273380659243275938904335757337482424n, wb = yb({
-	p: bb,
-	n: xb,
+}, vb = Object.freeze, yb = 115792089237316195423570985008687907853269984665640564039457584007908834671663n, bb = 115792089237316195423570985008687907852837564279074904382605163141518161494337n, xb = 55066263022277343669578718895168534326250603453777594175500187360389116729240n, Sb = 32670510020758816978083085130507043184471273380659243275938904335757337482424n, Cb = vb({
+	p: yb,
+	n: bb,
 	h: 1n,
 	a: 0n,
 	b: 7n,
-	Gx: Sb,
-	Gy: Cb
-}), Tb = 32, Eb = (e) => e instanceof Uint8Array || ArrayBuffer.isView(e) && e.constructor.name === "Uint8Array" && e.BYTES_PER_ELEMENT === 1, Db = (e, t, n = "") => {
-	if (Eb(e) && (t === void 0 || e.length === t)) return e;
-	let r = Eb(e), i = t === void 0 ? "" : ` of length ${t}`, a = r ? `length=${e.length}` : `type=${typeof e}`, o = (n ? `"${n}" ` : "") + "expected Uint8Array" + i + ", got " + a;
+	Gx: xb,
+	Gy: Sb
+}), wb = 32, Tb = (e) => e instanceof Uint8Array || ArrayBuffer.isView(e) && e.constructor.name === "Uint8Array" && e.BYTES_PER_ELEMENT === 1, Eb = (e, t, n = "") => {
+	if (Tb(e) && (t === void 0 || e.length === t)) return e;
+	let r = Tb(e), i = t === void 0 ? "" : ` of length ${t}`, a = r ? `length=${e.length}` : `type=${typeof e}`, o = (n ? `"${n}" ` : "") + "expected Uint8Array" + i + ", got " + a;
 	throw r ? RangeError(o) : TypeError(o);
-}, Ob = (e) => Uint8Array.from(e), kb = (e, t, n) => Ob(Db(e, n, t)), Ab = (e, t) => e.toString(16).padStart(t, "0"), jb = (e) => {
+}, Db = (e) => Uint8Array.from(e), Ob = (e, t, n) => Db(Eb(e, n, t)), kb = (e, t) => e.toString(16).padStart(t, "0"), Ab = (e) => {
 	let t = "";
-	for (let n of Db(e)) t += Ab(n, 2);
+	for (let n of Eb(e)) t += kb(n, 2);
 	return t;
-}, Mb = (e) => {
+}, jb = (e) => {
 	let t = "hex invalid";
 	if (typeof e != "string") throw TypeError(t);
 	if (e.length % 2 || !/^[\da-f]*$/i.test(e)) throw RangeError(t);
@@ -21259,25 +21241,25 @@ var nb = 1025, rb = 9.81, ib = 1 / 240, ab = 28, ob = new q(), sb = new q(), cb 
 		n[t] = ((i & 15) + (i >> 6) * 9) * 16 + (a & 15) + (a >> 6) * 9;
 	}
 	return n;
-}, Nb = () => {
+}, Mb = () => {
 	let e = globalThis?.crypto?.subtle;
 	if (e) return e;
 	throw Error("crypto.subtle must be defined, consider polyfill");
-}, Pb = (...e) => {
+}, Nb = (...e) => {
 	let t = 0;
-	for (let n of e) t += Db(n).length;
+	for (let n of e) t += Eb(n).length;
 	let n = new Uint8Array(t), r = 0;
 	for (let t of e) n.set(t, r), r += t.length;
 	return n;
-}, Fb = (e = Tb) => {
+}, Pb = (e = wb) => {
 	let t = globalThis?.crypto;
 	if (typeof t?.getRandomValues != "function") throw Error("crypto.getRandomValues must be defined, consider polyfill");
 	return t.getRandomValues(new Uint8Array(e));
-}, Ib = BigInt, Lb = (e, t, n, r = "bad number: out of range") => {
+}, Fb = BigInt, Ib = (e, t, n, r = "bad number: out of range") => {
 	if (typeof e != "bigint") throw TypeError(r);
 	if (t <= e && e < n) return e;
 	throw RangeError(r);
-}, $ = (e, t = bb) => (e %= t) >= 0n ? e : t + e, Rb = (e) => $(e, xb), zb = (e, t) => {
+}, $ = (e, t = yb) => (e %= t) >= 0n ? e : t + e, Lb = (e) => $(e, bb), Rb = (e, t) => {
 	if (e === 0n) throw Error("invert: expected non-zero number");
 	if (t <= 1n) throw Error("invert: expected modulus > 1, got " + t);
 	let n = $(e, t), r = t, i = 0n, a = 1n;
@@ -21287,50 +21269,50 @@ var nb = 1025, rb = 9.81, ib = 1 / 240, ab = 28, ob = new q(), sb = new q(), cb 
 	}
 	if (r !== 1n) throw Error("invert: does not exist");
 	return $(i, t);
-}, Bb = (e) => {
-	let t = sx[e];
+}, zb = (e) => {
+	let t = ox[e];
 	if (typeof t != "function") throw Error("hashes." + e + " not set");
 	return t;
-}, Vb = (e, t, n) => Db(Bb(e)(t, n), Tb, "digest"), Hb = async (e, t, n) => Db(await Bb(e)(t, n), Tb, "digest"), Ub = (e) => {
-	if (e instanceof Qb) return e;
+}, Bb = (e, t, n) => Eb(zb(e)(t, n), wb, "digest"), Vb = async (e, t, n) => Eb(await zb(e)(t, n), wb, "digest"), Hb = (e) => {
+	if (e instanceof Zb) return e;
 	throw TypeError("Point expected");
-}, Wb = "bad point: not on curve", Gb = (e) => $($(e * e) * e + 7n), Kb = (e) => Lb(e, 0n, bb), qb = (e) => Lb(e, 1n, bb), Jb = (e) => Lb(e, 1n, xb), Yb = (e) => !(e & 1n), Xb = (e) => Uint8Array.of(Yb(e) ? 2 : 3), Zb = (e) => {
-	let t = Gb(qb(e)), n = 1n;
-	for (let e = t, r = 115792089237316195423570985008687907853269984665640564039457584007908834671664n / 4n; r > 0n; r >>= 1n) r & 1n && (n = n * e % bb), e = e * e % bb;
+}, Ub = "bad point: not on curve", Wb = (e) => $($(e * e) * e + 7n), Gb = (e) => Ib(e, 0n, yb), Kb = (e) => Ib(e, 1n, yb), qb = (e) => Ib(e, 1n, bb), Jb = (e) => !(e & 1n), Yb = (e) => Uint8Array.of(Jb(e) ? 2 : 3), Xb = (e) => {
+	let t = Wb(Kb(e)), n = 1n;
+	for (let e = t, r = 115792089237316195423570985008687907853269984665640564039457584007908834671664n / 4n; r > 0n; r >>= 1n) r & 1n && (n = n * e % yb), e = e * e % yb;
 	if ($(n * n) !== t) throw Error("sqrt invalid");
-	return new Qb(e, Yb(n) ? n : $(-n), 1n);
-}, Qb = class e {
+	return new Zb(e, Jb(n) ? n : $(-n), 1n);
+}, Zb = class e {
 	static BASE;
 	static ZERO;
 	X;
 	Y;
 	Z;
 	constructor(e, t, n) {
-		this.X = Kb(e), this.Y = qb(t), this.Z = Kb(n), yb(this);
+		this.X = Gb(e), this.Y = Kb(t), this.Z = Gb(n), vb(this);
 	}
 	static CURVE() {
-		return wb;
+		return Cb;
 	}
 	static fromAffine(t) {
 		let { x: n, y: r } = t;
-		return n === 0n && r === 0n ? ex : new e(n, r, 1n);
+		return n === 0n && r === 0n ? $b : new e(n, r, 1n);
 	}
 	static fromBytes(t) {
-		Db(t);
-		let n = t.length, r = t[0], i = rx(t, 1, 33);
+		Eb(t);
+		let n = t.length, r = t[0], i = nx(t, 1, 33);
 		try {
 			if (n === 33 && (r === 2 || r === 3)) {
-				let e = Zb(i);
+				let e = Xb(i);
 				return r === 3 ? e.negate() : e;
 			}
-			if (n === 65 && r === 4) return new e(i, rx(t, 33, 65), 1n).assertValidity();
+			if (n === 65 && r === 4) return new e(i, nx(t, 33, 65), 1n).assertValidity();
 		} catch {
-			throw Error(Wb);
+			throw Error(Ub);
 		}
-		throw Error(Wb);
+		throw Error(Ub);
 	}
 	static fromHex(t) {
-		return e.fromBytes(Mb(t));
+		return e.fromBytes(jb(t));
 	}
 	get x() {
 		return this.toAffine().x;
@@ -21339,7 +21321,7 @@ var nb = 1025, rb = 9.81, ib = 1 / 240, ab = 28, ob = new q(), sb = new q(), cb 
 		return this.toAffine().y;
 	}
 	equals(e) {
-		let { X: t, Y: n, Z: r } = this, { X: i, Y: a, Z: o } = Ub(e);
+		let { X: t, Y: n, Z: r } = this, { X: i, Y: a, Z: o } = Hb(e);
 		return $(t * o) === $(i * r) && $(n * o) === $(a * r);
 	}
 	is0() {
@@ -21352,19 +21334,19 @@ var nb = 1025, rb = 9.81, ib = 1 / 240, ab = 28, ob = new q(), sb = new q(), cb 
 		return this.add(this);
 	}
 	add(t) {
-		let { X: n, Y: r, Z: i } = this, { X: a, Y: o, Z: s } = Ub(t), c = 0n, l = 0n, u = 0n, d = 0n, f = $(7n * 3n), p = $(n * a), m = $(r * o), h = $(i * s), g = $(n + r), _ = $(a + o);
+		let { X: n, Y: r, Z: i } = this, { X: a, Y: o, Z: s } = Hb(t), c = 0n, l = 0n, u = 0n, d = 0n, f = $(7n * 3n), p = $(n * a), m = $(r * o), h = $(i * s), g = $(n + r), _ = $(a + o);
 		g = $(g * _), _ = $(p + m), g = $(g - _), _ = $(n + i);
 		let v = $(a + s);
 		return _ = $(_ * v), v = $(p + h), _ = $(_ - v), v = $(r + i), l = $(o + s), v = $(v * l), l = $(m + h), v = $(v - l), d = $(c * _), l = $(f * h), d = $(l + d), l = $(m - d), d = $(m + d), u = $(l * d), m = $(p + p), m = $(m + p), h = $(c * h), _ = $(f * _), m = $(m + h), h = $(p - h), h = $(c * h), _ = $(_ + h), p = $(m * _), u = $(u + p), p = $(v * _), l = $(g * l), l = $(l - p), p = $(g * m), d = $(v * d), d = $(d + p), new e(l, u, d);
 	}
 	subtract(e) {
-		return this.add(Ub(e).negate());
+		return this.add(Hb(e).negate());
 	}
 	multiply(e, t = !0) {
-		if (!t && e === 0n) return ex;
-		if (Jb(e), e === 1n) return this;
-		if (this.equals($b)) return Nx(e).p;
-		let n = ex, r = $b, i = this;
+		if (!t && e === 0n) return $b;
+		if (qb(e), e === 1n) return this;
+		if (this.equals(Qb)) return Mx(e).p;
+		let n = $b, r = Qb, i = this;
 		for (let a = 0; t ? a < 256 : e > 0n; a++) e & 1n ? n = n.add(i) : t && (r = r.add(i)), i = i.double(), e >>= 1n;
 		return n;
 	}
@@ -21381,7 +21363,7 @@ var nb = 1025, rb = 9.81, ib = 1 / 240, ab = 28, ob = new q(), sb = new q(), cb 
 			x: e,
 			y: t
 		};
-		let r = zb(n, bb);
+		let r = Rb(n, yb);
 		if ($(n * r) !== 1n) throw Error("inverse invalid");
 		return {
 			x: $(e * r),
@@ -21390,143 +21372,143 @@ var nb = 1025, rb = 9.81, ib = 1 / 240, ab = 28, ob = new q(), sb = new q(), cb 
 	}
 	assertValidity() {
 		let { x: e, y: t } = this.toAffine();
-		if (qb(e), qb(t), $(t * t) !== Gb(e)) throw Error(Wb);
+		if (Kb(e), Kb(t), $(t * t) !== Wb(e)) throw Error(Ub);
 		return this;
 	}
 	toBytes(e = !0) {
-		let { x: t, y: n } = this.assertValidity().toAffine(), r = ix(t);
-		return e ? Pb(Xb(n), r) : Pb(Uint8Array.of(4), r, ix(n));
+		let { x: t, y: n } = this.assertValidity().toAffine(), r = rx(t);
+		return e ? Nb(Yb(n), r) : Nb(Uint8Array.of(4), r, rx(n));
 	}
 	toHex(e) {
-		return jb(this.toBytes(e));
+		return Ab(this.toBytes(e));
 	}
-}, $b = new Qb(Sb, Cb, 1n), ex = new Qb(0n, 1n, 0n);
-Qb.BASE = $b, Qb.ZERO = ex;
-var tx = (e, t, n) => $b.multiply(t, !1).add(e.multiply(n, !1)).assertValidity(), nx = (e) => Ib("0x" + (jb(e) || "0")), rx = (e, t, n) => nx(e.subarray(t, n)), ix = (e) => Mb(Ab(Lb(e, 0n, 2n ** 256n), 64)), ax = (e) => Lb(nx(Db(e, Tb, "secret key")), 1n, xb, "invalid secret key: outside of range"), ox = "SHA-256", sx = {
+}, Qb = new Zb(xb, Sb, 1n), $b = new Zb(0n, 1n, 0n);
+Zb.BASE = Qb, Zb.ZERO = $b;
+var ex = (e, t, n) => Qb.multiply(t, !1).add(e.multiply(n, !1)).assertValidity(), tx = (e) => Fb("0x" + (Ab(e) || "0")), nx = (e, t, n) => tx(e.subarray(t, n)), rx = (e) => jb(kb(Ib(e, 0n, 2n ** 256n), 64)), ix = (e) => Ib(tx(Eb(e, wb, "secret key")), 1n, bb, "invalid secret key: outside of range"), ax = "SHA-256", ox = {
 	hmacSha256Async: async (e, t) => {
-		let n = Nb(), r = await n.importKey("raw", e, {
+		let n = Mb(), r = await n.importKey("raw", e, {
 			name: "HMAC",
-			hash: ox
+			hash: ax
 		}, !1, ["sign"]);
 		return new Uint8Array(await n.sign("HMAC", r, t));
 	},
 	hmacSha256: void 0,
-	sha256Async: async (e) => new Uint8Array(await Nb().digest(ox, e)),
+	sha256Async: async (e) => new Uint8Array(await Mb().digest(ax, e)),
 	sha256: void 0
-}, cx = (e) => {
-	if (e = e === void 0 ? Fb(48) : e, Db(e), e.length < 48 || e.length > 1024) throw RangeError("expected 48-1024b");
-	return ix($(nx(e), xb - 1n) + 1n);
-}, lx = (e) => (t) => {
-	let n = cx(t);
+}, sx = (e) => {
+	if (e = e === void 0 ? Pb(48) : e, Eb(e), e.length < 48 || e.length > 1024) throw RangeError("expected 48-1024b");
+	return rx($(tx(e), bb - 1n) + 1n);
+}, cx = (e) => (t) => {
+	let n = sx(t);
 	return {
 		secretKey: n,
 		publicKey: e(n)
 	};
-}, ux = (e) => Uint8Array.from("BIP0340/" + e, (e) => e.charCodeAt(0)), dx = (e, ...t) => {
-	let n = Vb("sha256", ux(e));
-	return Vb("sha256", Pb(n, n, ...t));
-}, fx = (e, ...t) => Hb("sha256Async", ux(e)).then((e) => Hb("sha256Async", Pb(e, e, ...t))), px = (e) => {
-	let t = ax(e), { x: n, y: r } = $b.multiply(t).assertValidity().toAffine();
+}, lx = (e) => Uint8Array.from("BIP0340/" + e, (e) => e.charCodeAt(0)), ux = (e, ...t) => {
+	let n = Bb("sha256", lx(e));
+	return Bb("sha256", Nb(n, n, ...t));
+}, dx = (e, ...t) => Vb("sha256Async", lx(e)).then((e) => Vb("sha256Async", Nb(e, e, ...t))), fx = (e) => {
+	let t = ix(e), { x: n, y: r } = Qb.multiply(t).assertValidity().toAffine();
 	return {
-		d: Yb(r) ? t : Rb(-t),
-		px: ix(n)
+		d: Jb(r) ? t : Lb(-t),
+		px: rx(n)
 	};
-}, mx = (e) => Rb(nx(e)), hx = (...e) => mx(dx("challenge", ...e)), gx = async (...e) => mx(await fx("challenge", ...e)), _x = (e) => px(e).px, vx = /* @__PURE__ */ lx(_x), yx = (e, t, n) => {
-	let r = kb(e, "message"), { px: i, d: a } = px(t);
+}, px = (e) => Lb(tx(e)), mx = (...e) => px(ux("challenge", ...e)), hx = async (...e) => px(await dx("challenge", ...e)), gx = (e) => fx(e).px, _x = /* @__PURE__ */ cx(gx), vx = (e, t, n) => {
+	let r = Ob(e, "message"), { px: i, d: a } = fx(t);
 	return {
 		m: r,
 		px: i,
 		d: a,
-		a: Db(n, Tb)
+		a: Eb(n, wb)
 	};
-}, bx = (e) => {
-	let t = mx(e);
+}, yx = (e) => {
+	let t = px(e);
 	if (t === 0n) throw Error("sign failed: k is zero");
-	let { px: n, d: r } = px(ix(t));
+	let { px: n, d: r } = fx(rx(t));
 	return {
 		rx: n,
 		k: r
 	};
-}, xx = (e, t, n, r) => Pb(t, ix(Rb(e + n * r))), Sx = "invalid signature produced", Cx = (e, t, n = Fb(Tb)) => {
-	let { m: r, px: i, d: a, a: o } = yx(e, t, n), { rx: s, k: c } = bx(dx("nonce", ix(a ^ nx(dx("aux", o))), i, r)), l = xx(c, s, hx(s, i, r), a);
-	if (!Dx(l, r, i)) throw Error(Sx);
+}, bx = (e, t, n, r) => Nb(t, rx(Lb(e + n * r))), xx = "invalid signature produced", Sx = (e, t, n = Pb(wb)) => {
+	let { m: r, px: i, d: a, a: o } = vx(e, t, n), { rx: s, k: c } = yx(ux("nonce", rx(a ^ tx(ux("aux", o))), i, r)), l = bx(c, s, mx(s, i, r), a);
+	if (!Ex(l, r, i)) throw Error(xx);
 	return l;
-}, wx = async (e, t, n = Fb(Tb)) => {
-	let { m: r, px: i, d: a, a: o } = yx(e, t, n), { rx: s, k: c } = bx(await fx("nonce", ix(a ^ nx(await fx("aux", o))), i, r)), l = xx(c, s, await gx(s, i, r), a);
-	if (!await Ox(l, r, i)) throw Error(Sx);
+}, Cx = async (e, t, n = Pb(wb)) => {
+	let { m: r, px: i, d: a, a: o } = vx(e, t, n), { rx: s, k: c } = yx(await dx("nonce", rx(a ^ tx(await dx("aux", o))), i, r)), l = bx(c, s, await hx(s, i, r), a);
+	if (!await Dx(l, r, i)) throw Error(xx);
 	return l;
-}, Tx = (e, t) => e instanceof Promise ? e.then(t) : t(e), Ex = (e, t, n, r) => {
-	let i = Db(e, 64, "signature"), a = Db(t, void 0, "message"), o = Db(n, Tb, "publicKey"), s, c, l, u;
+}, wx = (e, t) => e instanceof Promise ? e.then(t) : t(e), Tx = (e, t, n, r) => {
+	let i = Eb(e, 64, "signature"), a = Eb(t, void 0, "message"), o = Eb(n, wb, "publicKey"), s, c, l, u;
 	try {
-		s = Zb(nx(o)), c = qb(rx(i, 0, Tb)), l = Jb(rx(i, Tb, 64)), u = Pb(ix(c), o, a);
+		s = Xb(tx(o)), c = Kb(nx(i, 0, wb)), l = qb(nx(i, wb, 64)), u = Nb(rx(c), o, a);
 	} catch {
 		return !1;
 	}
-	return Tx(r(u), (e) => {
+	return wx(r(u), (e) => {
 		try {
-			let { x: t, y: n } = tx(s, l, Rb(-e)).toAffine();
-			return !(!Yb(n) || t !== c);
+			let { x: t, y: n } = ex(s, l, Lb(-e)).toAffine();
+			return !(!Jb(n) || t !== c);
 		} catch {
 			return !1;
 		}
 	});
-}, Dx = (e, t, n) => Ex(e, t, n, hx), Ox = async (e, t, n) => Ex(e, t, n, gx), kx = /* @__PURE__ */ yb({
-	keygen: vx,
-	getPublicKey: _x,
-	sign: Cx,
-	verify: Dx,
-	signAsync: wx,
-	verifyAsync: Ox
-}), Ax = () => {
-	let e = [], t = $b, n = t;
+}, Ex = (e, t, n) => Tx(e, t, n, mx), Dx = async (e, t, n) => Tx(e, t, n, hx), Ox = /* @__PURE__ */ vb({
+	keygen: _x,
+	getPublicKey: gx,
+	sign: Sx,
+	verify: Ex,
+	signAsync: Cx,
+	verifyAsync: Dx
+}), kx = () => {
+	let e = [], t = Qb, n = t;
 	for (let r = 0; r < 33; r++) {
 		n = t, e.push(n);
 		for (let r = 1; r < 128; r++) n = n.add(t), e.push(n);
 		t = n.double();
 	}
 	return e;
-}, jx = void 0, Mx = (e, t) => {
+}, Ax = void 0, jx = (e, t) => {
 	let n = t.negate();
 	return e ? n : t;
-}, Nx = (e) => {
-	let t = jx ||= Ax(), n = ex, r = $b;
+}, Mx = (e) => {
+	let t = Ax ||= kx(), n = $b, r = Qb;
 	for (let i = 0; i < 33; i++) {
 		let a = Number(e & 255n);
 		e >>= 8n, a > 128 && (a -= 256, e += 1n);
 		let o = i * 128, s = o + Math.abs(a) - 1, c = i % 2 != 0, l = a < 0;
-		a === 0 ? r = r.add(Mx(c, t[o])) : n = n.add(Mx(l, t[s]));
+		a === 0 ? r = r.add(jx(c, t[o])) : n = n.add(jx(l, t[s]));
 	}
 	if (e !== 0n) throw Error("invalid wnaf");
 	return {
 		p: n,
 		f: r
 	};
-}, { floor: Px, min: Fx, sin: Ix } = Math, Lx = "Trystero", Rx = (e, t) => Array(e).fill(void 0).map(t), zx = "0123456789AaBbCcDdEeFfGgHhIiJjKkLlMmNnOoPpQqRrSsTtUuVvWwXxYyZz", Bx = (e) => Rx(e, () => zx[Px(Math.random() * 62)] ?? "").join(""), Vx = Bx(20), Hx = Promise.all.bind(Promise), Ux = typeof window < "u", { entries: Wx, fromEntries: Gx, keys: Kx, values: qx } = Object, Jx = () => {}, Yx = "candidate", Xx = (e) => (e !== null && clearTimeout(e), null), Zx = (e) => /* @__PURE__ */ Error(`${Lx}: ${e}`), Qx = (e, t) => e instanceof Error && e.message ? e.message : typeof e == "string" && e ? e : cS(e ?? t), $x = (e, t) => e instanceof Error ? e : Zx(Qx(e, t)), eS = new TextEncoder(), tS = new TextDecoder(), nS = (e) => eS.encode(e), rS = (e) => tS.decode(e), iS = (e) => e.reduce((e, t) => e + t.toString(16).padStart(2, "0"), ""), aS = (...e) => e.join("@"), oS = (e, t) => {
+}, { floor: Nx, min: Px, sin: Fx } = Math, Ix = "Trystero", Lx = (e, t) => Array(e).fill(void 0).map(t), Rx = "0123456789AaBbCcDdEeFfGgHhIiJjKkLlMmNnOoPpQqRrSsTtUuVvWwXxYyZz", zx = (e) => Lx(e, () => Rx[Nx(Math.random() * 62)] ?? "").join(""), Bx = zx(20), Vx = Promise.all.bind(Promise), Hx = typeof window < "u", { entries: Ux, fromEntries: Wx, keys: Gx, values: Kx } = Object, qx = () => {}, Jx = "candidate", Yx = (e) => (e !== null && clearTimeout(e), null), Xx = (e) => /* @__PURE__ */ Error(`${Ix}: ${e}`), Zx = (e, t) => e instanceof Error && e.message ? e.message : typeof e == "string" && e ? e : sS(e ?? t), Qx = (e, t) => e instanceof Error ? e : Xx(Zx(e, t)), $x = new TextEncoder(), eS = new TextDecoder(), tS = (e) => $x.encode(e), nS = (e) => eS.decode(e), rS = (e) => e.reduce((e, t) => e + t.toString(16).padStart(2, "0"), ""), iS = (...e) => e.join("@"), aS = (e, t) => {
 	let n = [...e], r = () => {
-		let e = Ix(t++) * 1e4;
-		return e - Px(e);
+		let e = Fx(t++) * 1e4;
+		return e - Nx(e);
 	}, i = n.length;
 	for (; i;) {
-		let e = Px(r() * i--), t = n[i];
+		let e = Nx(r() * i--), t = n[i];
 		n[i] = n[e], n[e] = t;
 	}
 	return n;
-}, sS = (e, t, n, r = !1) => e.relayConfig?.urls || (r ? oS(t, uS(e.appId)) : t).slice(0, e.relayConfig?.redundancy ?? n), cS = JSON.stringify, lS = (e) => {
+}, oS = (e, t, n, r = !1) => e.relayConfig?.urls || (r ? aS(t, lS(e.appId)) : t).slice(0, e.relayConfig?.redundancy ?? n), sS = JSON.stringify, cS = (e) => {
 	try {
 		return JSON.parse(e);
 	} catch {
-		throw Zx(`failed to parse JSON: ${e}`);
+		throw Xx(`failed to parse JSON: ${e}`);
 	}
-}, uS = (e, t = 2 ** 53 - 1) => e.split("").reduce((e, t) => e + t.charCodeAt(0), 0) % t, dS = 3333, fS = 6e4, pS = {}, mS = null, hS = null, gS = () => {
-	mS ||= new Promise((e) => {
-		hS = e;
+}, lS = (e, t = 2 ** 53 - 1) => e.split("").reduce((e, t) => e + t.charCodeAt(0), 0) % t, uS = 3333, dS = 6e4, fS = {}, pS = null, mS = null, hS = () => {
+	pS ||= new Promise((e) => {
+		mS = e;
 	}).finally(() => {
-		hS = null, mS = null;
+		mS = null, pS = null;
 	});
-}, _S = () => {
-	hS?.();
-}, vS = (e, t, n) => {
-	let r = {}, i = !1, a = !1, o, s = Jx;
+}, gS = () => {
+	mS?.();
+}, _S = (e, t, n) => {
+	let r = {}, i = !1, a = !1, o, s = qx;
 	r.isClosed = !1, r.ready = new Promise((e) => s = e);
 	let c = () => {
 		if (r.isClosed) return;
@@ -21534,15 +21516,15 @@ var tx = (e, t, n) => $b.multiply(t, !1).add(e.multiply(n, !1)).assertValidity()
 		let l = new WebSocket(e);
 		l.onclose = () => {
 			if (r.isClosed || a) return;
-			if (a = !0, mS) {
-				mS.then(c);
+			if (a = !0, pS) {
+				pS.then(c);
 				return;
 			}
-			let t = pS[e] ??= dS;
-			o = setTimeout(c, Math.random() * t), pS[e] = Fx(t * 2, fS);
+			let t = fS[e] ??= uS;
+			o = setTimeout(c, Math.random() * t), fS[e] = Px(t * 2, dS);
 		}, l.onmessage = (e) => t(String(e.data)), r.socket = l, r.url = l.url, l.onopen = () => {
 			let t = i;
-			i = !0, s(r), pS[e] = dS, t && n?.();
+			i = !0, s(r), fS[e] = uS, t && n?.();
 		}, r.send = (e) => {
 			l.readyState === 1 && l.send(e);
 		};
@@ -21550,10 +21532,10 @@ var tx = (e, t, n) => $b.multiply(t, !1).add(e.multiply(n, !1)).assertValidity()
 	return r.close = () => {
 		r.isClosed = !0, o !== void 0 && (clearTimeout(o), o = void 0), r.socket.close();
 	}, c(), r;
-}, yS = (e) => {
+}, vS = (e) => {
 	let t = {}, n = /* @__PURE__ */ new WeakMap(), r = (e) => {
 		let t = n.get(e);
-		if (!t) throw Zx("relay bookkeeping missing registration for relay client");
+		if (!t) throw Xx("relay bookkeeping missing registration for relay client");
 		return t;
 	}, i = () => {
 		let e = {}, t = (t) => e[t] ??= {};
@@ -21566,33 +21548,33 @@ var tx = (e, t, n) => $b.multiply(t, !1).add(e.multiply(n, !1)).assertValidity()
 		register: (e, n) => t[e] || a(e, n()),
 		keyOf: r,
 		scoped: i,
-		getSockets: () => Gx(Wx(t).flatMap(([t, n]) => {
+		getSockets: () => Wx(Ux(t).flatMap(([t, n]) => {
 			let r = e(n);
 			return r ? [[t, r]] : [];
 		}))
 	};
-}, bS = () => {
-	if (Ux) {
+}, yS = () => {
+	if (Hx) {
 		let e = new AbortController();
-		return addEventListener("online", _S, { signal: e.signal }), addEventListener("offline", gS, { signal: e.signal }), () => e.abort();
+		return addEventListener("online", gS, { signal: e.signal }), addEventListener("offline", hS, { signal: e.signal }), () => e.abort();
 	}
-	return Jx;
-}, xS = "AES-GCM", SS = {}, CS = (e) => btoa(String.fromCharCode.apply(null, Array.from(new Uint8Array(e)))), wS = (e) => {
+	return qx;
+}, bS = "AES-GCM", xS = {}, SS = (e) => btoa(String.fromCharCode.apply(null, Array.from(new Uint8Array(e)))), CS = (e) => {
 	let t = atob(e);
 	return new Uint8Array(t.length).map((e, n) => t.charCodeAt(n)).buffer;
-}, TS = async (e, t) => new Uint8Array(await crypto.subtle.digest(e, nS(t))), ES = async (e) => SS[e] ??= Array.from(await TS("SHA-1", e)).map((e) => e.toString(36)).join(""), DS = async (e, t, n) => crypto.subtle.importKey("raw", await crypto.subtle.digest({ name: "SHA-256" }, nS(`${e}:${t}:${n}`)), { name: xS }, !1, ["encrypt", "decrypt"]), OS = async (e, t) => iS(await TS("SHA-256", `${Lx}:${e}:${t}`)), kS = "$", AS = ",", jS = async (e, t) => {
+}, wS = async (e, t) => new Uint8Array(await crypto.subtle.digest(e, tS(t))), TS = async (e) => xS[e] ??= Array.from(await wS("SHA-1", e)).map((e) => e.toString(36)).join(""), ES = async (e, t, n) => crypto.subtle.importKey("raw", await crypto.subtle.digest({ name: "SHA-256" }, tS(`${e}:${t}:${n}`)), { name: bS }, !1, ["encrypt", "decrypt"]), DS = async (e, t) => rS(await wS("SHA-256", `${Ix}:${e}:${t}`)), OS = "$", kS = ",", AS = async (e, t) => {
 	let n = crypto.getRandomValues(/* @__PURE__ */ new Uint8Array(16));
-	return n.join(AS) + kS + CS(await crypto.subtle.encrypt({
-		name: xS,
+	return n.join(kS) + OS + SS(await crypto.subtle.encrypt({
+		name: bS,
 		iv: n
-	}, await e, nS(t)));
-}, MS = async (e, t) => {
-	let [n, r] = t.split(kS);
-	return rS(await crypto.subtle.decrypt({
-		name: xS,
-		iv: new Uint8Array(n?.split(AS).map(Number) ?? [])
-	}, await e, wS(r ?? "")));
-}, NS = 18e4, PS = class {
+	}, await e, tS(t)));
+}, jS = async (e, t) => {
+	let [n, r] = t.split(OS);
+	return nS(await crypto.subtle.decrypt({
+		name: bS,
+		iv: new Uint8Array(n?.split(kS).map(Number) ?? [])
+	}, await e, CS(r ?? "")));
+}, MS = 18e4, NS = class {
 	makeOffer;
 	leased = /* @__PURE__ */ new Map();
 	destroyed = !1;
@@ -21601,21 +21583,21 @@ var tx = (e, t, n) => $b.multiply(t, !1).add(e.multiply(n, !1)).assertValidity()
 	}
 	claimLeased(e) {
 		let t = this.leased.get(e);
-		t && (Xx(t), this.leased.delete(e));
+		t && (Yx(t), this.leased.delete(e));
 	}
 	reclaimLeased(e) {
 		this.leased.has(e) && (this.claimLeased(e), e.destroy());
 	}
 	checkout(e, t, n) {
 		let r = async (e = !1) => {
-			if (this.destroyed) throw Zx("room left while preparing offer");
+			if (this.destroyed) throw Xx("room left while preparing offer");
 			let i = this.makeOffer();
 			try {
 				let e = await n(i);
-				if (this.destroyed) throw Zx("room left while preparing offer");
+				if (this.destroyed) throw Xx("room left while preparing offer");
 				return t ? (this.leased.set(i, setTimeout(() => {
 					this.leased.delete(i), i.destroy();
-				}, NS)), {
+				}, MS)), {
 					peer: i,
 					offer: e,
 					claim: () => this.claimLeased(i),
@@ -21629,33 +21611,33 @@ var tx = (e, t, n) => $b.multiply(t, !1).add(e.multiply(n, !1)).assertValidity()
 				throw t;
 			}
 		};
-		return Hx(Rx(e, () => r()));
+		return Vx(Lx(e, () => r()));
 	}
 	getOffers(e, t) {
 		return this.checkout(e, !0, t);
 	}
 	destroy() {
 		this.destroyed = !0, this.leased.forEach((e, t) => {
-			Xx(e), t.destroy();
+			Yx(e), t.destroy();
 		}), this.leased.clear();
 	}
-}, FS = Zx("incorrect password for overlapping room"), IS = (e, t, n) => {
-	let r = (r) => TS("SHA-256", `${r}:${e}:${t}:${n}`).then(iS), i = async (t, n, i) => {
+}, PS = Xx("incorrect password for overlapping room"), FS = (e, t, n) => {
+	let r = (r) => wS("SHA-256", `${r}:${e}:${t}:${n}`).then(rS), i = async (t, n, i) => {
 		if (!e) return;
 		if (i) {
-			let e = Bx(36);
+			let e = zx(36);
 			await t({
 				__trystero_pw: "challenge",
 				c: e
 			});
 			let { data: i } = await n();
-			if (!i || typeof i != "object" || i.__trystero_pw !== "response" || typeof i.h != "string") throw FS;
+			if (!i || typeof i != "object" || i.__trystero_pw !== "response" || typeof i.h != "string") throw PS;
 			let a = await r(e);
-			if (i.h !== a) throw FS;
+			if (i.h !== a) throw PS;
 			return;
 		}
 		let { data: a } = await n();
-		if (!a || typeof a != "object" || a.__trystero_pw !== "challenge" || typeof a.c != "string") throw FS;
+		if (!a || typeof a != "object" || a.__trystero_pw !== "challenge" || typeof a.c != "string") throw PS;
 		await t({
 			__trystero_pw: "response",
 			h: await r(a.c)
@@ -21667,21 +21649,21 @@ var tx = (e, t, n) => $b.multiply(t, !1).add(e.multiply(n, !1)).assertValidity()
 			await i(n, r, a), await t?.(e, n, r, a);
 		} : void 0
 	};
-}, LS = (e) => {
-	let t = Qx(e, "unknown error");
+}, IS = (e) => {
+	let t = Zx(e, "unknown error");
 	return t.startsWith("handshake ") ? t : `handshake failed: ${t}`;
-}, RS = ({ onPeerHandshake: e, onHandshakeError: t, handshakeTimeoutMs: n, sendHandshakeData: r, sendHandshakeReady: i, onActivate: a, onFailure: o }) => {
+}, LS = ({ onPeerHandshake: e, onHandshakeError: t, handshakeTimeoutMs: n, sendHandshakeData: r, sendHandshakeReady: i, onActivate: a, onFailure: o }) => {
 	let s = {}, c = (e, t) => {
 		let n = s[e];
-		!n || t && n.peer !== t || n.isActive || n.didLocalHandshakePass && n.didReceiveRemoteReady && (n.isActive = !0, n.handshakeTimer = Xx(n.handshakeTimer), a(e, n.peer));
+		!n || t && n.peer !== t || n.isActive || n.didLocalHandshakePass && n.didReceiveRemoteReady && (n.isActive = !0, n.handshakeTimer = Yx(n.handshakeTimer), a(e, n.peer));
 	}, l = (e, n, r) => {
 		let i = s[e];
 		if (!i || i.peer !== n) return;
-		let a = LS(r);
-		t?.(e, a), o(e, n, Zx(a));
+		let a = IS(r);
+		t?.(e, a), o(e, n, Xx(a));
 	}, u = (e, t) => {
 		let n = s[e];
-		n && n.peer === t && !n.isActive && (n.didLocalHandshakePass = !0, i("", e).catch((n) => l(e, t, Zx(`failed sending handshake readiness: ${Qx(n, "unknown send failure")}`))), c(e, t));
+		n && n.peer === t && !n.isActive && (n.didLocalHandshakePass = !0, i("", e).catch((n) => l(e, t, Xx(`failed sending handshake readiness: ${Zx(n, "unknown send failure")}`))), c(e, t));
 	};
 	return {
 		addPeer: (e, t) => {
@@ -21697,7 +21679,7 @@ var tx = (e, t, n) => $b.multiply(t, !1).add(e.multiply(n, !1)).assertValidity()
 		},
 		clearPeer: (e, t) => {
 			let n = s[e];
-			n && (n.handshakeTimer = Xx(n.handshakeTimer), n.pendingHandshakePayloads.length = 0, n.handshakeWaiters.splice(0).forEach((e) => e.reject(t)), delete s[e]);
+			n && (n.handshakeTimer = Yx(n.handshakeTimer), n.pendingHandshakePayloads.length = 0, n.handshakeWaiters.splice(0).forEach((e) => e.reject(t)), delete s[e]);
 		},
 		canReceiveFromPeer: (e, t) => {
 			let n = s[e];
@@ -21706,13 +21688,13 @@ var tx = (e, t, n) => $b.multiply(t, !1).add(e.multiply(n, !1)).assertValidity()
 		start: (t, i) => {
 			let a = s[t];
 			if (!a || a.peer !== i) return;
-			a.handshakeTimer = setTimeout(() => l(t, i, Zx(`handshake timed out after ${n}ms`)), n);
+			a.handshakeTimer = setTimeout(() => l(t, i, Xx(`handshake timed out after ${n}ms`)), n);
 			let o = async (e, n) => {
 				await r(e, t, n);
 			}, c = () => new Promise((e, n) => {
 				let r = s[t];
 				if (!r || r.peer !== i) {
-					n(Zx("peer disconnected during handshake"));
+					n(Xx("peer disconnected during handshake"));
 					return;
 				}
 				let a = r.pendingHandshakePayloads.shift();
@@ -21720,8 +21702,8 @@ var tx = (e, t, n) => $b.multiply(t, !1).add(e.multiply(n, !1)).assertValidity()
 					resolve: e,
 					reject: (e) => n(e)
 				});
-			}), d = Vx < t;
-			Promise.resolve(e?.(t, o, c, d)).then(() => u(t, i)).catch((e) => l(t, i, $x(e, "handshake failed")));
+			}), d = Bx < t;
+			Promise.resolve(e?.(t, o, c, d)).then(() => u(t, i)).catch((e) => l(t, i, Qx(e, "handshake failed")));
 		},
 		receiveHandshakeData: (e, t, n) => {
 			let r = s[t];
@@ -21730,37 +21712,37 @@ var tx = (e, t, n) => $b.multiply(t, !1).add(e.multiply(n, !1)).assertValidity()
 				data: e,
 				metadata: n
 			}, a = r.handshakeWaiters.shift();
-			a ? a.resolve(i) : r.pendingHandshakePayloads.length >= 16 ? l(t, r.peer, Zx("too many pending handshake messages")) : r.pendingHandshakePayloads.push(i);
+			a ? a.resolve(i) : r.pendingHandshakePayloads.length >= 16 ? l(t, r.peer, Xx("too many pending handshake messages")) : r.pendingHandshakePayloads.push(i);
 		},
 		receiveHandshakeReady: (e) => {
 			let t = s[e];
 			t && !t.isActive && (t.didReceiveRemoteReady = !0, c(e));
 		}
 	};
-}, zS = 16384, BS = 1e4, VS = 12e4, HS = 15e3, US = 150, WS = 5e3, GS = "icecandidate", KS = "icegatheringstatechange", qS = "iceconnectionstatechange", JS = "offer", YS = "answer", XS = /out of range/i, ZS = 128, QS = 8192, $S = (e) => e.replace(/ (\S+\.local) (\d+) typ host/g, " 127.0.0.1 $2 typ host"), eC = (e, { trickleIce: t, rtcConfig: n, rtcPolyfill: r, turnConfig: i, _test_only_mdnsHostFallbackToLoopback: a }) => {
+}, RS = 16384, zS = 1e4, BS = 12e4, VS = 15e3, HS = 150, US = 5e3, WS = "icecandidate", GS = "icegatheringstatechange", KS = "iceconnectionstatechange", qS = "offer", JS = "answer", YS = /out of range/i, XS = 128, ZS = 8192, QS = (e) => e.replace(/ (\S+\.local) (\d+) typ host/g, " 127.0.0.1 $2 typ host"), $S = (e, { trickleIce: t, rtcConfig: n, rtcPolyfill: r, turnConfig: i, _test_only_mdnsHostFallbackToLoopback: a }) => {
 	let o = new (r ?? RTCPeerConnection)({
-		iceServers: tC.concat(i ?? []),
+		iceServers: eC.concat(i ?? []),
 		...n
 	}), s = {}, c = /* @__PURE__ */ new Set(), l = [], u = [], d = null, f = t !== !1, p = [], m = [], h, g = !1, _ = !1, v = null, y = null, b = !1, x = (e) => {
 		h &&= (h(e), void 0);
-	}, S = () => y = Xx(y), C = () => {
-		b || (b = !0, c.forEach((e) => e()), d = Xx(d), u.length = 0, S(), s.close?.());
+	}, S = () => y = Yx(y), C = () => {
+		b || (b = !0, c.forEach((e) => e()), d = Yx(d), u.length = 0, S(), s.close?.());
 	}, w = (e) => {
-		e.type === JS && (x(e), !s.signal && !o.remoteDescription) || (s.signal ? s.signal(e) : l.push(e));
+		e.type === qS && (x(e), !s.signal && !o.remoteDescription) || (s.signal ? s.signal(e) : l.push(e));
 	}, T = (e) => {
 		let t = s.signal;
 		s.signal = (n) => {
 			t?.(n), e(n);
 		}, l.length > 0 && l.splice(0).forEach((e) => s.signal?.(e));
-	}, E = (e) => a ? $S(e) : e, D = (e) => {
+	}, E = (e) => a ? QS(e) : e, D = (e) => {
 		if (!a || typeof e.candidate != "string") return e;
-		let t = $S(e.candidate);
+		let t = QS(e.candidate);
 		return t === e.candidate ? e : {
 			...e,
 			candidate: t
 		};
 	}, O = (e) => ({
-		type: e.localDescription?.type ?? JS,
+		type: e.localDescription?.type ?? qS,
 		sdp: E(e.localDescription?.sdp ?? "")
 	}), k = () => {
 		let e = o.remoteDescription?.sdp;
@@ -21775,11 +21757,11 @@ var tx = (e, t, n) => $b.multiply(t, !1).add(e.multiply(n, !1)).assertValidity()
 		try {
 			return await o.addIceCandidate(e), !0;
 		} catch (t) {
-			if (t instanceof Error && XS.test(t.message) && typeof e.sdpMLineIndex == "number") return !1;
+			if (t instanceof Error && YS.test(t.message) && typeof e.sdpMLineIndex == "number") return !1;
 			throw t;
 		}
 	}, M = (e) => {
-		p.length >= ZS && p.shift(), p.push(e);
+		p.length >= XS && p.shift(), p.push(e);
 	}, N = async () => {
 		if (!o.remoteDescription || p.length === 0) return;
 		let e = k(), t = p.splice(0), n = [];
@@ -21790,7 +21772,7 @@ var tx = (e, t, n) => $b.multiply(t, !1).add(e.multiply(n, !1)).assertValidity()
 	}, te = (e) => {
 		e.binaryType = "arraybuffer", e.bufferedAmountLowThreshold = 65535;
 		let t = () => {
-			console.warn(`${Lx}: invalid or excessive data before handler registration; disconnecting peer`), e.close(), o.close(), C();
+			console.warn(`${Ix}: invalid or excessive data before handler registration; disconnecting peer`), e.close(), o.close(), C();
 		};
 		e.onmessage = (e) => {
 			let n = e.data;
@@ -21802,25 +21784,25 @@ var tx = (e, t, n) => $b.multiply(t, !1).add(e.multiply(n, !1)).assertValidity()
 						t();
 						return;
 					}
-					d ||= setTimeout(t, BS), u.push(n);
+					d ||= setTimeout(t, zS), u.push(n);
 				}
 			}
 		}, e.onopen = () => s.connect?.(), e.onclose = C, e.onerror = ({ error: e }) => {
-			b || e?.errorDetail === "sctp-failure" && (e.sctpCauseCode === 12 || /^User-Initiated Abort\b/.test(e.message)) || s.error?.($x(e, "data channel error"));
+			b || e?.errorDetail === "sctp-failure" && (e.sctpCauseCode === 12 || /^User-Initiated Abort\b/.test(e.message)) || s.error?.(Qx(e, "data channel error"));
 		};
-	}, ne = n?.iceServers ?? tC.concat(i ?? []), re = (e) => ne.some(({ urls: t }) => (Array.isArray(t) ? t : [t]).some((t) => e.test(t))), ie = re(/^turns?:/i), F = !ie && re(/^stuns?:/i), I = ie ? /\btyp relay\b/ : F ? /\btyp (?:srflx|relay|prflx)\b/ : /\btyp (?:host|srflx|relay|prflx)\b/, ae = async (e) => (await new Promise((t) => {
+	}, ne = n?.iceServers ?? eC.concat(i ?? []), re = (e) => ne.some(({ urls: t }) => (Array.isArray(t) ? t : [t]).some((t) => e.test(t))), ie = re(/^turns?:/i), F = !ie && re(/^stuns?:/i), I = ie ? /\btyp relay\b/ : F ? /\btyp (?:srflx|relay|prflx)\b/ : /\btyp (?:host|srflx|relay|prflx)\b/, ae = async (e) => (await new Promise((t) => {
 		let n = null, r = null, i = () => {
-			Xx(n), Xx(r), e.removeEventListener(KS, o), e.removeEventListener(GS, s), c.delete(i), t();
+			Yx(n), Yx(r), e.removeEventListener(GS, o), e.removeEventListener(WS, s), c.delete(i), t();
 		}, a = (t = "") => {
 			let n = `${e.localDescription?.sdp ?? ""}\n${t}`;
-			I.test(n) && (Xx(r), r = setTimeout(i, US));
+			I.test(n) && (Yx(r), r = setTimeout(i, HS));
 		}, o = () => {
 			e.iceGatheringState === "complete" || b ? i() : a();
 		}, s = (e) => {
 			let { candidate: t } = e;
 			t ? a(t.candidate) : i();
 		};
-		c.add(i), n = setTimeout(i, HS), e.addEventListener(KS, o), e.addEventListener(GS, s), o();
+		c.add(i), n = setTimeout(i, VS), e.addEventListener(GS, o), e.addEventListener(WS, s), o();
 	}), O(e)), oe = async () => {
 		let e = f ? O(o) : await ae(o);
 		return b || w(e), e;
@@ -21831,9 +21813,9 @@ var tx = (e, t, n) => $b.multiply(t, !1).add(e.multiply(n, !1)).assertValidity()
 	let L = async (e = !1) => {
 		if (o.connectionState === "closed" || !e && (g || o.signalingState !== "stable")) o.connectionState === "closed" && x();
 		else try {
-			return g = !0, e && (o.remoteDescription && o.signalingState !== "stable" && o.signalingState !== "closed" && o.localDescription?.type === JS && await o.setLocalDescription({ type: "rollback" }), typeof o.restartIce == "function" && o.restartIce()), await o.setLocalDescription(e ? await o.createOffer({ iceRestart: !0 }) : void 0), await oe();
+			return g = !0, e && (o.remoteDescription && o.signalingState !== "stable" && o.signalingState !== "closed" && o.localDescription?.type === qS && await o.setLocalDescription({ type: "rollback" }), typeof o.restartIce == "function" && o.restartIce()), await o.setLocalDescription(e ? await o.createOffer({ iceRestart: !0 }) : void 0), await oe();
 		} catch (t) {
-			e || x(), s.error?.($x(t, "failed to create local offer"));
+			e || x(), s.error?.(Qx(t, "failed to create local offer"));
 		} finally {
 			g = !1;
 		}
@@ -21847,16 +21829,16 @@ var tx = (e, t, n) => $b.multiply(t, !1).add(e.multiply(n, !1)).assertValidity()
 			usernameFragment: e.usernameFragment
 		});
 		w({
-			type: Yx,
+			type: Jx,
 			sdp: JSON.stringify(t)
 		});
 	};
 	let R = () => {
 		o.connectionState === "failed" || o.connectionState === "closed" || o.iceConnectionState === "failed" || o.iceConnectionState === "closed" ? C() : o.connectionState === "connected" || o.connectionState === "connecting" || o.iceConnectionState === "connected" || o.iceConnectionState === "completed" || o.iceConnectionState === "checking" ? S() : (o.connectionState === "disconnected" || o.iceConnectionState === "disconnected") && (y ||= setTimeout(() => {
 			y = null, (o.connectionState === "disconnected" || o.iceConnectionState === "disconnected") && C();
-		}, WS));
+		}, US));
 	};
-	o.onconnectionstatechange = R, o.addEventListener(qS, R), o.ontrack = (e) => {
+	o.onconnectionstatechange = R, o.addEventListener(KS, R), o.ontrack = (e) => {
 		let t = e.streams[0];
 		if (t) {
 			if (!s.track && !s.stream) {
@@ -21883,27 +21865,27 @@ var tx = (e, t, n) => $b.multiply(t, !1).add(e.multiply(n, !1)).assertValidity()
 			return o.connectionState === "closed";
 		},
 		getOffer: async (t = !1) => {
-			if (e) return t ? L(!0) : h ? se : o.localDescription?.type === JS ? f ? O(o) : ae(o) : se;
+			if (e) return t ? L(!0) : h ? se : o.localDescription?.type === qS ? f ? O(o) : ae(o) : se;
 		},
 		async signal(t) {
 			if (t.type === "candidate") {
-				if (t.sdp.length > QS) return;
+				if (t.sdp.length > ZS) return;
 				try {
 					let e = JSON.parse(t.sdp);
 					e && typeof e == "object" && await P(D(e));
 				} catch (e) {
-					s.error?.($x(e, "failed to parse remote candidate"));
+					s.error?.(Qx(e, "failed to parse remote candidate"));
 				}
 			} else if (v?.readyState !== "open" || t.sdp?.includes("a=rtpmap")) try {
 				let n = {
 					...t,
 					sdp: E(t.sdp)
 				};
-				if (t.type === JS) {
+				if (t.type === qS) {
 					let t = g || o.signalingState !== "stable" && !_;
-					return t && e ? void 0 : (t && o.signalingState !== "stable" ? await Hx([o.setLocalDescription({ type: "rollback" }), o.setRemoteDescription(n)]) : await o.setRemoteDescription(n), await N(), await o.setLocalDescription(), await oe());
+					return t && e ? void 0 : (t && o.signalingState !== "stable" ? await Vx([o.setLocalDescription({ type: "rollback" }), o.setRemoteDescription(n)]) : await o.setRemoteDescription(n), await N(), await o.setLocalDescription(), await oe());
 				}
-				if (t.type === YS) {
+				if (t.type === JS) {
 					_ = !0;
 					try {
 						await o.setRemoteDescription(n), await N();
@@ -21912,7 +21894,7 @@ var tx = (e, t, n) => $b.multiply(t, !1).add(e.multiply(n, !1)).assertValidity()
 					}
 				}
 			} catch (e) {
-				s.error?.($x(e, "failed to apply remote signal"));
+				s.error?.(Qx(e, "failed to apply remote signal"));
 			}
 		},
 		sendData: (e) => v?.send(e),
@@ -21921,7 +21903,7 @@ var tx = (e, t, n) => $b.multiply(t, !1).add(e.multiply(n, !1)).assertValidity()
 		},
 		setHandlers: (e) => {
 			let { signal: t, ...n } = e;
-			Object.assign(s, n), s.data && u.length > 0 && (d = Xx(d), u.splice(0).forEach((e) => s.data?.(e))), t && T(t), (s.track || s.stream) && m.length > 0 && m.splice(0).forEach(({ track: e, stream: t }) => {
+			Object.assign(s, n), s.data && u.length > 0 && (d = Yx(d), u.splice(0).forEach((e) => s.data?.(e))), t && T(t), (s.track || s.stream) && m.length > 0 && m.splice(0).forEach(({ track: e, stream: t }) => {
 				s.track?.(e, t), s.stream?.(t);
 			});
 		},
@@ -21937,7 +21919,7 @@ var tx = (e, t, n) => $b.multiply(t, !1).add(e.multiply(n, !1)).assertValidity()
 			if (n) return n.replaceTrack(t);
 		}
 	};
-}, tC = [...Rx(3, (e, t) => `stun:stun${t || ""}.l.google.com:19302`), "stun:stun.cloudflare.com:3478"].map((e) => ({ urls: e })), nC = 1024, rC = 64, iC = 128, aC = 8, oC = /* @__PURE__ */ new Uint8Array(), sC = (e, t) => {
+}, eC = [...Lx(3, (e, t) => `stun:stun${t || ""}.l.google.com:19302`), "stun:stun.cloudflare.com:3478"].map((e) => ({ urls: e })), tC = 1024, nC = 64, rC = 128, iC = 8, aC = /* @__PURE__ */ new Uint8Array(), oC = (e, t) => {
 	let n;
 	try {
 		n = e();
@@ -21945,31 +21927,31 @@ var tx = (e, t, n) => $b.multiply(t, !1).add(e.multiply(n, !1)).assertValidity()
 		return t(!1);
 	}
 	return typeof n == "boolean" ? t(n) : Promise.resolve(n).then((e) => t(e === !0), () => t(!1));
-}, cC = (e, t, n) => t === 2 ? n ? e.slice() : e : t === 1 ? lS(rS(e)) : rS(e), lC = (e, t, n, r) => {
+}, sC = (e, t, n) => t === 2 ? n ? e.slice() : e : t === 1 ? cS(nS(e)) : nS(e), cC = (e, t, n, r) => {
 	try {
 		e.progress(t, n, r);
 	} catch (e) {
-		console.error(`${Lx} progress handler error:`, e);
+		console.error(`${Ix} progress handler error:`, e);
 	}
-}, uC = (e, t, n, r) => {
-	lC(e, 1, n, r);
+}, lC = (e, t, n, r) => {
+	cC(e, 1, n, r);
 	try {
 		e.receiver?.(t, n, r);
 	} catch (e) {
-		console.error(`${Lx} action handler error:`, e);
+		console.error(`${Ix} action handler error:`, e);
 	}
-}, dC = ({ fail: e, accept: t, refuse: n, maxReceiveBytes: r, chunkSize: i }) => {
+}, uC = ({ fail: e, accept: t, refuse: n, maxReceiveBytes: r, chunkSize: i }) => {
 	let a = /* @__PURE__ */ new Map(), o = /* @__PURE__ */ new Map(), s = /* @__PURE__ */ new Set(), c = /* @__PURE__ */ new Map(), l = 0, u = 0, d = 0, f = !1, p = !1, m = (e) => e.phase !== "released", h = (e) => Math.min(r, e?.maxPayloadBytes ?? r), g = (e, t, r, i) => {
 		r?.reject(t), a.get(e.type)?.reject?.(e.peerId, e.metadata, t), i !== void 0 && n(e.peerId, i, t);
 	}, _ = (e) => {
 		for (let t of Array.from(s)) t.peerId === e && (s.delete(t), s.add(t));
 	}, v = (e) => {
 		if (!m(e)) return;
-		e.phase = "released", e.removeAbortListener?.(), e.timer = Xx(e.timer);
+		e.phase = "released", e.removeAbortListener?.(), e.timer = Yx(e.timer);
 		let t = o.get(e.peerId);
 		if (e.kind === "inline") {
 			let n = t.inline.get(e.key);
-			n.splice(n.indexOf(e), 1), n.length || t.inline.delete(e.key), e.data = oC;
+			n.splice(n.indexOf(e), 1), n.length || t.inline.delete(e.key), e.data = aC;
 		} else t.bulk.delete(e.id), s.delete(e), e.data = null, e.transfer === "receiving" && (d -= e.size, t.active === e && (t.active = null, _(e.peerId)), p = !0);
 		t.count--, l--, t.count || o.delete(e.peerId), e.controller?.abort();
 	}, y = (e, t) => {
@@ -21979,11 +21961,11 @@ var tx = (e, t, n) => $b.multiply(t, !1).add(e.multiply(n, !1)).assertValidity()
 		if (e.size > h(t)) return y(e, "payload exceeds receiver size limit"), !1;
 		let n = e.scope ? e.scope.receive : t.receive;
 		if (!n) return t.receiver ? (e.phase = "ready", !0) : !1;
-		if (u >= iC || (c.get(e.peerId) ?? 0) >= aC) return y(e, "too many pending receive decisions"), !1;
+		if (u >= rC || (c.get(e.peerId) ?? 0) >= iC) return y(e, "too many pending receive decisions"), !1;
 		e.phase = "deciding";
 		let r = new AbortController();
 		e.controller = r, u++, c.set(e.peerId, (c.get(e.peerId) ?? 0) + 1);
-		let i = sC(() => n({
+		let i = oC(() => n({
 			byteLength: e.size,
 			peerId: e.peerId,
 			signal: r.signal,
@@ -21997,12 +21979,12 @@ var tx = (e, t, n) => $b.multiply(t, !1).add(e.multiply(n, !1)).assertValidity()
 	}, x = (t, n, r) => {
 		let i;
 		try {
-			i = cC(r, t.format, t.kind === "inline");
+			i = sC(r, t.format, t.kind === "inline");
 		} catch {
 			v(t), e(t.peerId, "invalid action payload");
 			return;
 		}
-		v(t), uC(n, i, t.peerId, t.metadata);
+		v(t), lC(n, i, t.peerId, t.metadata);
 	}, S = (e) => {
 		let t = a.get(e.type);
 		m(e) && t && b(e, t) && t.receiver && x(e, t, e.data);
@@ -22040,7 +22022,7 @@ var tx = (e, t, n) => $b.multiply(t, !1).add(e.multiply(n, !1)).assertValidity()
 		}
 	}, E = (e) => {
 		let t = o.get(e.peerId);
-		if (l >= nC || (t?.count ?? 0) >= rC) return g(e, "too many pending transfers", e.scope, e.kind === "bulk" ? e.id : void 0), !1;
+		if (l >= tC || (t?.count ?? 0) >= nC) return g(e, "too many pending transfers", e.scope, e.kind === "bulk" ? e.id : void 0), !1;
 		if (t || (t = {
 			bulk: /* @__PURE__ */ new Map(),
 			inline: /* @__PURE__ */ new Map(),
@@ -22051,10 +22033,10 @@ var tx = (e, t, n) => $b.multiply(t, !1).add(e.multiply(n, !1)).assertValidity()
 			n.push(e), t.inline.set(e.key, n);
 		} else t.bulk.set(e.id, e), s.add(e);
 		let n = () => {
-			let t = VS - (Date.now() - e.lastSeen);
+			let t = BS - (Date.now() - e.lastSeen);
 			t > 0 ? e.timer = setTimeout(n, t) : (y(e, "action transfer timed out"), T());
 		};
-		if (e.timer = setTimeout(n, VS), e.scope) {
+		if (e.timer = setTimeout(n, BS), e.scope) {
 			let { signal: t } = e.scope, n = () => {
 				y(e, "receive cancelled"), T();
 			};
@@ -22082,7 +22064,7 @@ var tx = (e, t, n) => $b.multiply(t, !1).add(e.multiply(n, !1)).assertValidity()
 				receiver: null,
 				receive: null,
 				reject: null,
-				progress: Jx
+				progress: qx
 			};
 			return a.set(e, n), {
 				onMessage: (e) => {
@@ -22106,12 +22088,12 @@ var tx = (e, t, n) => $b.multiply(t, !1).add(e.multiply(n, !1)).assertValidity()
 			if (i?.receiver && !(a ? a.receive : i.receive) && !o.get(t.peerId)?.inline.has(s)) {
 				let r;
 				try {
-					r = cC(n, t.format, !0);
+					r = sC(n, t.format, !0);
 				} catch {
 					e(t.peerId, "invalid action payload");
 					return;
 				}
-				uC(i, r, t.peerId, t.metadata);
+				lC(i, r, t.peerId, t.metadata);
 				return;
 			}
 			let c = {
@@ -22156,7 +22138,7 @@ var tx = (e, t, n) => $b.multiply(t, !1).add(e.multiply(n, !1)).assertValidity()
 			let d = Date.now();
 			u.lastSeen = d;
 			for (let e of s) e.phase === "ready" && a.get(e.type)?.receiver && (e.lastSeen = d);
-			u.offset === u.size ? (C(u), m(u) && l?.active === u && (l.active = null, _(t)), T()) : lC(a.get(u.type), u.offset / u.size, t, u.metadata);
+			u.offset === u.size ? (C(u), m(u) && l?.active === u && (l.active = null, _(t)), T()) : cC(a.get(u.type), u.offset / u.size, t, u.metadata);
 		},
 		cancel: (e, t) => {
 			let n = o.get(e)?.bulk.get(t);
@@ -22174,40 +22156,40 @@ var tx = (e, t, n) => $b.multiply(t, !1).add(e.multiply(n, !1)).assertValidity()
 			T();
 		}
 	};
-}, fC = 2, pC = 0, mC = 1, hC = 2, gC = 3, _C = 4, vC = 5, yC = 36, bC = 48, xC = 6, SC = 14, CC = zS - SC, wC = 256 * 1024 ** 2, TC = 1024 ** 2, EC = "bufferedamountlow", DC = "close", OC = "error", kC = 1e4, AC = (e, t) => {
-	let n = Zx(t);
+}, dC = 2, fC = 0, pC = 1, mC = 2, hC = 3, gC = 4, _C = 5, vC = 36, yC = 48, bC = 6, xC = 14, SC = RS - xC, CC = 256 * 1024 ** 2, wC = 1024 ** 2, TC = "bufferedamountlow", EC = "close", DC = "error", OC = 1e4, kC = (e, t) => {
+	let n = Xx(t);
 	return n.kind = e, n.name = e === "aborted" ? "AbortError" : n.name, n;
-}, jC = (e) => {
-	if (e?.aborted) throw AC("aborted", "operation aborted");
-}, MC = (e, t, n = xC) => {
+}, AC = (e) => {
+	if (e?.aborted) throw kC("aborted", "operation aborted");
+}, jC = (e, t, n = bC) => {
 	let r = new Uint8Array(n);
-	return r[0] = fC, r[1] = e, new DataView(r.buffer).setUint32(2, t), r;
-}, NC = AC, PC = (e, t, n = kC) => e.readyState !== "open" || e.bufferedAmount <= e.bufferedAmountLowThreshold ? Promise.resolve(e.readyState === "open") : new Promise((r) => {
+	return r[0] = dC, r[1] = e, new DataView(r.buffer).setUint32(2, t), r;
+}, MC = kC, NC = (e, t, n = OC) => e.readyState !== "open" || e.bufferedAmount <= e.bufferedAmountLowThreshold ? Promise.resolve(e.readyState === "open") : new Promise((r) => {
 	let i = !1, a = null, o = (n) => {
-		i || (i = !0, e.removeEventListener(EC, s), e.removeEventListener(DC, c), e.removeEventListener(OC, c), t?.removeEventListener("abort", c), Xx(a), r(n));
+		i || (i = !0, e.removeEventListener(TC, s), e.removeEventListener(EC, c), e.removeEventListener(DC, c), t?.removeEventListener("abort", c), Yx(a), r(n));
 	}, s = () => o(!0), c = () => o(!1);
-	e.addEventListener(EC, s), e.addEventListener(DC, c), e.addEventListener(OC, c), t?.addEventListener("abort", c, { once: !0 }), a = setTimeout(() => o(!1), n), e.readyState !== "open" || t?.aborted ? o(!1) : e.bufferedAmount <= e.bufferedAmountLowThreshold && o(!0);
-}), FC = ({ getPeer: e, getPeerIds: t, canReceiveFromPeer: n, onPeerError: r, throwIfAborted: i = jC, maxReceiveBytes: a = wC }) => {
-	if (!Number.isSafeInteger(a) || a <= 0) throw Zx("maxReceiveBytes must be a positive safe integer");
-	let o = /* @__PURE__ */ new Map(), s = /* @__PURE__ */ new Map(), c = /* @__PURE__ */ new WeakSet(), l = 0, u = dC({
+	e.addEventListener(TC, s), e.addEventListener(EC, c), e.addEventListener(DC, c), t?.addEventListener("abort", c, { once: !0 }), a = setTimeout(() => o(!1), n), e.readyState !== "open" || t?.aborted ? o(!1) : e.bufferedAmount <= e.bufferedAmountLowThreshold && o(!0);
+}), PC = ({ getPeer: e, getPeerIds: t, canReceiveFromPeer: n, onPeerError: r, throwIfAborted: i = AC, maxReceiveBytes: a = CC }) => {
+	if (!Number.isSafeInteger(a) || a <= 0) throw Xx("maxReceiveBytes must be a positive safe integer");
+	let o = /* @__PURE__ */ new Map(), s = /* @__PURE__ */ new Map(), c = /* @__PURE__ */ new WeakSet(), l = 0, u = uC({
 		fail: (e, t) => f(e, t),
-		accept: (e, t) => p(e, t, gC),
-		refuse: (e, t, n) => p(e, t, _C, n),
+		accept: (e, t) => p(e, t, hC),
+		refuse: (e, t, n) => p(e, t, gC, n),
 		maxReceiveBytes: a,
-		chunkSize: CC
+		chunkSize: SC
 	}), d = (e) => {
-		for (let t of s.get(e)?.values() ?? []) t.fail(NC("disconnected", "peer disconnected"));
+		for (let t of s.get(e)?.values() ?? []) t.fail(MC("disconnected", "peer disconnected"));
 		s.delete(e), u.clearPeer(e);
 	}, f = (t, n) => {
 		let i = e(t, !0);
-		i && !c.has(i) && (c.add(i), console.warn(`${Lx}: ${n}; disconnecting peer ${t}`), r(t, Zx(n)));
+		i && !c.has(i) && (c.add(i), console.warn(`${Ix}: ${n}; disconnecting peer ${t}`), r(t, Xx(n)));
 	}, p = (t, n, r, i = "") => {
 		let a = e(t, !0);
 		if (!a) return;
-		let o = nS(i).subarray(0, 200), s = MC(r, n, xC + o.length);
-		s.set(o, xC);
+		let o = tS(i).subarray(0, 200), s = jC(r, n, bC + o.length);
+		s.set(o, bC);
 		try {
-			if ((a.channel?.bufferedAmount ?? 0) > TC) throw Zx("control send buffer is full");
+			if ((a.channel?.bufferedAmount ?? 0) > wC) throw Xx("control send buffer is full");
 			a.sendData(s);
 		} catch {
 			f(t, "unable to send action control");
@@ -22222,46 +22204,46 @@ var tx = (e, t, n) => $b.multiply(t, !1).add(e.multiply(n, !1)).assertValidity()
 				...r.receiveScope ? { receiveScope: r.receiveScope } : {}
 			}, c = o.get(n);
 			if (c) {
-				if (c.options.sendToPending !== a.sendToPending || c.options.receiveWhilePending !== a.receiveWhilePending || c.options.receiveScope !== a.receiveScope || c.options.maxPayloadBytes !== a.maxPayloadBytes) throw Zx(`action type "${n}" cannot be redefined`);
+				if (c.options.sendToPending !== a.sendToPending || c.options.receiveWhilePending !== a.receiveWhilePending || c.options.receiveScope !== a.receiveScope || c.options.maxPayloadBytes !== a.maxPayloadBytes) throw Xx(`action type "${n}" cannot be redefined`);
 				return c.action;
 			}
-			let d = nS(n);
-			if (!n || n.includes("\0") || d.length > 32) throw Zx("action type must contain 1–32 UTF-8 bytes and no null characters");
+			let d = tS(n);
+			if (!n || n.includes("\0") || d.length > 32) throw Xx("action type must contain 1–32 UTF-8 bytes and no null characters");
 			let f = {
 				options: a,
 				action: {
 					...u.register(n, a),
 					send: async (n, r, o, c, u) => {
-						if (i(u), n === void 0) throw Zx("action data cannot be undefined");
-						let f = n instanceof Blob, m = f || n instanceof ArrayBuffer || ArrayBuffer.isView(n), h = m ? 2 : typeof n == "string" ? 0 : 1, g = f ? n : n instanceof ArrayBuffer ? new Uint8Array(n) : ArrayBuffer.isView(n) ? new Uint8Array(n.buffer, n.byteOffset, n.byteLength) : nS(h === 0 ? n : cS(n)), _ = g instanceof Blob ? g.size : g.byteLength, v = o === void 0 ? /* @__PURE__ */ new Uint8Array() : nS(cS(o));
-						if (v.length > 16336) throw Zx("action metadata is too large");
-						let y = yC + v.length + _ <= zS;
+						if (i(u), n === void 0) throw Xx("action data cannot be undefined");
+						let f = n instanceof Blob, m = f || n instanceof ArrayBuffer || ArrayBuffer.isView(n), h = m ? 2 : typeof n == "string" ? 0 : 1, g = f ? n : n instanceof ArrayBuffer ? new Uint8Array(n) : ArrayBuffer.isView(n) ? new Uint8Array(n.buffer, n.byteOffset, n.byteLength) : tS(h === 0 ? n : sS(n)), _ = g instanceof Blob ? g.size : g.byteLength, v = o === void 0 ? /* @__PURE__ */ new Uint8Array() : tS(sS(o));
+						if (v.length > 16336) throw Xx("action metadata is too large");
+						let y = vC + v.length + _ <= RS;
 						!y && m && !(g instanceof Blob) && (g = g.slice());
-						let b = y ? 0 : l++ >>> 0, x = y ? yC : bC, S = new Uint8Array(x + v.length + (y ? _ : 0));
-						S[0] = fC, S[1] = (y ? pC : mC) | h << 4, S.set(d, 2);
+						let b = y ? 0 : l++ >>> 0, x = y ? vC : yC, S = new Uint8Array(x + v.length + (y ? _ : 0));
+						S[0] = dC, S[1] = (y ? fC : pC) | h << 4, S.set(d, 2);
 						let C = new DataView(S.buffer);
 						C.setUint16(34, v.length), y || (C.setUint32(36, b), C.setFloat64(40, _)), S.set(v, x), y && S.set(g instanceof Blob ? new Uint8Array(await g.arrayBuffer()) : g, x + v.length);
 						let w = r ? Array.isArray(r) ? r : [r] : t(a.sendToPending);
-						await Hx([...new Set(w)].map(async (t) => {
+						await Vx([...new Set(w)].map(async (t) => {
 							let n = e(t, a.sendToPending);
 							if (!n) {
-								console.warn(`${Lx}: no peer with id ${t} found`);
+								console.warn(`${Ix}: no peer with id ${t} found`);
 								return;
 							}
 							let r = null, l = () => {
 								if (r) throw r;
-								if (i(u), e(t, a.sendToPending) !== n || n.channel?.readyState === "closed") throw NC("disconnected", "peer disconnected");
+								if (i(u), e(t, a.sendToPending) !== n || n.channel?.readyState === "closed") throw MC("disconnected", "peer disconnected");
 							}, d = async (e) => {
 								l();
 								let t = n.channel;
 								if (t && (t.readyState !== "open" || t.bufferedAmount > t.bufferedAmountLowThreshold)) {
-									if (!await PC(t, u)) throw i(u), NC("disconnected", "data channel stopped draining");
+									if (!await NC(t, u)) throw i(u), MC("disconnected", "data channel stopped draining");
 									l();
 								}
 								try {
 									n.sendData(e);
 								} catch {
-									throw NC("disconnected", "peer disconnected");
+									throw MC("disconnected", "peer disconnected");
 								}
 							};
 							if (y) {
@@ -22271,12 +22253,12 @@ var tx = (e, t, n) => $b.multiply(t, !1).add(e.multiply(n, !1)).assertValidity()
 							let f = !1, m = !1, h = Date.now(), v, x, C = new Promise((e, t) => {
 								v = e, x = t;
 							});
-							C.catch(Jx);
+							C.catch(qx);
 							let w = s.get(t) ?? /* @__PURE__ */ new Map();
-							if (w.has(b)) throw Zx("action transmission id is still in use");
+							if (w.has(b)) throw Xx("action transmission id is still in use");
 							s.set(t, w);
 							let T = null, E = {
-								accept: () => !T || r ? !1 : (T = Xx(T), v(), !0),
+								accept: () => !T || r ? !1 : (T = Yx(T), v(), !0),
 								fail: (e, t = !1) => {
 									t && (m = !0), r = e, x(e);
 								},
@@ -22286,10 +22268,10 @@ var tx = (e, t, n) => $b.multiply(t, !1).add(e.multiply(n, !1)).assertValidity()
 							};
 							w.set(b, E);
 							let D = () => {
-								let e = VS - (Date.now() - h);
-								e > 0 ? T = setTimeout(D, e) : E.fail(NC("timeout", "action offer timed out"));
+								let e = BS - (Date.now() - h);
+								e > 0 ? T = setTimeout(D, e) : E.fail(MC("timeout", "action offer timed out"));
 							};
-							T = setTimeout(D, VS);
+							T = setTimeout(D, BS);
 							let O = () => {
 								try {
 									i(u);
@@ -22300,18 +22282,18 @@ var tx = (e, t, n) => $b.multiply(t, !1).add(e.multiply(n, !1)).assertValidity()
 							u?.addEventListener("abort", O, { once: !0 });
 							try {
 								await d(S), f = !0, await C;
-								for (let e = 0; e < _; e += CC) {
+								for (let e = 0; e < _; e += SC) {
 									l();
-									let n = Math.min(CC, _ - e), r = MC(hC, b, SC + n);
-									new DataView(r.buffer).setFloat64(xC, e), r.set(g instanceof Blob ? new Uint8Array(await g.slice(e, e + n).arrayBuffer()) : g.subarray(e, e + n), SC), await d(r);
+									let n = Math.min(SC, _ - e), r = jC(mC, b, xC + n);
+									new DataView(r.buffer).setFloat64(bC, e), r.set(g instanceof Blob ? new Uint8Array(await g.slice(e, e + n).arrayBuffer()) : g.subarray(e, e + n), xC), await d(r);
 									for (let e of w.values()) e.touch();
 									c?.((e + n) / _, t, o);
 								}
 								l();
 							} catch (r) {
-								throw f && !m && e(t, !0) === n && (!n.channel || n.channel.readyState === "open" && (n.channel.bufferedAmount ?? 0) <= TC) && p(t, b, vC), r;
+								throw f && !m && e(t, !0) === n && (!n.channel || n.channel.readyState === "open" && (n.channel.bufferedAmount ?? 0) <= wC) && p(t, b, _C), r;
 							} finally {
-								T = Xx(T), u?.removeEventListener("abort", O), w.delete(b), !w.size && s.get(t) === w && s.delete(t);
+								T = Yx(T), u?.removeEventListener("abort", O), w.delete(b), !w.size && s.get(t) === w && s.delete(t);
 							}
 						}));
 					}
@@ -22325,48 +22307,48 @@ var tx = (e, t, n) => $b.multiply(t, !1).add(e.multiply(n, !1)).assertValidity()
 				return;
 			}
 			let r = new Uint8Array(t);
-			if (r[0] !== fC) {
+			if (r[0] !== dC) {
 				f(e, "incompatible action protocol version");
 				return;
 			}
 			let i = r[1] & 15, a = r[1] >>> 4, c = new DataView(r.buffer, r.byteOffset, r.byteLength);
-			if (i > vC || a > 2 || i > mC && a !== 0) {
+			if (i > _C || a > 2 || i > pC && a !== 0) {
 				f(e, "invalid action frame");
 				return;
 			}
-			if (i >= hC) {
-				if (r.length < xC || (i === gC || i === vC) && r.length !== xC || i === _C && r.length > 206) {
+			if (i >= mC) {
+				if (r.length < bC || (i === hC || i === _C) && r.length !== bC || i === gC && r.length > 206) {
 					f(e, "invalid action control");
 					return;
 				}
 				let t = c.getUint32(2);
-				if (i === gC) {
+				if (i === hC) {
 					let n = s.get(e);
 					if (n?.get(t)?.accept()) for (let e of n.values()) e.touch();
 					return;
 				}
-				if (i === _C) {
-					s.get(e)?.get(t)?.fail(NC("rejected", rS(r.subarray(xC))), !0);
+				if (i === gC) {
+					s.get(e)?.get(t)?.fail(MC("rejected", nS(r.subarray(bC))), !0);
 					return;
 				}
-				i === vC ? u.cancel(e, t) : u.receiveChunk(e, t, r.length >= SC ? c.getFloat64(xC) : NaN, r.subarray(SC));
+				i === _C ? u.cancel(e, t) : u.receiveChunk(e, t, r.length >= xC ? c.getFloat64(bC) : NaN, r.subarray(xC));
 				return;
 			}
-			let l = i === pC ? yC : bC;
+			let l = i === fC ? vC : yC;
 			if (r.length < l) {
 				f(e, "invalid action header");
 				return;
 			}
-			let d = rS(r.subarray(2, 34)).replaceAll("\0", "");
+			let d = nS(r.subarray(2, 34)).replaceAll("\0", "");
 			if (!n(e, !!o.get(d)?.options.receiveWhilePending)) return;
-			let p = c.getUint16(34), m = l + p, h = i === pC ? r.length - m : c.getFloat64(40), g = i === mC ? c.getUint32(36) : 0;
-			if (!d || m > r.length || !Number.isSafeInteger(h) || h < 0 || i === mC && (h === 0 || m !== r.length)) {
+			let p = c.getUint16(34), m = l + p, h = i === fC ? r.length - m : c.getFloat64(40), g = i === pC ? c.getUint32(36) : 0;
+			if (!d || m > r.length || !Number.isSafeInteger(h) || h < 0 || i === pC && (h === 0 || m !== r.length)) {
 				f(e, "invalid action proposal");
 				return;
 			}
 			let _;
 			try {
-				p && (_ = lS(rS(r.subarray(l, m))));
+				p && (_ = cS(nS(r.subarray(l, m))));
 			} catch {
 				f(e, "invalid action metadata");
 				return;
@@ -22378,27 +22360,27 @@ var tx = (e, t, n) => $b.multiply(t, !1).add(e.multiply(n, !1)).assertValidity()
 				size: h,
 				..._ === void 0 ? {} : { metadata: _ }
 			};
-			i === pC ? u.receiveInline(v, r.subarray(m)) : u.receiveOffer(v, g);
+			i === fC ? u.receiveInline(v, r.subarray(m)) : u.receiveOffer(v, g);
 		},
 		clearPeer: d
 	};
-}, IC = (e) => e && typeof e == "object" && !Array.isArray(e) && typeof e.r == "string" ? e : null, LC = (e) => {
-	let t = IC(e);
+}, FC = (e) => e && typeof e == "object" && !Array.isArray(e) && typeof e.r == "string" ? e : null, IC = (e) => {
+	let t = FC(e);
 	return t ? {
 		r: t.r,
 		...Object.hasOwn(t, "m") ? { m: t.m } : {}
 	} : null;
-}, RC = (e) => {
-	let t = IC(e);
+}, LC = (e) => {
+	let t = FC(e);
 	return t ? {
 		r: t.r,
 		...typeof t.e == "string" ? { e: t.e } : {}
 	} : null;
-}, zC = (e, t) => t === void 0 ? e : {
+}, RC = (e, t) => t === void 0 ? e : {
 	...e,
 	metadata: t
-}, BC = ({ getPeer: e, getPeerIds: t, canReceiveFromPeer: n, onPeerError: r, maxReceiveBytes: i }) => {
-	let a = Object.create(null), o = {}, s = /* @__PURE__ */ new Map(), c = FC({
+}, zC = ({ getPeer: e, getPeerIds: t, canReceiveFromPeer: n, onPeerError: r, maxReceiveBytes: i }) => {
+	let a = Object.create(null), o = {}, s = /* @__PURE__ */ new Map(), c = PC({
 		getPeer: e,
 		getPeerIds: t,
 		canReceiveFromPeer: n,
@@ -22406,17 +22388,17 @@ var tx = (e, t, n) => $b.multiply(t, !1).add(e.multiply(n, !1)).assertValidity()
 		...i === void 0 ? {} : { maxReceiveBytes: i }
 	}), l = c.makeInternalAction, u = c.handleData, d = (e) => {
 		let t = o[e];
-		t && (Xx(t.timer), t.signal && t.abortHandler && t.signal.removeEventListener("abort", t.abortHandler), delete o[e], t.controller.abort());
+		t && (Yx(t.timer), t.signal && t.abortHandler && t.signal.removeEventListener("abort", t.abortHandler), delete o[e], t.controller.abort());
 	}, f = (e, t) => {
-		Wx(o).forEach(([n, r]) => {
+		Ux(o).forEach(([n, r]) => {
 			r.peerId === e && (d(n), r.reject(t));
 		});
 	}, p = (e, t) => {
 		c.clearPeer(e);
 		let n = s.get(e);
-		n && (s.delete(e), n.forEach((e) => e.abort())), f(e, AC("disconnected", Qx(t, "peer disconnected")));
+		n && (s.delete(e), n.forEach((e) => e.abort())), f(e, kC("disconnected", Zx(t, "peer disconnected")));
 	}, m = l("@_response", { receiveScope: (e, t) => {
-		let n = RC(t), r = n && o[n.r];
+		let n = LC(t), r = n && o[n.r];
 		if (!n || !r || r.peerId !== e) return null;
 		let i = n.e === void 0 ? r.getReceive() : null;
 		return {
@@ -22429,24 +22411,24 @@ var tx = (e, t, n) => $b.multiply(t, !1).add(e.multiply(n, !1)).assertValidity()
 				signal: e.signal
 			}) : null,
 			reject: (e) => {
-				o[n.r] === r && (d(n.r), r.reject(AC("rejected", e)));
+				o[n.r] === r && (d(n.r), r.reject(kC("rejected", e)));
 			}
 		};
 	} });
 	return m.onProgress((e, t, n) => {
-		let r = RC(n), i = r && o[r.r];
+		let r = LC(n), i = r && o[r.r];
 		i && i.peerId === t && r?.e === void 0 && i.getReceiveProgress()?.(e, { peerId: t });
 	}), m.onMessage((e, t, n) => {
-		let r = RC(n);
+		let r = LC(n);
 		if (!r) return;
 		let i = o[r.r];
-		i && i.peerId === t && (d(r.r), r.e === void 0 ? i.resolve(e) : i.reject(AC("rejected", r.e)));
+		i && i.peerId === t && (d(r.r), r.e === void 0 ? i.resolve(e) : i.reject(kC("rejected", r.e)));
 	}), {
 		makeAction: (t, n) => {
-			if (n && "onRequest" in n && n.kind !== "request") throw Zx("request actions must use kind: \"request\"");
+			if (n && "onRequest" in n && n.kind !== "request") throw Xx("request actions must use kind: \"request\"");
 			let r = n?.kind ?? "message", i = l(t), c = a[t];
 			if (c) {
-				if (c.kind !== r) throw Zx(`action type "${t}" cannot be redefined`);
+				if (c.kind !== r) throw Xx(`action type "${t}" cannot be redefined`);
 				return c.action;
 			}
 			let u = {
@@ -22454,13 +22436,13 @@ var tx = (e, t, n) => $b.multiply(t, !1).add(e.multiply(n, !1)).assertValidity()
 				action: null,
 				onReceive: n?.onReceive ?? null,
 				onReceiveProgress: n?.onReceiveProgress ?? null
-			}, f = (e, t) => e ? (n, r) => e(n, zC({ peerId: r }, t)) : void 0, p = (e, t, n) => {
-				let r = u.kind === "request" ? LC(n) : null;
-				u.onReceiveProgress?.(e, zC({ peerId: t }, r ? r.m : n));
+			}, f = (e, t) => e ? (n, r) => e(n, RC({ peerId: r }, t)) : void 0, p = (e, t, n) => {
+				let r = u.kind === "request" ? IC(n) : null;
+				u.onReceiveProgress?.(e, RC({ peerId: t }, r ? r.m : n));
 			}, h = (e) => {
 				u.onReceive = e, i.onReceive(e ? (t) => {
-					let n = r === "request" ? LC(t.metadata) : null;
-					return e(zC({
+					let n = r === "request" ? IC(t.metadata) : null;
+					return e(RC({
 						byteLength: t.byteLength,
 						peerId: t.peerId,
 						signal: t.signal,
@@ -22471,7 +22453,7 @@ var tx = (e, t, n) => $b.multiply(t, !1).add(e.multiply(n, !1)).assertValidity()
 			if (h(u.onReceive), i.onProgress(p), r === "message") {
 				let e = n?.onMessage ?? null, r = (t, n, r) => {
 					let i = e;
-					Promise.resolve().then(() => i(t, zC({ peerId: n }, r))).catch((e) => console.error(`${Lx} action handler error:`, e));
+					Promise.resolve().then(() => i(t, RC({ peerId: n }, r))).catch((e) => console.error(`${Ix} action handler error:`, e));
 				}, o = {
 					send: async (e, t = {}) => {
 						await i.send(e, t.target, t.metadata, f(t.onProgress, t.metadata), t.signal);
@@ -22498,34 +22480,34 @@ var tx = (e, t, n) => $b.multiply(t, !1).add(e.multiply(n, !1)).assertValidity()
 				return u.action = o, a[t] = u, i.onMessage(e ? r : null), o;
 			}
 			i.onReject((e, t, n) => {
-				let r = LC(t);
+				let r = IC(t);
 				r && m.send(null, e, {
 					r: r.r,
 					e: n
-				}).catch(Jx);
+				}).catch(qx);
 			});
 			let g = n?.onRequest ?? null, _ = (e, t, n) => {
-				let r = LC(n);
+				let r = IC(n);
 				if (!r) return;
 				let i = g, a = new AbortController(), o = s.get(t);
 				o || (o = /* @__PURE__ */ new Set(), s.set(t, o)), o.add(a), Promise.resolve().then(async () => {
 					let n = await i(e, {
-						...zC({ peerId: t }, r.m),
+						...RC({ peerId: t }, r.m),
 						signal: a.signal
 					});
-					if (n === void 0) throw Zx("request handler returned undefined");
+					if (n === void 0) throw Xx("request handler returned undefined");
 					return n;
 				}).then((e) => m.send(e, t, { r: r.r }), (e) => m.send(null, t, {
 					r: r.r,
-					e: Qx(e, "request failed").slice(0, 512)
-				})).catch(Jx).finally(() => {
+					e: Zx(e, "request failed").slice(0, 512)
+				})).catch(qx).finally(() => {
 					let e = s.get(t);
 					e?.delete(a), e && !e.size && s.delete(t), a.abort();
 				});
 			}, v = async (t, n) => {
 				let { target: r, metadata: a, onProgress: s, signal: c, timeoutMs: l } = n;
-				if (jC(c), !e(r, !1)) throw AC("disconnected", `no active peer with id ${r}`);
-				let p = Bx(20), m = new AbortController(), h = new Promise((e, t) => {
+				if (AC(c), !e(r, !1)) throw kC("disconnected", `no active peer with id ${r}`);
+				let p = zx(20), m = new AbortController(), h = new Promise((e, t) => {
 					let n = {
 						controller: m,
 						getReceive: () => u.onReceive,
@@ -22536,10 +22518,10 @@ var tx = (e, t, n) => $b.multiply(t, !1).add(e.multiply(n, !1)).assertValidity()
 						timer: null,
 						...c === void 0 ? {} : { signal: c }
 					}, i = () => {
-						d(p), t(AC("aborted", "operation aborted"));
+						d(p), t(kC("aborted", "operation aborted"));
 					};
 					c && (n.abortHandler = i, c.addEventListener("abort", i, { once: !0 })), o[p] = n, l !== void 0 && (n.timer = setTimeout(() => {
-						d(p), n.reject(AC("timeout", "request timed out"));
+						d(p), n.reject(kC("timeout", "request timed out"));
 					}, l));
 				});
 				try {
@@ -22555,7 +22537,7 @@ var tx = (e, t, n) => $b.multiply(t, !1).add(e.multiply(n, !1)).assertValidity()
 				request: v,
 				requestMany: async (e, t) => {
 					let { targets: n, onResult: r, ...i } = t;
-					return jC(i.signal), await Hx(n.map(async (t) => {
+					return AC(i.signal), await Vx(n.map(async (t) => {
 						try {
 							let n = {
 								peerId: t,
@@ -22567,7 +22549,7 @@ var tx = (e, t, n) => $b.multiply(t, !1).add(e.multiply(n, !1)).assertValidity()
 							};
 							return r?.(n), n;
 						} catch (e) {
-							let n = $x(e, "request failed");
+							let n = Qx(e, "request failed");
 							if (n.kind === "aborted" || !n.kind) throw n;
 							let i = n.kind === "timeout" ? {
 								peerId: t,
@@ -22609,19 +22591,19 @@ var tx = (e, t, n) => $b.multiply(t, !1).add(e.multiply(n, !1)).assertValidity()
 		handleData: u,
 		clearPeer: p
 	};
-}, VC = (e) => e && typeof e == "object" && !Array.isArray(e) && typeof e.k == "string" ? {
+}, BC = (e) => e && typeof e == "object" && !Array.isArray(e) && typeof e.k == "string" ? {
 	key: e.k,
 	...typeof e.s == "string" ? { streamId: e.s } : {},
 	...typeof e.t == "string" ? { trackId: e.t } : {},
 	...Object.hasOwn(e, "m") ? { metadata: e.m } : {}
-} : null, HC = (e) => (t) => {
+} : null, VC = (e) => (t) => {
 	let n = e.get(t);
-	return n || (n = Bx(20), e.set(t, n)), n;
-}, UC = () => {
+	return n || (n = zx(20), e.set(t, n)), n;
+}, HC = () => {
 	let e = /* @__PURE__ */ new WeakMap(), t = /* @__PURE__ */ new WeakMap(), n = /* @__PURE__ */ new Map(), r = /* @__PURE__ */ new Map(), i = /* @__PURE__ */ new Map(), a = /* @__PURE__ */ new Map(), o = /* @__PURE__ */ new WeakMap(), s = /* @__PURE__ */ new WeakMap();
 	return {
-		getStreamKey: HC(e),
-		getTrackKey: HC(t),
+		getStreamKey: VC(e),
+		getTrackKey: VC(t),
 		rememberRemoteStream: (e, t, i) => {
 			let s = o.get(t);
 			s !== void 0 && n.get(s) === t && n.delete(s), o.set(t, e), n.set(e, t), i && r.set(i, t), t.getTracks?.().forEach((e) => {
@@ -22645,10 +22627,10 @@ var tx = (e, t, n) => $b.multiply(t, !1).add(e.multiply(n, !1)).assertValidity()
 			n.clear(), r.clear(), i.clear(), a.clear();
 		}
 	};
-}, WC = ({ iterate: e, isActive: t, getSharedMediaPeer: n, onPeerError: r }) => {
-	let i = {}, a = {}, o = {}, s = UC(), c = (e) => n(e)?.__trysteroMedia ?? (o[e] ??= UC()), l = (e, t, n, i) => {
+}, UC = ({ iterate: e, isActive: t, getSharedMediaPeer: n, onPeerError: r }) => {
+	let i = {}, a = {}, o = {}, s = HC(), c = (e) => n(e)?.__trysteroMedia ?? (o[e] ??= HC()), l = (e, t, n, i) => {
 		let a = e[t] ??= [];
-		a.length >= 64 ? (console.warn(`${Lx}: too many pending ${i} metadata messages`), r(t, Zx("too many pending media metadata messages"))) : a.push(n);
+		a.length >= 64 ? (console.warn(`${Ix}: too many pending ${i} metadata messages`), r(t, Xx("too many pending media metadata messages"))) : a.push(n);
 	}, u = (e, t, n) => {
 		if (!e?.length) return;
 		let r = t ? e.findIndex((e) => {
@@ -22684,14 +22666,14 @@ var tx = (e, t, n) => $b.multiply(t, !1).add(e.multiply(n, !1)).assertValidity()
 		replaceTrack: (e, t, n, r) => p(n.target, s.getTrackKey(t), n.metadata, r, (n) => n.replaceTrack(e, t), { t: e.id }),
 		receiveStreamMeta: (e, n) => {
 			if (!t(n)) return;
-			let r = VC(e);
+			let r = BC(e);
 			if (!r) return;
 			let a = c(n).getRemoteStream(r.key, r.streamId);
 			a?.getTracks().length ? d(n, r.key, a, r.metadata) : l(i, n, r, "stream");
 		},
 		receiveTrackMeta: (e, n) => {
 			if (!t(n)) return;
-			let r = VC(e);
+			let r = BC(e);
 			if (!r) return;
 			let i = c(n).getRemoteTrack(r.key, r.trackId);
 			i && i.track.readyState !== "ended" && (!i.stream.getTracks || i.stream.getTracks().includes(i.track)) ? f(n, r.key, i.track, i.stream, r.metadata) : l(a, n, r, "track");
@@ -22713,31 +22695,31 @@ var tx = (e, t, n) => $b.multiply(t, !1).add(e.multiply(n, !1)).assertValidity()
 		onPeerTrack: null
 	};
 	return m;
-}, GC = "beforeunload", KC = 1e4, qC = (e) => "@_" + e, JC = /* @__PURE__ */ new Set(), YC = () => JC.forEach((e) => e()), XC = (e) => (JC.add(e), JC.size === 1 && addEventListener(GC, YC), () => {
-	JC.delete(e), JC.size || removeEventListener(GC, YC);
-}), ZC = (e, t, n, { onPeerHandshake: r, onHandshakeError: i, handshakeTimeoutMs: a = KC, maxReceiveBytes: o, isPassive: s = !1, onBeforeLeave: c } = {}) => {
+}, WC = "beforeunload", GC = 1e4, KC = (e) => "@_" + e, qC = /* @__PURE__ */ new Set(), JC = () => qC.forEach((e) => e()), YC = (e) => (qC.add(e), qC.size === 1 && addEventListener(WC, JC), () => {
+	qC.delete(e), qC.size || removeEventListener(WC, JC);
+}), XC = (e, t, n, { onPeerHandshake: r, onHandshakeError: i, handshakeTimeoutMs: a = GC, maxReceiveBytes: o, isPassive: s = !1, onBeforeLeave: c } = {}) => {
 	let l = {}, u = {}, d = {}, f = {
 		onPeerJoin: null,
 		onPeerLeave: null
-	}, p = Jx, m = null, h = (e, t) => (e ? Array.isArray(e) ? e : [e] : Kx(u)).flatMap((e) => {
+	}, p = qx, m = null, h = (e, t) => (e ? Array.isArray(e) ? e : [e] : Gx(u)).flatMap((e) => {
 		let n = u[e];
-		return n ? [Promise.resolve(t(e, n))] : (console.warn(`${Lx}: no peer with id ${e} found`), []);
+		return n ? [Promise.resolve(t(e, n))] : (console.warn(`${Ix}: no peer with id ${e} found`), []);
 	}), g = (e, t, n) => {
 		let r = l[e];
-		!r || t && r !== t || (j.send("", e).catch(Jx), w(e, r, n));
-	}, _ = (e, t) => g(e, void 0, t), v = WC({
+		!r || t && r !== t || (j.send("", e).catch(qx), w(e, r, n));
+	}, _ = (e, t) => g(e, void 0, t), v = UC({
 		onPeerError: _,
 		iterate: (e, t) => h(e, (e, n) => t(e, n)),
 		isActive: (e) => !!u[e],
 		getSharedMediaPeer: (e) => l[e] ?? null
-	}), y = BC({
+	}), y = zC({
 		onPeerError: _,
 		...o === void 0 ? {} : { maxReceiveBytes: o },
 		getPeer: (e, t) => (t ? l : u)[e],
-		getPeerIds: (e) => Kx(e ? l : u),
+		getPeerIds: (e) => Gx(e ? l : u),
 		canReceiveFromPeer: (e, t) => N.canReceiveFromPeer(e, t)
-	}), b = y.makeInternalAction, x = y.handleData, S = y.makeAction, C = (e, t = Zx("peer disconnected")) => {
-		let n = $x(t, "peer disconnected");
+	}), b = y.makeInternalAction, x = y.handleData, S = y.makeAction, C = (e, t = Xx("peer disconnected")) => {
+		let n = Qx(t, "peer disconnected");
 		N.clearPeer(e, n), delete l[e], delete u[e], y.clearPeer(e, n), d[e]?.splice(0).forEach((e) => e.reject(n)), delete d[e], v.clearPeer(e);
 	}, w = (e, n, r) => {
 		let i = l[e];
@@ -22747,10 +22729,10 @@ var tx = (e, t, n) => $b.multiply(t, !1).add(e.multiply(n, !1)).assertValidity()
 	}, T = () => m ??= (async () => {
 		c?.();
 		let e = new AbortController();
-		j.send("", void 0, void 0, void 0, e.signal).catch(Jx), await new Promise((e) => setTimeout(e, 99)), e.abort();
+		j.send("", void 0, void 0, void 0, e.signal).catch(qx), await new Promise((e) => setTimeout(e, 99)), e.abort();
 		try {
-			Wx(l).forEach(([e, t]) => {
-				t.destroy(), C(e, Zx("room left"));
+			Ux(l).forEach(([e, t]) => {
+				t.destroy(), C(e, Xx("room left"));
 			});
 		} finally {
 			try {
@@ -22759,17 +22741,17 @@ var tx = (e, t, n) => $b.multiply(t, !1).add(e.multiply(n, !1)).assertValidity()
 				n();
 			}
 		}
-	})(), E = b(qC("ping")), D = b(qC("pong")), O = b(qC("signal")), k = b(qC("stream"), { maxPayloadBytes: 65536 }), A = b(qC("track"), { maxPayloadBytes: 65536 }), j = b(qC("leave"), {
+	})(), E = b(KC("ping")), D = b(KC("pong")), O = b(KC("signal")), k = b(KC("stream"), { maxPayloadBytes: 65536 }), A = b(KC("track"), { maxPayloadBytes: 65536 }), j = b(KC("leave"), {
 		sendToPending: !0,
 		receiveWhilePending: !0
-	}), ee = b(qC("hsdata"), {
+	}), ee = b(KC("hsdata"), {
 		sendToPending: !0,
 		receiveWhilePending: !0,
 		maxPayloadBytes: 65536
-	}), M = b(qC("hsready"), {
+	}), M = b(KC("hsready"), {
 		sendToPending: !0,
 		receiveWhilePending: !0
-	}), N = RS({
+	}), N = LS({
 		...r === void 0 ? {} : { onPeerHandshake: r },
 		...i === void 0 ? {} : { onHandshakeError: i },
 		handshakeTimeoutMs: a,
@@ -22777,23 +22759,23 @@ var tx = (e, t, n) => $b.multiply(t, !1).add(e.multiply(n, !1)).assertValidity()
 		sendHandshakeReady: M.send,
 		onActivate: (e, t) => {
 			u[e] = t, t.setHandlers({ signal: (n) => {
-				u[e] === t && O.send(n, e).catch(Jx);
+				u[e] === t && O.send(n, e).catch(qx);
 			} }), f.onPeerJoin?.(e);
 		},
 		onFailure: (e, t, n) => g(e, t, n)
 	});
 	return E.onMessage((e, t) => {
-		D.send("", t).catch(Jx);
+		D.send("", t).catch(qx);
 	}), D.onMessage((e, t) => {
 		let n = d[t];
 		(n?.shift())?.resolve(), n && !n.length && delete d[t];
 	}), O.onMessage((e, t) => {
 		u[t]?.signal(e);
-	}), k.onMessage((e, t) => v.receiveStreamMeta(e, t)), A.onMessage((e, t) => v.receiveTrackMeta(e, t)), j.onMessage((e, t) => w(t, void 0, Zx("peer left room"))), ee.onMessage((e, t, n) => N.receiveHandshakeData(e, t, n)), M.onMessage((e, t) => N.receiveHandshakeReady(t)), e((e, t) => {
+	}), k.onMessage((e, t) => v.receiveStreamMeta(e, t)), A.onMessage((e, t) => v.receiveTrackMeta(e, t)), j.onMessage((e, t) => w(t, void 0, Xx("peer left room"))), ee.onMessage((e, t, n) => N.receiveHandshakeData(e, t, n)), M.onMessage((e, t) => N.receiveHandshakeReady(t)), e((e, t) => {
 		let n = l[t];
 		if (n) {
 			if (n === e) return;
-			n.destroy(), C(t, Zx("peer replaced"));
+			n.destroy(), C(t, Xx("peer replaced"));
 		}
 		l[t] = e, N.addPeer(t, e), e.setHandlers({
 			data: (n) => {
@@ -22801,16 +22783,16 @@ var tx = (e, t, n) => $b.multiply(t, !1).add(e.multiply(n, !1)).assertValidity()
 			},
 			stream: (e) => v.receiveRemoteStream(t, e),
 			track: (e, n) => v.receiveRemoteTrack(t, e, n),
-			close: () => w(t, e, Zx("peer disconnected")),
+			close: () => w(t, e, Xx("peer disconnected")),
 			error: (n) => {
-				console.error(`${Lx} peer error:`, n), w(t, e, n);
+				console.error(`${Ix} peer error:`, n), w(t, e, n);
 			}
 		}), N.start(t, e);
-	}), Ux && (p = XC(() => T().catch(Jx))), {
+	}), Hx && (p = YC(() => T().catch(qx))), {
 		makeAction: S,
 		leave: T,
 		ping: async (e) => {
-			if (!u[e]) throw Zx(`no active peer with id ${e}`);
+			if (!u[e]) throw Xx(`no active peer with id ${e}`);
 			let t = Date.now();
 			return await new Promise((t, n) => {
 				let r = d[e] ??= [], i = () => {
@@ -22826,11 +22808,11 @@ var tx = (e, t, n) => $b.multiply(t, !1).add(e.multiply(n, !1)).assertValidity()
 						i(), n(e);
 					}
 				};
-				r.push(a), E.send("", e).catch((e) => a.reject($x(e, "peer disconnected")));
+				r.push(a), E.send("", e).catch((e) => a.reject(Qx(e, "peer disconnected")));
 			}), Date.now() - t;
 		},
 		isPassive: () => s,
-		getPeers: () => Gx(Wx(u).map(([e, t]) => [e, t.connection])),
+		getPeers: () => Wx(Ux(u).map(([e, t]) => [e, t.connection])),
 		addStream: (e, t = {}) => v.addStream(e, t, k.send),
 		removeStream: (e, t = {}) => {
 			v.removeStream(e, t.target);
@@ -22844,7 +22826,7 @@ var tx = (e, t, n) => $b.multiply(t, !1).add(e.multiply(n, !1)).assertValidity()
 			return f.onPeerJoin;
 		},
 		set onPeerJoin(e) {
-			f.onPeerJoin = e, e && Kx(u).forEach((t) => e(t));
+			f.onPeerJoin = e, e && Gx(u).forEach((t) => e(t));
 		},
 		get onPeerLeave() {
 			return f.onPeerLeave;
@@ -22865,32 +22847,32 @@ var tx = (e, t, n) => $b.multiply(t, !1).add(e.multiply(n, !1)).assertValidity()
 			v.onPeerTrack = e;
 		}
 	};
-}, QC = 1, $C = 2, ew = (e, t) => {
-	let n = nS(e), r = new Uint8Array(3 + n.byteLength + t.byteLength);
-	return r[0] = QC, r[1] = n.byteLength >>> 8 & 255, r[2] = n.byteLength & 255, r.set(n, 3), r.set(t, 3 + n.byteLength), r;
+}, ZC = 1, QC = 2, $C = (e, t) => {
+	let n = tS(e), r = new Uint8Array(3 + n.byteLength + t.byteLength);
+	return r[0] = ZC, r[1] = n.byteLength >>> 8 & 255, r[2] = n.byteLength & 255, r.set(n, 3), r.set(t, 3 + n.byteLength), r;
+}, ew = (e, t) => {
+	let n = tS(e), r = new Uint8Array(4 + n.byteLength);
+	return r[0] = QC, r[1] = Number(t), r[2] = n.byteLength >>> 8 & 255, r[3] = n.byteLength & 255, r.set(n, 4), r;
 }, tw = (e, t) => {
-	let n = nS(e), r = new Uint8Array(4 + n.byteLength);
-	return r[0] = $C, r[1] = Number(t), r[2] = n.byteLength >>> 8 & 255, r[3] = n.byteLength & 255, r.set(n, 4), r;
-}, nw = (e, t) => {
 	if (e.byteLength < t + 2) return null;
 	let n = (e[t] ?? 0) << 8 | (e[t + 1] ?? 0), r = t + 2 + n;
 	return n <= 0 || n > 128 || e.byteLength < r ? null : {
-		roomToken: rS(e.subarray(t + 2, r)),
+		roomToken: nS(e.subarray(t + 2, r)),
 		headerSize: r
 	};
-}, rw = (e) => {
+}, nw = (e) => {
 	let t = new Uint8Array(e);
 	if (t.byteLength < 3 || t.byteLength > 16515) return null;
-	if (t[0] === QC) {
-		let e = nw(t, 1);
+	if (t[0] === ZC) {
+		let e = tw(t, 1);
 		return e ? {
 			type: "room",
 			roomToken: e.roomToken,
 			payload: t.subarray(e.headerSize).slice().buffer
 		} : null;
 	}
-	if (t[0] === $C) {
-		let e = nw(t, 2);
+	if (t[0] === QC) {
+		let e = tw(t, 2);
 		return e ? {
 			type: "presence",
 			roomToken: e.roomToken,
@@ -22898,21 +22880,21 @@ var tx = (e, t, n) => $b.multiply(t, !1).add(e.multiply(n, !1)).assertValidity()
 		} : null;
 	}
 	return null;
-}, iw = (e) => {
+}, rw = (e) => {
 	let { connection: t, channel: n } = e;
 	return e.isDead || t.connectionState === "closed" || t.connectionState === "failed" || t.iceConnectionState === "closed" || t.iceConnectionState === "failed" || n?.readyState === "closing" || n?.readyState === "closed";
-}, aw = (e) => {
-	if (iw(e)) return "stale";
+}, iw = (e) => {
+	if (rw(e)) return "stale";
 	let { channel: t } = e;
 	return !t || t.readyState !== "open" ? "transient" : "live";
-}, ow = class {
+}, aw = class {
 	rooms = /* @__PURE__ */ new Map();
 	unclaimedDataTimers = /* @__PURE__ */ new WeakMap();
 	pendingDataTimers = /* @__PURE__ */ new WeakMap();
 	byApp = {};
 	registerRoom(e, t, n, r) {
 		let i = this.rooms.get(e) ?? /* @__PURE__ */ new Map();
-		if (i.has(t)) throw Zx("room membership already registered");
+		if (i.has(t)) throw Xx("room membership already registered");
 		let a = {
 			token: null,
 			tokenPromise: n,
@@ -22920,14 +22902,14 @@ var tx = (e, t, n) => $b.multiply(t, !1).add(e.multiply(n, !1)).assertValidity()
 		};
 		i.set(t, a), this.rooms.set(e, i);
 		let o = () => this.rooms.get(e)?.get(t) === a, s = (t) => {
-			if (a.token) for (let n of qx(this.byApp[e] ?? {})) try {
+			if (a.token) for (let n of Kx(this.byApp[e] ?? {})) try {
 				this.sendRoomPresence(n, a.token, t);
 			} catch {}
 		};
 		return n.then((n) => {
 			if (o()) {
 				a.token = n;
-				for (let r of qx(this.byApp[e] ?? {})) r.remoteRoomTokens.has(n) && this.attachRoom(e, t, a, r), this.discardUnboundData(r);
+				for (let r of Kx(this.byApp[e] ?? {})) r.remoteRoomTokens.has(n) && this.attachRoom(e, t, a, r), this.discardUnboundData(r);
 				o() && a.active && s(!0);
 			}
 		}), {
@@ -22952,7 +22934,7 @@ var tx = (e, t, n) => $b.multiply(t, !1).add(e.multiply(n, !1)).assertValidity()
 			leave: () => {
 				if (o()) {
 					i.delete(t), i.size || this.rooms.delete(e), s(!1);
-					for (let n of qx(this.byApp[e] ?? {})) {
+					for (let n of Kx(this.byApp[e] ?? {})) {
 						let e = n.bindings[t];
 						e?.handlers.close?.(), e?.detach(), this.discardUnboundData(n);
 					}
@@ -22965,7 +22947,7 @@ var tx = (e, t, n) => $b.multiply(t, !1).add(e.multiply(n, !1)).assertValidity()
 	}
 	reusable(e, t) {
 		let n = this.byApp[e]?.[t];
-		if (n && iw(n.peer)) this.clear(e, t, { destroyPeer: !0 });
+		if (n && rw(n.peer)) this.clear(e, t, { destroyPeer: !0 });
 		else return n;
 	}
 	attachRoom(e, t, n, r) {
@@ -22977,21 +22959,21 @@ var tx = (e, t, n) => $b.multiply(t, !1).add(e.multiply(n, !1)).assertValidity()
 		return this.byApp[e]?.[t];
 	}
 	sendRoomPresence(e, t, n) {
-		e.isClosing || iw(e.peer) || e.peer.sendData(tw(t, n));
+		e.isClosing || rw(e.peer) || e.peer.sendData(ew(t, n));
 	}
 	clear(e, t, { destroyPeer: n }) {
 		let r = this.byApp[e], i = r?.[t];
 		if (!i || i.isClosing) return;
-		i.idleTimer = Xx(i.idleTimer), this.clearDataTimers(i), i.isClosing = !0, n && !i.peer.isDead && i.peer.destroy();
-		let a = qx(i.bindings);
+		i.idleTimer = Yx(i.idleTimer), this.clearDataTimers(i), i.isClosing = !0, n && !i.peer.isDead && i.peer.destroy();
+		let a = Kx(i.bindings);
 		i.bindings = {}, i.bindingsByToken = {}, i.controlRoomId = null, delete r[t], a.forEach((e) => {
 			e.handlers.close?.(), e.pendingData.length = 0, e.pendingSendData.length = 0, e.pendingTracks.length = 0;
-		}), i.media.clearRemote(), i.pendingDataByToken.clear(), i.remoteRoomTokens.clear(), Kx(r).length === 0 && delete this.byApp[e];
+		}), i.media.clearRemote(), i.pendingDataByToken.clear(), i.remoteRoomTokens.clear(), Gx(r).length === 0 && delete this.byApp[e];
 	}
 	register(e, t, n, r) {
 		let i = this.byApp[e]?.[t];
 		if (i) {
-			if (i.idleTimer = Xx(i.idleTimer), i.peer === n) return i;
+			if (i.idleTimer = Yx(i.idleTimer), i.peer === n) return i;
 			this.clear(e, t, { destroyPeer: !0 });
 		}
 		let a = {
@@ -23006,7 +22988,7 @@ var tx = (e, t, n) => $b.multiply(t, !1).add(e.multiply(n, !1)).assertValidity()
 			controlRoomId: null,
 			streamOwners: /* @__PURE__ */ new Map(),
 			trackOwners: /* @__PURE__ */ new Map(),
-			media: UC(),
+			media: HC(),
 			idleMs: r,
 			isClosing: !1
 		};
@@ -23019,14 +23001,14 @@ var tx = (e, t, n) => $b.multiply(t, !1).add(e.multiply(n, !1)).assertValidity()
 			signal: (e) => this.dispatchSignal(a, e),
 			close: o,
 			error: (e) => {
-				console.error(`${Lx} peer error:`, e), o();
+				console.error(`${Ix} peer error:`, e), o();
 			},
 			track: (e, t) => this.dispatchTrack(a, e, t)
 		}), a;
 	}
 	bind(e, t, n, { onDetach: r }) {
 		let i = n.bindings[e];
-		if (i) return n.idleTimer = Xx(n.idleTimer), {
+		if (i) return n.idleTimer = Yx(n.idleTimer), {
 			proxy: i.proxy,
 			isNew: !1
 		};
@@ -23038,12 +23020,12 @@ var tx = (e, t, n) => $b.multiply(t, !1).add(e.multiply(n, !1)).assertValidity()
 			pendingData: [],
 			pendingSendData: [],
 			pendingTracks: [],
-			detach: Jx,
+			detach: qx,
 			proxy: {}
 		}, o = () => {
 			if (n.bindings[e] !== a) return;
-			let t = Kx(n.bindings).length === 1 && (n.streamOwners.size > 0 || n.trackOwners.size > 0 || n.media.hasRemoteMedia());
-			t || this.pruneRoomOwnership(n, e), delete n.bindings[e], a.roomToken && n.bindingsByToken[a.roomToken] === a && delete n.bindingsByToken[a.roomToken], n.controlRoomId === e && (n.controlRoomId = Kx(n.bindings)[0] ?? null), this.discardUnboundData(n), r(), t ? this.clear(n.appId, n.peerId, { destroyPeer: !0 }) : this.scheduleIdleTimer(n);
+			let t = Gx(n.bindings).length === 1 && (n.streamOwners.size > 0 || n.trackOwners.size > 0 || n.media.hasRemoteMedia());
+			t || this.pruneRoomOwnership(n, e), delete n.bindings[e], a.roomToken && n.bindingsByToken[a.roomToken] === a && delete n.bindingsByToken[a.roomToken], n.controlRoomId === e && (n.controlRoomId = Gx(n.bindings)[0] ?? null), this.discardUnboundData(n), r(), t ? this.clear(n.appId, n.peerId, { destroyPeer: !0 }) : this.scheduleIdleTimer(n);
 		}, s = {
 			get connection() {
 				return n.peer.connection;
@@ -23057,7 +23039,7 @@ var tx = (e, t, n) => $b.multiply(t, !1).add(e.multiply(n, !1)).assertValidity()
 			getOffer: (e) => n.peer.getOffer(e),
 			signal: (e) => n.peer.signal(e),
 			sendData: (e) => {
-				a.roomToken ? n.peer.sendData(ew(a.roomToken, e)) : a.pendingSendData.push(e);
+				a.roomToken ? n.peer.sendData($C(a.roomToken, e)) : a.pendingSendData.push(e);
 			},
 			destroy: () => o(),
 			setHandlers: (e) => {
@@ -23089,15 +23071,15 @@ var tx = (e, t, n) => $b.multiply(t, !1).add(e.multiply(n, !1)).assertValidity()
 			},
 			__trysteroMedia: n.media
 		};
-		return a.proxy = s, a.detach = o, n.bindings[e] = a, n.controlRoomId ??= e, n.idleTimer = Xx(n.idleTimer), t.then((t) => {
+		return a.proxy = s, a.detach = o, n.bindings[e] = a, n.controlRoomId ??= e, n.idleTimer = Yx(n.idleTimer), t.then((t) => {
 			if (n.isClosing || n.bindings[e] !== a) return;
 			a.roomToken = t, n.bindingsByToken[t] = a;
 			let r = n.pendingDataByToken.get(t);
 			r?.length && (a.pendingData.push(...r), n.pendingDataByToken.delete(t));
 			let i = a.pendingSendData.splice(0);
-			iw(n.peer) || i.forEach((e) => {
+			rw(n.peer) || i.forEach((e) => {
 				try {
-					n.peer.sendData(ew(t, e));
+					n.peer.sendData($C(t, e));
 				} catch {}
 			}), this.flushBindingQueues(n, a), this.discardUnboundData(n);
 		}), {
@@ -23117,9 +23099,9 @@ var tx = (e, t, n) => $b.multiply(t, !1).add(e.multiply(n, !1)).assertValidity()
 		e.streamOwners.forEach((n, r) => this.releaseStreamOwner(e, r, t)), e.trackOwners.forEach((n, r) => this.releaseTrackOwner(e, r, t));
 	}
 	scheduleIdleTimer(e) {
-		e.isClosing || Kx(e.bindings).length > 0 || (e.idleTimer = Xx(e.idleTimer), e.idleTimer = setTimeout(() => {
+		e.isClosing || Gx(e.bindings).length > 0 || (e.idleTimer = Yx(e.idleTimer), e.idleTimer = setTimeout(() => {
 			let t = this.byApp[e.appId]?.[e.peerId];
-			!t || Kx(t.bindings).length > 0 || this.clear(e.appId, e.peerId, { destroyPeer: !0 });
+			!t || Gx(t.bindings).length > 0 || this.clear(e.appId, e.peerId, { destroyPeer: !0 });
 		}, e.idleMs));
 	}
 	getSignalBinding(e) {
@@ -23127,7 +23109,7 @@ var tx = (e, t, n) => $b.multiply(t, !1).add(e.multiply(n, !1)).assertValidity()
 			let t = e.bindings[e.controlRoomId];
 			if (t?.handlers.signal) return t;
 		}
-		let t = qx(e.bindings).find((e) => !!e.handlers.signal);
+		let t = Kx(e.bindings).find((e) => !!e.handlers.signal);
 		return t ? (e.controlRoomId = t.roomId, t) : null;
 	}
 	flushBindingQueues(e, t) {
@@ -23147,35 +23129,35 @@ var tx = (e, t, n) => $b.multiply(t, !1).add(e.multiply(n, !1)).assertValidity()
 	}
 	boundBufferedFrameCount(e) {
 		let t = 0;
-		for (let n of qx(e.bindings)) t += n.pendingData.length;
+		for (let n of Kx(e.bindings)) t += n.pendingData.length;
 		return t;
 	}
 	bufferedFrameCount(e) {
 		return this.unclaimedBufferedFrameCount(e) + this.boundBufferedFrameCount(e);
 	}
 	clearDataTimers(e) {
-		Xx(this.unclaimedDataTimers.get(e)), this.unclaimedDataTimers.delete(e), Xx(this.pendingDataTimers.get(e)), this.pendingDataTimers.delete(e);
+		Yx(this.unclaimedDataTimers.get(e)), this.unclaimedDataTimers.delete(e), Yx(this.pendingDataTimers.get(e)), this.pendingDataTimers.delete(e);
 	}
 	syncDataTimers(e) {
-		e.isClosing ? this.clearDataTimers(e) : (this.unclaimedBufferedFrameCount(e) === 0 ? (Xx(this.unclaimedDataTimers.get(e)), this.unclaimedDataTimers.delete(e)) : this.unclaimedDataTimers.has(e) || this.unclaimedDataTimers.set(e, setTimeout(() => {
+		e.isClosing ? this.clearDataTimers(e) : (this.unclaimedBufferedFrameCount(e) === 0 ? (Yx(this.unclaimedDataTimers.get(e)), this.unclaimedDataTimers.delete(e)) : this.unclaimedDataTimers.has(e) || this.unclaimedDataTimers.set(e, setTimeout(() => {
 			this.unclaimedDataTimers.delete(e), e.pendingDataByToken.clear();
-		}, BS)), this.boundBufferedFrameCount(e) === 0 ? (Xx(this.pendingDataTimers.get(e)), this.pendingDataTimers.delete(e)) : this.pendingDataTimers.has(e) || this.pendingDataTimers.set(e, setTimeout(() => {
+		}, zS)), this.boundBufferedFrameCount(e) === 0 ? (Yx(this.pendingDataTimers.get(e)), this.pendingDataTimers.delete(e)) : this.pendingDataTimers.has(e) || this.pendingDataTimers.set(e, setTimeout(() => {
 			this.pendingDataTimers.delete(e), this.boundBufferedFrameCount(e) > 0 && this.failData(e, "room data handler timed out");
-		}, BS)));
+		}, zS)));
 	}
 	canBindRoomToken(e, t) {
-		return qx(e.bindings).some((e) => !e.roomToken) || [...this.rooms.get(e.appId)?.values() ?? []].some((e) => !e.token || e.token === t);
+		return Kx(e.bindings).some((e) => !e.roomToken) || [...this.rooms.get(e.appId)?.values() ?? []].some((e) => !e.token || e.token === t);
 	}
 	discardUnboundData(e) {
 		for (let t of e.pendingDataByToken.keys()) this.canBindRoomToken(e, t) || e.pendingDataByToken.delete(t);
 		this.syncDataTimers(e);
 	}
 	failData(e, t) {
-		console.warn(`${Lx}: ${t}; disconnecting peer ${e.peerId}`), this.clear(e.appId, e.peerId, { destroyPeer: !0 });
+		console.warn(`${Ix}: ${t}; disconnecting peer ${e.peerId}`), this.clear(e.appId, e.peerId, { destroyPeer: !0 });
 	}
 	dispatchData(e, t) {
 		if (e.isClosing) return;
-		let n = rw(t);
+		let n = nw(t);
 		if (!n) {
 			this.failData(e, "invalid or incompatible room frame");
 			return;
@@ -23214,35 +23196,35 @@ var tx = (e, t, n) => $b.multiply(t, !1).add(e.multiply(n, !1)).assertValidity()
 		n ? n.handlers.signal?.(t) : t.type === "offer" && this.clear(e.appId, e.peerId, { destroyPeer: !0 });
 	}
 	dispatchTrack(e, t, n) {
-		qx(e.bindings).forEach((e) => {
+		Kx(e.bindings).forEach((e) => {
 			e.handlers.track || e.handlers.stream ? (e.handlers.track?.(t, n), e.handlers.stream?.(n)) : e.pendingTracks.push({
 				track: t,
 				stream: n
 			});
 		});
 	}
-}, sw = 23333, cw = 57333, lw = 12, uw = 7533, dw = 23333, fw = "offer-placeholder", pw = [
+}, ow = 23333, sw = 57333, cw = 12, lw = 7533, uw = 23333, dw = "offer-placeholder", fw = [
 	"offer",
 	"answer",
 	"candidate"
-], mw = (e) => {
+], pw = (e) => {
 	if (typeof e == "string") try {
-		let t = lS(e);
+		let t = cS(e);
 		return t && typeof t == "object" && !Array.isArray(t) ? t : null;
 	} catch {
 		return null;
 	}
 	return e && typeof e == "object" && !Array.isArray(e) ? e : null;
-}, hw = (e, t) => typeof e[t] == "string" && e[t] ? e[t] : void 0, gw = (e) => !!(e && typeof e == "object" && typeof e.signal == "function" && typeof e.destroy == "function" && typeof e.setHandlers == "function"), _w = (e, t = !1) => pw.some((t) => t in e && (typeof e[t] != "string" || e[t] === "")) || "peer" in e && (t || e.peer !== void 0 && !gw(e.peer)), vw = (e) => {
-	let t = mw(e);
-	if (!t || _w(t, typeof e == "string")) return !1;
-	let n = hw(t, "peerId");
-	return !(!n || n === Vx || t.passive === !0 || hw(t, "answer") || hw(t, "candidate"));
-}, yw = (e, t, n, r, i, a) => {
+}, mw = (e, t) => typeof e[t] == "string" && e[t] ? e[t] : void 0, hw = (e) => !!(e && typeof e == "object" && typeof e.signal == "function" && typeof e.destroy == "function" && typeof e.setHandlers == "function"), gw = (e, t = !1) => fw.some((t) => t in e && (typeof e[t] != "string" || e[t] === "")) || "peer" in e && (t || e.peer !== void 0 && !hw(e.peer)), _w = (e) => {
+	let t = pw(e);
+	if (!t || gw(t, typeof e == "string")) return !1;
+	let n = mw(t, "peerId");
+	return !(!n || n === Bx || t.passive === !0 || mw(t, "answer") || mw(t, "candidate"));
+}, vw = (e, t, n, r, i, a) => {
 	e.toCipher(t).then((t) => {
-		!e.isLeaving() && a() && r(n, cS(i(t.sdp)));
+		!e.isLeaving() && a() && r(n, sS(i(t.sdp)));
 	});
-}, bw = () => ({
+}, yw = () => ({
 	offerPeer: null,
 	offerId: null,
 	offerSdp: null,
@@ -23260,44 +23242,44 @@ var tx = (e, t, n) => $b.multiply(t, !1).add(e.multiply(n, !1)).assertValidity()
 	answerSent: !1,
 	answerReplay: null,
 	connectionErrorReported: !1
-}), xw = (e) => [...e.turnConfig ?? [], ...e.rtcConfig?.iceServers ?? []].some(({ urls: e }) => (Array.isArray(e) ? e : [e]).some((e) => /^turns?:/i.test(e))), Sw = (e, t) => `could not connect to peer ${e} after exchanging SDP; ${xw(t) ? "check that your TURN server URLs and credentials are reachable by both peers" : "configure TURN servers with turnConfig or rtcConfig.iceServers"}`, Cw = (e, t, n) => {
+}), bw = (e) => [...e.turnConfig ?? [], ...e.rtcConfig?.iceServers ?? []].some(({ urls: e }) => (Array.isArray(e) ? e : [e]).some((e) => /^turns?:/i.test(e))), xw = (e, t) => `could not connect to peer ${e} after exchanging SDP; ${bw(t) ? "check that your TURN server URLs and credentials are reachable by both peers" : "configure TURN servers with turnConfig or rtcConfig.iceServers"}`, Sw = (e, t, n) => {
 	e.isLeaving() || t.connectedPeer || t.connectionErrorReported || (t.connectionErrorReported = !0, e.onJoinError?.({
-		error: Sw(n, e.config),
+		error: xw(n, e.config),
 		appId: e.appId,
 		peerId: n,
 		roomId: e.roomId
 	}));
-}, ww = (e, t) => e[t] ??= bw(), Tw = /* @__PURE__ */ new WeakMap(), Ew = (e) => {
-	Tw.delete(e), e.answeringExpiryTimer = Xx(e.answeringExpiryTimer), e.answeringPeer = null, e.answerSent = !1, e.answerReplay = null;
+}, Cw = (e, t) => e[t] ??= yw(), ww = /* @__PURE__ */ new WeakMap(), Tw = (e) => {
+	ww.delete(e), e.answeringExpiryTimer = Yx(e.answeringExpiryTimer), e.answeringPeer = null, e.answerSent = !1, e.answerReplay = null;
+}, Ew = (e, t) => {
+	e.answeringPeer === t && (Tw(e), e.connectedPeer !== t && !t.isDead && t.destroy());
 }, Dw = (e, t) => {
-	e.answeringPeer === t && (Ew(e), e.connectedPeer !== t && !t.isDead && t.destroy());
+	e.answeringPeer && e.answeringPeer !== t && !e.answeringPeer.isDead && e.answeringPeer.destroy(), Tw(e), e.connectedPeer = t, e.connectedPeerUnhealthySinceMs = null;
 }, Ow = (e, t) => {
-	e.answeringPeer && e.answeringPeer !== t && !e.answeringPeer.isDead && e.answeringPeer.destroy(), Ew(e), e.connectedPeer = t, e.connectedPeerUnhealthySinceMs = null;
-}, kw = (e, t) => {
 	e?.connectedPeer === t && (e.connectedPeer = null, e.connectedPeerUnhealthySinceMs = null);
-}, Aw = (e, t, n) => {
+}, kw = (e, t, n) => {
 	e.connectedPeer && (e.connectedPeer.isDead || e.connectedPeer.destroy(), e.connectedPeer = null, e.connectedPeerUnhealthySinceMs = null);
+}, Aw = (e, t) => {
+	e.offerRelayTimers[t] = Yx(e.offerRelayTimers[t]), e.offerRelays[t] && (e.offerRelays[t] = void 0);
 }, jw = (e, t) => {
-	e.offerRelayTimers[t] = Xx(e.offerRelayTimers[t]), e.offerRelays[t] && (e.offerRelays[t] = void 0);
-}, Mw = (e, t) => {
-	e?.offerRelays[t] === fw && jw(e, t);
-}, Nw = (e) => {
-	Tw.delete(e), e.offerExpiryTimer = Xx(e.offerExpiryTimer), e.offerInitPromise = null, e.offerRelays.forEach((t, n) => jw(e, n)), e.offerRelays = [], e.offerSignalRelays = [], e.offerRelayTimers = [], e.offerSignalBacklog = [], e.offerPeer && e.offerPeer !== e.connectedPeer && (e.offerPeer.isDead || e.offerPeer.destroy()), e.offerPeer = null, e.offerId = null, e.offerSdp = null, e.offerAnswered = !1, e.connectionErrorReported = !1;
-}, Pw = (e, t, n, r) => {
-	Xx(t.answeringExpiryTimer), t.answeringExpiryTimer = setTimeout(() => {
+	e?.offerRelays[t] === dw && Aw(e, t);
+}, Mw = (e) => {
+	ww.delete(e), e.offerExpiryTimer = Yx(e.offerExpiryTimer), e.offerInitPromise = null, e.offerRelays.forEach((t, n) => Aw(e, n)), e.offerRelays = [], e.offerSignalRelays = [], e.offerRelayTimers = [], e.offerSignalBacklog = [], e.offerPeer && e.offerPeer !== e.connectedPeer && (e.offerPeer.isDead || e.offerPeer.destroy()), e.offerPeer = null, e.offerId = null, e.offerSdp = null, e.offerAnswered = !1, e.connectionErrorReported = !1;
+}, Nw = (e, t, n, r) => {
+	Yx(t.answeringExpiryTimer), t.answeringExpiryTimer = setTimeout(() => {
 		let t = e.peerStates[n];
-		t && !t.connectedPeer && t.answeringPeer === r && (t.answerSent && Cw(e, t, n), Dw(t, r), e.checkDeactivate());
-	}, dw);
-}, Fw = (e, t, n, r = cw) => {
-	Xx(t.offerExpiryTimer);
+		t && !t.connectedPeer && t.answeringPeer === r && (t.answerSent && Sw(e, t, n), Ew(t, r), e.checkDeactivate());
+	}, uw);
+}, Pw = (e, t, n, r = sw) => {
+	Yx(t.offerExpiryTimer);
 	let i = t.offerId;
 	t.offerExpiryTimer = setTimeout(() => {
 		let t = e.peerStates[n];
-		t && !t.connectedPeer && t.offerId === i && (t.offerAnswered && Cw(e, t, n), Nw(t), e.checkDeactivate());
+		t && !t.connectedPeer && t.offerId === i && (t.offerAnswered && Sw(e, t, n), Mw(t), e.checkDeactivate());
 	}, r);
-}, Iw = (e, t, n, r, i) => {
+}, Fw = (e, t, n, r, i) => {
 	let a = () => {
-		t.offerPeer === r && !t.connectedPeer && (t.offerAnswered && Cw(e, t, n), Nw(t)), e.disconnectPeer(r, n), e.checkDeactivate();
+		t.offerPeer === r && !t.connectedPeer && (t.offerAnswered && Sw(e, t, n), Mw(t)), e.disconnectPeer(r, n), e.checkDeactivate();
 	};
 	r.setHandlers({
 		connect: () => e.connectPeer(r, n),
@@ -23305,7 +23287,7 @@ var tx = (e, t, n) => $b.multiply(t, !1).add(e.multiply(n, !1)).assertValidity()
 		close: a,
 		error: a
 	});
-}, Lw = (e, t, n) => {
+}, Iw = (e, t, n) => {
 	if (t.offerPeer && t.offerId && t.offerSdp) return Promise.resolve({
 		peer: t.offerPeer,
 		offer: t.offerSdp,
@@ -23320,11 +23302,11 @@ var tx = (e, t, n) => $b.multiply(t, !1).add(e.multiply(n, !1)).assertValidity()
 			if (e.isLeaving() || t.offerInitPromise !== r) return null;
 			throw n;
 		}
-		if (!i) throw Zx("failed to allocate offer peer");
+		if (!i) throw Xx("failed to allocate offer peer");
 		let { peer: a, offer: o } = i;
-		return e.isLeaving() || t.offerInitPromise !== r ? (a.destroy(), null) : (t.offerPeer = a, t.offerId = Bx(lw), t.offerSdp = o, t.offerAnswered = !1, t.connectionErrorReported = !1, t.offerSignalBacklog = [], Iw(e, t, n, a, (e) => {
+		return e.isLeaving() || t.offerInitPromise !== r ? (a.destroy(), null) : (t.offerPeer = a, t.offerId = zx(cw), t.offerSdp = o, t.offerAnswered = !1, t.connectionErrorReported = !1, t.offerSignalBacklog = [], Fw(e, t, n, a, (e) => {
 			t.offerPeer === a && (t.offerSignalBacklog.push(e), t.offerSignalRelays.forEach((t) => t?.(e)));
-		}), Fw(e, t, n), {
+		}), Pw(e, t, n), {
 			peer: a,
 			offer: o,
 			offerId: t.offerId
@@ -23333,50 +23315,50 @@ var tx = (e, t, n) => $b.multiply(t, !1).add(e.multiply(n, !1)).assertValidity()
 		t.offerInitPromise === r && (t.offerInitPromise = null);
 	});
 	return t.offerInitPromise = r;
-}, Rw = async (e, t, n, r, i = 0) => {
+}, Lw = async (e, t, n, r, i = 0) => {
 	let a = e.peerStates[n];
 	if (!a || a.connectedPeer || a.answeringPeer || a.offerAnswered) {
-		Mw(a, t);
+		jw(a, t);
 		return;
 	}
-	if (a.offerRelays[t] !== fw) return;
-	let [o, s] = await Hx([ES(aS(e.rootTopicPlaintext, n)), Lw(e, a, n)]);
+	if (a.offerRelays[t] !== dw) return;
+	let [o, s] = await Vx([TS(iS(e.rootTopicPlaintext, n)), Iw(e, a, n)]);
 	if (!s) {
-		Mw(a, t);
+		jw(a, t);
 		return;
 	}
 	if (e.isLeaving()) {
-		Nw(a);
+		Mw(a);
 		return;
 	}
-	if (a.connectedPeer || a.answeringPeer || a.offerAnswered || a.offerRelays[t] !== fw) {
-		Mw(a, t);
+	if (a.connectedPeer || a.answeringPeer || a.offerAnswered || a.offerRelays[t] !== dw) {
+		jw(a, t);
 		return;
 	}
-	a.offerRelayTimers[t] = Xx(a.offerRelayTimers[t]), a.offerRelays[t] = !0, a.offerRelayTimers[t] = setTimeout(() => {
-		i >= 2 || e.isLeaving() || a.connectedPeer || a.answeringPeer || a.offerAnswered || a.offerPeer !== s.peer || a.offerId !== s.offerId ? Hw(e, n, t) : (a.offerRelays[t] = fw, Rw(e, t, n, r, i + 1));
+	a.offerRelayTimers[t] = Yx(a.offerRelayTimers[t]), a.offerRelays[t] = !0, a.offerRelayTimers[t] = setTimeout(() => {
+		i >= 2 || e.isLeaving() || a.connectedPeer || a.answeringPeer || a.offerAnswered || a.offerPeer !== s.peer || a.offerId !== s.offerId ? Vw(e, n, t) : (a.offerRelays[t] = dw, Lw(e, t, n, r, i + 1));
 	}, i === 0 && e.announceIntervals[t] === void 0 ? 2e3 : (e.announceIntervals[t] ?? e.announceIntervalMs) * .9);
 	let c = !1;
 	a.offerSignalRelays[t] = (t) => {
-		c && (e.isLeaving() || a.connectedPeer || a.offerPeer !== s.peer || a.offerId !== s.offerId || t.type !== "candidate" || yw(e, t, o, r, (t) => ({
-			peerId: Vx,
+		c && (e.isLeaving() || a.connectedPeer || a.offerPeer !== s.peer || a.offerId !== s.offerId || t.type !== "candidate" || vw(e, t, o, r, (t) => ({
+			peerId: Bx,
 			offerId: s.offerId,
 			candidate: t,
 			...e.isPassive ? { passive: !0 } : {}
 		}), () => !a.connectedPeer && a.offerPeer === s.peer && a.offerId === s.offerId));
-	}, r(o, cS({
-		peerId: Vx,
+	}, r(o, sS({
+		peerId: Bx,
 		offerId: s.offerId,
 		offer: s.offer,
 		...e.isPassive ? { passive: !0 } : {}
 	})), c = !0, a.offerSignalBacklog.forEach((e) => a.offerSignalRelays[t]?.(e));
-}, zw = async (e, t, n, r, i, a) => {
-	let o = ww(e.peerStates, n);
+}, Rw = async (e, t, n, r, i, a) => {
+	let o = Cw(e.peerStates, n);
 	if (o.answeringPeer || o.offerAnswered) {
 		let s = o.answerReplay, c = s?.lastSentAt[t];
 		if (o.answeringPeer && !o.answeringPeer.isDead && s && s.offer === r && s.offerId === i && (c === void 0 || Date.now() - c >= 1e3)) {
 			s.lastSentAt[t] = Date.now();
-			let r = await ES(aS(e.rootTopicPlaintext, n));
+			let r = await TS(iS(e.rootTopicPlaintext, n));
 			if (!e.isLeaving() && o.answerReplay === s && !o.connectedPeer) {
 				let e = (e) => a(r, e);
 				s.relays[t] = e, s.messages.forEach(e);
@@ -23385,8 +23367,8 @@ var tx = (e, t, n) => $b.multiply(t, !1).add(e.multiply(n, !1)).assertValidity()
 		return;
 	}
 	let s = !!(o.offerPeer || o.offerRelays.some(Boolean));
-	if (s && Vx < n) return;
-	s && Nw(o);
+	if (s && Bx < n) return;
+	s && Mw(o);
 	let c = e.initPeer(!1, e.config), l = {
 		offer: r,
 		offerId: i,
@@ -23394,9 +23376,9 @@ var tx = (e, t, n) => $b.multiply(t, !1).add(e.multiply(n, !1)).assertValidity()
 		lastSentAt: [],
 		relays: []
 	};
-	l.lastSentAt[t] = Date.now(), o.answeringPeer = c, o.answerSent = !1, o.answerReplay = l, o.connectionErrorReported = !1, Pw(e, o, n, c);
+	l.lastSentAt[t] = Date.now(), o.answeringPeer = c, o.answerSent = !1, o.answerReplay = l, o.connectionErrorReported = !1, Nw(e, o, n, c);
 	let u = () => {
-		o.answeringPeer === c && !o.connectedPeer && o.answerSent && Cw(e, o, n), Dw(o, c), e.disconnectPeer(c, n), e.checkDeactivate();
+		o.answeringPeer === c && !o.connectedPeer && o.answerSent && Sw(e, o, n), Ew(o, c), e.disconnectPeer(c, n), e.checkDeactivate();
 	};
 	c.setHandlers({
 		connect: () => e.connectPeer(c, n),
@@ -23410,7 +23392,7 @@ var tx = (e, t, n) => $b.multiply(t, !1).add(e.multiply(n, !1)).assertValidity()
 			sdp: r
 		});
 	} catch {
-		Dw(o, c), e.onJoinError?.({
+		Ew(o, c), e.onJoinError?.({
 			error: "incorrect room password when decrypting offer",
 			appId: e.appId,
 			peerId: n,
@@ -23419,18 +23401,18 @@ var tx = (e, t, n) => $b.multiply(t, !1).add(e.multiply(n, !1)).assertValidity()
 		return;
 	}
 	if (c.isDead) {
-		Dw(o, c);
+		Ew(o, c);
 		return;
 	}
-	let f = await ES(aS(e.rootTopicPlaintext, n));
+	let f = await TS(iS(e.rootTopicPlaintext, n));
 	if (e.isLeaving() || o.answerReplay !== l) return;
 	l.relays[t] = (e) => a(f, e);
 	let p = [], m = !1, h = (t) => {
 		e.toCipher(t).then((n) => {
 			if (e.isLeaving() || o.answeringPeer !== c || c.isDead) return;
-			let r = { peerId: Vx };
+			let r = { peerId: Bx };
 			t.type === "answer" ? (o.answerSent = !0, r.answer = n.sdp) : r.candidate = n.sdp, i && (r.offerId = i), e.isPassive && (r.passive = !0);
-			let a = cS(r), s = Date.now();
+			let a = sS(r), s = Date.now();
 			l.messages.push(a), l.relays.forEach((e, t) => {
 				e && (l.lastSentAt[t] = s, e(a));
 			}), t.type === "answer" && !m && (m = !0, p.splice(0).forEach(h));
@@ -23439,11 +23421,11 @@ var tx = (e, t, n) => $b.multiply(t, !1).add(e.multiply(n, !1)).assertValidity()
 	c.setHandlers({ signal: (t) => {
 		e.isLeaving() || o.answeringPeer !== c || c.isDead || (t.type === "answer" || t.type === "candidate") && (t.type === "candidate" && !m ? p.push(t) : h(t));
 	} }), await c.signal(d);
-}, Bw = async (e, t, n, r, i) => {
+}, zw = async (e, t, n, r, i) => {
 	let a;
 	try {
 		a = await e.toPlain({
-			type: Yx,
+			type: Jx,
 			sdp: n
 		});
 	} catch {
@@ -23451,7 +23433,7 @@ var tx = (e, t, n) => $b.multiply(t, !1).add(e.multiply(n, !1)).assertValidity()
 	}
 	let o = e.peerStates[t], s = r && o?.offerPeer && o.offerId === r ? o.offerPeer : null, c = !r || o?.answerReplay?.offerId === r ? o?.answeringPeer : null, l = !r && o?.offerPeer ? o.offerPeer : null, u = i && !i.isDead ? i : s ?? c ?? l;
 	u && !u.isDead && u.signal(a);
-}, Vw = async (e, t, n, r, i) => {
+}, Bw = async (e, t, n, r, i) => {
 	let a;
 	try {
 		a = await e.toPlain({
@@ -23468,88 +23450,88 @@ var tx = (e, t, n) => $b.multiply(t, !1).add(e.multiply(n, !1)).assertValidity()
 		return;
 	}
 	if (i) {
-		let n = ww(e.peerStates, t);
-		if (e.offerManager.claimLeased(i), n.connectedPeer || n.offerAnswered || n.answeringPeer && !n.answeringPeer.isDead && Vx > t) {
+		let n = Cw(e.peerStates, t);
+		if (e.offerManager.claimLeased(i), n.connectedPeer || n.offerAnswered || n.answeringPeer && !n.answeringPeer.isDead && Bx > t) {
 			i.destroy();
 			return;
 		}
 		if (n.answeringPeer) {
 			let e = n.answeringPeer;
-			Dw(n, e);
+			Ew(n, e);
 		}
-		Nw(n), n.offerPeer = i, n.offerId = r ?? null, n.offerAnswered = !0, Fw(e, n, t, sw), Iw(e, n, t, i), i.signal(a);
+		Mw(n), n.offerPeer = i, n.offerId = r ?? null, n.offerAnswered = !0, Pw(e, n, t, ow), Fw(e, n, t, i), i.signal(a);
 	} else {
 		let n = e.peerStates[t];
 		if (!n || !n.offerPeer || n.offerAnswered || r && n.offerId && r !== n.offerId || n.offerPeer.isDead) return;
-		n.offerAnswered = !0, Fw(e, n, t, sw), n.offerPeer.signal(a);
+		n.offerAnswered = !0, Pw(e, n, t, ow), n.offerPeer.signal(a);
 	}
-}, Hw = (e, t, n) => {
+}, Vw = (e, t, n) => {
 	let r = e.peerStates[t];
-	r && !r.connectedPeer && r.offerRelays[n] && (jw(r, n), e.checkDeactivate());
-}, Uw = (e) => (t) => async (n, r, i) => {
+	r && !r.connectedPeer && r.offerRelays[n] && (Aw(r, n), e.checkDeactivate());
+}, Hw = (e) => (t) => async (n, r, i) => {
 	if (e.isLeaving()) return;
-	let a = mw(r);
-	if (!a || _w(a, typeof r == "string")) return;
-	let o = hw(a, "peerId") ?? "", s = hw(a, "offer"), c = hw(a, "answer"), l = hw(a, "candidate"), u = hw(a, "offerId"), d = gw(a.peer) ? a.peer : void 0, f = a.passive === !0;
-	if (!o || o === Vx) return;
-	let [p, m] = await Hx([e.rootTopicP, e.selfTopicP]);
+	let a = pw(r);
+	if (!a || gw(a, typeof r == "string")) return;
+	let o = mw(a, "peerId") ?? "", s = mw(a, "offer"), c = mw(a, "answer"), l = mw(a, "candidate"), u = mw(a, "offerId"), d = hw(a.peer) ? a.peer : void 0, f = a.passive === !0;
+	if (!o || o === Bx) return;
+	let [p, m] = await Vx([e.rootTopicP, e.selfTopicP]);
 	if (e.isLeaving() || n !== p && n !== m || e.isPassive && f || (e.isPassive && !e.isActive && !c && !l && (e.isActive = !0, e.requeueAnnounce?.()), e.isPassive && !e.isActive)) return;
 	let h = e.peerStates[o], g = h?.connectedPeer;
 	if (g && h) {
-		let e = aw(g);
+		let e = iw(g);
 		if (e === "live") {
 			h.connectedPeerUnhealthySinceMs = null;
 			return;
 		}
-		if (e === "stale") Aw(h, o, "message-from-stale-peer");
+		if (e === "stale") kw(h, o, "message-from-stale-peer");
 		else {
 			let e = Date.now(), t = h.connectedPeerUnhealthySinceMs ?? e;
-			if (h.connectedPeerUnhealthySinceMs = t, e - t < uw) return;
-			Aw(h, o, "message-from-prolonged-disconnect");
+			if (h.connectedPeerUnhealthySinceMs = t, e - t < lw) return;
+			kw(h, o, "message-from-prolonged-disconnect");
 		}
 	}
 	if (!e.reusePeer(o)) {
 		if (o && !s && !c && !l) {
-			let n = ww(e.peerStates, o), r = Vx < o;
+			let n = Cw(e.peerStates, o), r = Bx < o;
 			if (n.answeringPeer || n.connectedPeer || n.offerAnswered) return;
 			if (!r && !n.offerPeer) {
-				let r = Tw.get(n);
-				r || (r = [], Tw.set(n, r));
+				let r = ww.get(n);
+				r || (r = [], ww.set(n, r));
 				let a = r[t];
 				if (a !== void 0 && Date.now() - a < 1e3) return;
 				r[t] = Date.now();
-				let s = await ES(aS(e.rootTopicPlaintext, o));
-				e.isLeaving() || n.connectedPeer || n.answeringPeer || n.offerAnswered || i(s, cS({ peerId: Vx }));
+				let s = await TS(iS(e.rootTopicPlaintext, o));
+				e.isLeaving() || n.connectedPeer || n.answeringPeer || n.offerAnswered || i(s, sS({ peerId: Bx }));
 				return;
 			}
-			return n.offerRelays[t] ? void 0 : (n.offerRelays[t] = fw, Rw(e, t, o, i));
+			return n.offerRelays[t] ? void 0 : (n.offerRelays[t] = dw, Lw(e, t, o, i));
 		}
-		if (s) return zw(e, t, o, s, u, i);
-		if (l) return Bw(e, o, l, u, d);
-		if (c) return Vw(e, o, c, u, d);
+		if (s) return Rw(e, t, o, s, u, i);
+		if (l) return zw(e, o, l, u, d);
+		if (c) return Bw(e, o, c, u, d);
 	}
-}, Ww = 5333, Gw = [
+}, Uw = 5333, Ww = [
 	233,
 	533,
 	1333
-], Kw = 7533, qw = 123333, Jw = ({ init: e, subscribe: t, announce: n, deactivate: r }) => {
-	let i = {}, a = {}, o = new ow(), s = () => qx(i).some((e) => Kx(e).length > 0), c = !1, l = [], u = Jx;
+], Gw = 7533, Kw = 123333, qw = ({ init: e, subscribe: t, announce: n, deactivate: r }) => {
+	let i = {}, a = {}, o = new aw(), s = () => Kx(i).some((e) => Gx(e).length > 0), c = !1, l = [], u = qx;
 	return (d, f, p) => {
-		if (!d) throw Zx("requires a config map as the first argument");
-		if (p && typeof p != "object") throw Zx("third argument must be a callbacks object");
+		if (!d) throw Xx("requires a config map as the first argument");
+		if (p && typeof p != "object") throw Xx("third argument must be a callbacks object");
 		let { appId: m } = d, h = p?.onJoinError, g = p?.onPeerHandshake, _ = p?.handshakeTimeoutMs;
-		if (!m) throw Zx("config map is missing appId field");
-		if (!f) throw Zx("roomId argument required");
-		if (d.maxReceiveBytes !== void 0 && (!Number.isSafeInteger(d.maxReceiveBytes) || d.maxReceiveBytes <= 0)) throw Zx("maxReceiveBytes must be a positive safe integer");
-		if (_ !== void 0 && (!Number.isFinite(_) || _ <= 0)) throw Zx("handshakeTimeoutMs must be a positive number");
+		if (!m) throw Xx("config map is missing appId field");
+		if (!f) throw Xx("roomId argument required");
+		if (d.maxReceiveBytes !== void 0 && (!Number.isSafeInteger(d.maxReceiveBytes) || d.maxReceiveBytes <= 0)) throw Xx("maxReceiveBytes must be a positive safe integer");
+		if (_ !== void 0 && (!Number.isFinite(_) || _ <= 0)) throw Xx("handshakeTimeoutMs must be a positive number");
 		if (i[m]?.[f]) return i[m][f];
 		a[m]?.[f]?.(!0);
-		let v = aS(Lx, m, f), y = ES(v), b = ES(aS(v, Vx)), x = DS(d.password ?? "", m, f), S = OS(m, f), C = d._test_only_sharedPeerIdleMs ?? qw, w = !1, T = (e) => async (t) => ({
+		let v = iS(Ix, m, f), y = TS(v), b = TS(iS(v, Bx)), x = ES(d.password ?? "", m, f), S = DS(m, f), C = d._test_only_sharedPeerIdleMs ?? Kw, w = !1, T = (e) => async (t) => ({
 			type: t.type,
 			sdp: await e(x, t.sdp)
-		}), E = T(MS), D = T(jS), O = () => eC(!0, d), k = !1, A = new PS(O), j = async (e) => {
+		}), E = T(jS), D = T(AS), O = () => $S(!0, d), k = !1, A = new NS(O), j = async (e) => {
 			let t = await e.getOffer();
-			if (!t || t.type !== "offer") throw Zx("failed to get offer for peer");
+			if (!t || t.type !== "offer") throw Xx("failed to get offer for peer");
 			return (await D(t)).sdp;
 		}, ee = (e, t) => {
 			_e.connect(t, e, C);
@@ -23560,13 +23542,13 @@ var tx = (e, t, n) => $b.multiply(t, !1).add(e.multiply(n, !1)).assertValidity()
 		}, P = (e, t) => {
 			if (w) return;
 			let n = F.peerStates[t];
-			n?.connectedPeer === e && (Aw(n, t, "close-event"), ie(), N());
-		}, te = !!d.passive, ne, re = Jx, ie = () => {
+			n?.connectedPeer === e && (kw(n, t, "close-event"), ie(), N());
+		}, te = !!d.passive, ne, re = qx, ie = () => {
 			if (!te || !F.isActive) return;
 			let e = !1;
-			Wx(F.peerStates).forEach(([t, n]) => {
+			Ux(F.peerStates).forEach(([t, n]) => {
 				n.connectedPeer || n.answeringPeer || n.offerInitPromise || n.offerPeer || n.offerRelays.some(Boolean) ? e = !0 : delete F.peerStates[t];
-			}), e || (F.isActive = !1, ne = Xx(ne), se.forEach(Xx), se.length = 0, re(), _e.setActive(!1));
+			}), e || (F.isActive = !1, ne = Yx(ne), se.forEach(Yx), se.length = 0, re(), _e.setActive(!1));
 		}, F = {
 			appId: m,
 			roomId: f,
@@ -23583,25 +23565,25 @@ var tx = (e, t, n) => $b.multiply(t, !1).add(e.multiply(n, !1)).assertValidity()
 			onJoinError: h,
 			offerManager: A,
 			encryptOffer: j,
-			initPeer: eC,
+			initPeer: $S,
 			connectPeer: ee,
 			disconnectPeer: P,
 			reusePeer: (e) => _e.reuse(e),
 			checkDeactivate: ie,
 			announceIntervals: [],
-			announceIntervalMs: Ww
+			announceIntervalMs: Uw
 		}, I = {
 			config: d,
 			appId: m,
 			roomId: f,
 			isPassive: te
-		}, ae = Uw(F);
+		}, ae = Hw(F);
 		if (!c) {
 			let t = e(d);
-			l = (Array.isArray(t) ? t : [t]).map((e) => Promise.resolve(e)), c = !0, u = d.relayConfig?.manualReconnection ? Jx : bS();
+			l = (Array.isArray(t) ? t : [t]).map((e) => Promise.resolve(e)), c = !0, u = d.relayConfig?.manualReconnection ? qx : yS();
 		}
-		let oe = l.map(() => Ww), L = l.map(() => 0), R = l.map(() => 0), se = [], ce = l.map(async (e, n) => t(await e, await y, await b, ae(n), (e) => A.getOffers(e, j), I));
-		Hx([y, b]).then(([e, t]) => {
+		let oe = l.map(() => Uw), L = l.map(() => 0), R = l.map(() => 0), se = [], ce = l.map(async (e, n) => t(await e, await y, await b, ae(n), (e) => A.getOffers(e, j), I));
+		Vx([y, b]).then(([e, t]) => {
 			if (w) return;
 			let i = async (r, a) => {
 				if (w || te && !F.isActive) return;
@@ -23611,13 +23593,13 @@ var tx = (e, t, n) => $b.multiply(t, !1).add(e.multiply(n, !1)).assertValidity()
 				} catch (e) {
 					if (w) return;
 					let t = R[a] ?? 0;
-					t === 0 && d.relayConfig?.warnOnRelayFailure !== !1 && console.warn(`${Lx}: announce failed - ${Qx(e, "")}`), R[a] = t + 1;
+					t === 0 && d.relayConfig?.warnOnRelayFailure !== !1 && console.warn(`${Ix}: announce failed - ${Zx(e, "")}`), R[a] = t + 1;
 				}
 				if (w || te && !F.isActive || s && typeof s != "number" && "stopAnnouncing" in s) return;
 				typeof s == "number" ? (F.announceIntervals[a] = s, oe[a] = s) : s && (oe[a] = s.nextAnnounceMs, k ||= s.reannounceOnDisconnect === !0);
 				let c = L[a] ?? 0;
 				L[a] = c + 1;
-				let l = oe[a] ?? Ww, u = Gw[c] ?? (c === 3 && typeof s == "object" ? Ww : void 0);
+				let l = oe[a] ?? Uw, u = Ww[c] ?? (c === 3 && typeof s == "object" ? Uw : void 0);
 				se[a] = setTimeout(() => {
 					i(r, a);
 				}, typeof u == "number" ? Math.min(l, u) : l);
@@ -23628,7 +23610,7 @@ var tx = (e, t, n) => $b.multiply(t, !1).add(e.multiply(n, !1)).assertValidity()
 					w || r(i, e, t, I);
 				});
 			}, F.requeueAnnounce = () => {
-				se.forEach(Xx), se.length = 0, ne = Xx(ne), _e.setActive(!0), ne = setTimeout(ie, Kw), l.forEach(async (e, t) => {
+				se.forEach(Yx), se.length = 0, ne = Yx(ne), _e.setActive(!0), ne = setTimeout(ie, Gw), l.forEach(async (e, t) => {
 					let n = await e;
 					n && !w && (L[t] = 0, i(n, t));
 				});
@@ -23638,14 +23620,14 @@ var tx = (e, t, n) => $b.multiply(t, !1).add(e.multiply(n, !1)).assertValidity()
 				n && !w && (!te || F.isActive) && i(n, t);
 			});
 		});
-		let le = Jx, { compose: ue } = IS(d.password ?? "", m, f), de = ue(g), fe = () => {
-			i[m]?.[f] === ge && (delete i[m][f], Kx(i[m]).length === 0 && delete i[m]);
+		let le = qx, { compose: ue } = FS(d.password ?? "", m, f), de = ue(g), fe = () => {
+			i[m]?.[f] === ge && (delete i[m][f], Gx(i[m]).length === 0 && delete i[m]);
 		}, pe = () => {
-			a[m]?.[f] === me && (delete a[m][f], Kx(a[m]).length === 0 && delete a[m]);
+			a[m]?.[f] === me && (delete a[m][f], Gx(a[m]).length === 0 && delete a[m]);
 		}, me = (e = !1) => {
-			w || (w = !0, le = Jx, fe(), pe(), _e.leave(), Wx(F.peerStates).forEach(([e, t]) => {
-				t.connectedPeer && !t.connectedPeer.isDead && (o.owns(m, e, t.connectedPeer) || t.connectedPeer.destroy()), t.answeringPeer && !t.answeringPeer.isDead && t.answeringPeer.destroy(), Nw(t), Ew(t), t.connectedPeer = null, t.connectedPeerUnhealthySinceMs = null;
-			}), se.forEach(Xx), ne = Xx(ne), ce.forEach(async (e) => {
+			w || (w = !0, le = qx, fe(), pe(), _e.leave(), Ux(F.peerStates).forEach(([e, t]) => {
+				t.connectedPeer && !t.connectedPeer.isDead && (o.owns(m, e, t.connectedPeer) || t.connectedPeer.destroy()), t.answeringPeer && !t.answeringPeer.isDead && t.answeringPeer.destroy(), Mw(t), Tw(t), t.connectedPeer = null, t.connectedPeerUnhealthySinceMs = null;
+			}), se.forEach(Yx), ne = Yx(ne), ce.forEach(async (e) => {
 				(await e)();
 			}), A.destroy(), e || s() || (c = !1, u()));
 		}, he = {
@@ -23664,79 +23646,79 @@ var tx = (e, t, n) => $b.multiply(t, !1).add(e.multiply(n, !1)).assertValidity()
 			})
 		};
 		i[m] ??= {};
-		let ge = ZC((e) => le = e, (e) => {
+		let ge = XC((e) => le = e, (e) => {
 			if (w) return;
 			let t = F.peerStates[e];
-			t?.connectedPeer && kw(t, t.connectedPeer), ie(), N();
+			t?.connectedPeer && Ow(t, t.connectedPeer), ie(), N();
 		}, () => me(!1), he), _e = o.registerRoom(m, f, S, {
 			active: !te || F.isActive,
 			onPeer: (e, t, n) => {
-				let r = ww(F.peerStates, t);
-				Ow(r, n), te && !F.isActive && (F.isActive = !0, _e.setActive(!0), F.requeueAnnounce ? F.requeueAnnounce() : (ne = Xx(ne), ne = setTimeout(ie, Kw))), le(e, t), Nw(r);
+				let r = Cw(F.peerStates, t);
+				Dw(r, n), te && !F.isActive && (F.isActive = !0, _e.setActive(!0), F.requeueAnnounce ? F.requeueAnnounce() : (ne = Yx(ne), ne = setTimeout(ie, Gw))), le(e, t), Mw(r);
 			},
 			onDetach: (e, t) => {
-				kw(F.peerStates[e], t), ie();
+				Ow(F.peerStates[e], t), ie();
 			}
 		});
 		return i[m][f] = ge;
 	};
-}, Yw = 6e4, Xw = (e) => {
-	if (!e) throw Zx("topic strategy missing room context");
+}, Jw = 6e4, Yw = (e) => {
+	if (!e) throw Xx("topic strategy missing room context");
 	return e;
-}, Zw = (e, t, n, r) => ({
+}, Xw = (e, t, n, r) => ({
 	kind: t,
 	appId: e.appId,
 	roomId: e.roomId,
 	rootTopic: n,
 	selfTopic: r
-}), Qw = ({ steadyAnnounceIntervalMs: e = Yw, reannounceOnDisconnect: t = !0, init: n, subscribeTopic: r, publishTopic: i, unpublishTopic: a }) => Jw({
+}), Zw = ({ steadyAnnounceIntervalMs: e = Jw, reannounceOnDisconnect: t = !0, init: n, subscribeTopic: r, publishTopic: i, unpublishTopic: a }) => qw({
 	init: n,
 	subscribe: async (e, t, n, a, o, s) => {
-		let c = Xw(s), l = (r, a) => void i(e, r, a, Zw(c, "signal", t, n)), u = null, d = !1, f = null, p = !1, m = (e) => {
+		let c = Yw(s), l = (r, a) => void i(e, r, a, Xw(c, "signal", t, n)), u = null, d = !1, f = null, p = !1, m = (e) => {
 			d || (d = !0, e());
 		}, h = () => (f ||= Promise.resolve(r(e, n, (e, t) => {
 			p || a(e, t, l);
-		}, Zw(c, "self", t, n))).then((e) => {
+		}, Xw(c, "self", t, n))).then((e) => {
 			u = e, p && m(e);
 		}), f);
 		c.isPassive || await h();
 		let g = await r(e, t, async (e, t) => {
-			p || (c.isPassive && vw(t) && await h(), p || await a(e, t, l));
-		}, Zw(c, "root", t, n));
+			p || (c.isPassive && _w(t) && await h(), p || await a(e, t, l));
+		}, Xw(c, "root", t, n));
 		return () => {
 			p = !0, u && m(u), g();
 		};
 	},
 	announce: async (n, r, a, o, s) => {
-		let c = Xw(s), l = await i(n, r, cS({
-			peerId: Vx,
+		let c = Yw(s), l = await i(n, r, sS({
+			peerId: Bx,
 			...o
-		}), Zw(c, "announce", r, a));
+		}), Xw(c, "announce", r, a));
 		return typeof l == "number" || l !== void 0 && "stopAnnouncing" in l ? l : {
 			nextAnnounceMs: l?.nextAnnounceMs ?? e,
 			reannounceOnDisconnect: l?.reannounceOnDisconnect ?? t
 		};
 	},
-	...a ? { deactivate: (e, t, n, r) => a(e, t, Zw(Xw(r), "announce", t, n)) } : {}
-}), $w = yS((e) => e.socket), eT = 5, tT = "x", nT = "EVENT", { secretKey: rT, publicKey: iT } = kx.keygen(), aT = iS(iT), oT = {}, sT = 250, cT = 6e4, lT = 9e5, uT = 5333, dT = /* @__PURE__ */ new WeakMap(), fT = $w.scoped(), pT = /* @__PURE__ */ new WeakSet(), mT = (e) => {
-	let t = dT.get(e), n = Math.min(t?.delayMs ? Math.max(cT, t.delayMs * 2) : cT, lT);
-	return dT.set(e, {
+	...a ? { deactivate: (e, t, n, r) => a(e, t, Xw(Yw(r), "announce", t, n)) } : {}
+}), Qw = vS((e) => e.socket), $w = 5, eT = "x", tT = "EVENT", { secretKey: nT, publicKey: rT } = Ox.keygen(), iT = rS(rT), aT = {}, oT = 250, sT = 6e4, cT = 9e5, lT = 5333, uT = /* @__PURE__ */ new WeakMap(), dT = Qw.scoped(), fT = /* @__PURE__ */ new WeakSet(), pT = (e) => {
+	let t = uT.get(e), n = Math.min(t?.delayMs ? Math.max(sT, t.delayMs * 2) : sT, cT);
+	return uT.set(e, {
 		delayMs: n,
 		untilMs: Date.now() + n
 	}), n;
-}, hT = (e) => {
-	let t = dT.get(e);
+}, mT = (e) => {
+	let t = uT.get(e);
 	if (!t) return 0;
 	let n = t.untilMs - Date.now();
 	return n > 0 ? n : 0;
-}, gT = (e) => ({ nextAnnounceMs: e }), _T = { stopAnnouncing: !0 }, vT = (e) => !pT.has(e) && (pT.add(e), dT.delete(e), e.close?.(), !0), yT = () => Math.floor(Date.now() / 1e3), bT = (e) => oT[e] ??= uS(e, 1e4) + 2e4, xT = async (e, t) => {
+}, hT = (e) => ({ nextAnnounceMs: e }), gT = { stopAnnouncing: !0 }, _T = (e) => !fT.has(e) && (fT.add(e), uT.delete(e), e.close?.(), !0), vT = () => Math.floor(Date.now() / 1e3), yT = (e) => aT[e] ??= lS(e, 1e4) + 2e4, bT = async (e, t) => {
 	let n = {
-		kind: bT(e),
-		tags: [[tT, e]],
-		created_at: yT(),
+		kind: yT(e),
+		tags: [[eT, e]],
+		created_at: vT(),
 		content: t,
-		pubkey: aT
-	}, r = await TS("SHA-256", cS([
+		pubkey: iT
+	}, r = await wS("SHA-256", sS([
 		0,
 		n.pubkey,
 		n.created_at,
@@ -23744,136 +23726,136 @@ var tx = (e, t, n) => $b.multiply(t, !1).add(e.multiply(n, !1)).assertValidity()
 		n.tags,
 		n.content
 	]));
-	return cS([nT, {
+	return sS([tT, {
 		...n,
-		id: iS(r),
-		sig: iS(await kx.signAsync(r, rT))
+		id: rS(r),
+		sig: rS(await Ox.signAsync(r, nT))
 	}]);
-}, ST = {}, CT = (e) => {
+}, xT = {}, ST = (e) => {
 	e.flushWaiters.forEach((e) => e()), e.flushWaiters.clear();
-}, wT = (e, t, n) => {
-	let r = ST[e.url] ??= {
+}, CT = (e, t, n) => {
+	let r = xT[e.url] ??= {
 		subIds: [],
 		topics: /* @__PURE__ */ new Map(),
 		updateTimer: null,
 		flushWaiters: /* @__PURE__ */ new Set(),
 		retryTimer: null,
-		retryMs: uT,
+		retryMs: lT,
 		pendingEose: /* @__PURE__ */ new Set(),
 		requestedAt: 0
 	};
-	r.topics.set(t, n), ET(e, r);
+	r.topics.set(t, n), TT(e, r);
+}, wT = (e, t) => {
+	let n = xT[e.url];
+	n && (n.topics.delete(t), delete dT.forRelay(e)[t], n.topics.size === 0 ? (n.retryTimer !== null && clearTimeout(n.retryTimer), n.updateTimer !== null && (clearTimeout(n.updateTimer), n.updateTimer = null), ST(n), n.subIds.forEach((t) => e.send(sS(["CLOSE", t]))), delete xT[e.url]) : TT(e, n));
 }, TT = (e, t) => {
-	let n = ST[e.url];
-	n && (n.topics.delete(t), delete fT.forRelay(e)[t], n.topics.size === 0 ? (n.retryTimer !== null && clearTimeout(n.retryTimer), n.updateTimer !== null && (clearTimeout(n.updateTimer), n.updateTimer = null), CT(n), n.subIds.forEach((t) => e.send(cS(["CLOSE", t]))), delete ST[e.url]) : ET(e, n));
-}, ET = (e, t) => {
 	t.updateTimer === null && (t.updateTimer = setTimeout(() => {
 		t.updateTimer = null;
 		try {
-			OT(e);
+			DT(e);
 		} finally {
-			CT(t);
+			ST(t);
 		}
 	}, 0));
-}, DT = (e) => {
-	let t = ST[e.url];
+}, ET = (e) => {
+	let t = xT[e.url];
 	return !t || t.updateTimer === null ? Promise.resolve() : new Promise((e) => t.flushWaiters.add(e));
-}, OT = (e) => {
-	let t = ST[e.url];
+}, DT = (e) => {
+	let t = xT[e.url];
 	if (!t || t.topics.size === 0) return;
-	let n = [...t.topics.keys()], r = [], i = yT();
-	for (let e = 0; e < n.length; e += sT) r.push(n.slice(e, e + sT));
+	let n = [...t.topics.keys()], r = [], i = vT();
+	for (let e = 0; e < n.length; e += oT) r.push(n.slice(e, e + oT));
 	for (; t.subIds.length > r.length;) {
 		let n = t.subIds.pop();
-		n && e.send(cS(["CLOSE", n]));
+		n && e.send(sS(["CLOSE", n]));
 	}
 	t.pendingEose.clear(), t.requestedAt = Date.now(), r.forEach((n, r) => {
-		let a = t.subIds[r] ??= Bx(64);
-		t.pendingEose.add(a), e.send(cS([
+		let a = t.subIds[r] ??= zx(64);
+		t.pendingEose.add(a), e.send(sS([
 			"REQ",
 			a,
 			{
-				kinds: [...new Set(n.map(bT))],
+				kinds: [...new Set(n.map(yT))],
 				since: i,
 				"#x": n
 			}
 		]));
 	});
-}, kT = (e) => {
-	let t = ST[e.url];
+}, OT = (e) => {
+	let t = xT[e.url];
 	if (t && t.topics.size > 0 && !e.isClosed) {
-		if (hT(e) > 0) {
-			MT(e, !0);
+		if (mT(e) > 0) {
+			jT(e, !0);
 			return;
 		}
-		t.retryTimer !== null && (clearTimeout(t.retryTimer), t.retryTimer = null), OT(e), AT(e);
+		t.retryTimer !== null && (clearTimeout(t.retryTimer), t.retryTimer = null), DT(e), kT(e);
 	}
-}, AT = (e) => {
-	Object.entries(fT.forRelay(e)).forEach(([t, n]) => {
-		jT(e, t, n, !0);
+}, kT = (e) => {
+	Object.entries(dT.forRelay(e)).forEach(([t, n]) => {
+		AT(e, t, n, !0);
 	});
-}, jT = async (e, t, n, r) => {
-	if (pT.has(e) || e.isClosed) return r ? _T : void 0;
-	let i = hT(e);
-	if (i > 0 || e.socket.readyState !== 1) return r ? gT(Math.max(cT, i)) : void 0;
-	let a = await xT(t, r ? cS({
-		...lS(n),
-		nonce: Bx(8)
+}, AT = async (e, t, n, r) => {
+	if (fT.has(e) || e.isClosed) return r ? gT : void 0;
+	let i = mT(e);
+	if (i > 0 || e.socket.readyState !== 1) return r ? hT(Math.max(sT, i)) : void 0;
+	let a = await bT(t, r ? sS({
+		...cS(n),
+		nonce: zx(8)
 	}) : n);
-	if (r && !ST[e.url]?.topics.has(t)) return gT(cT);
-	if (hT(e) > 0 || e.isClosed || e.socket.readyState !== 1) return r ? gT(cT) : void 0;
-	if (e.send(a), r) return gT(cT);
-}, MT = (e, t) => {
-	let n = ST[e.url];
+	if (r && !xT[e.url]?.topics.has(t)) return hT(sT);
+	if (mT(e) > 0 || e.isClosed || e.socket.readyState !== 1) return r ? hT(sT) : void 0;
+	if (e.send(a), r) return hT(sT);
+}, jT = (e, t) => {
+	let n = xT[e.url];
 	if (!n || n.retryTimer !== null && !t) return;
 	n.retryTimer !== null && clearTimeout(n.retryTimer);
-	let r = t ? hT(e) : n.retryMs;
-	n.retryMs = Math.min(n.retryMs * 2, cT), n.retryTimer = setTimeout(() => {
-		n.retryTimer = null, kT(e);
-	}, Math.max(r, uT));
-}, NT = Qw({
-	init: (e) => sS(e, PT, eT, !0).map((t) => {
-		let n = $w.register(t, () => vS(t, (t) => {
-			let [r, i, a, o] = lS(t);
-			if (r !== nT) {
-				let t = `${Lx}: relay failure from ${n.url} - `, s = r === "CLOSED" && typeof a == "string" ? a : o, c = r === "OK" && a === !1, l = (c || r === "CLOSED") && s?.startsWith("rate-limited:"), u = c && s?.startsWith("duplicate:"), d = s && /^(blocked|restricted|auth-required|pow):/.test(s);
-				if (r === "OK" && a === !0 && hT(n) === 0 && dT.delete(n), (c || r === "CLOSED") && d && !vT(n)) return;
-				if (l) mT(n);
+	let r = t ? mT(e) : n.retryMs;
+	n.retryMs = Math.min(n.retryMs * 2, sT), n.retryTimer = setTimeout(() => {
+		n.retryTimer = null, OT(e);
+	}, Math.max(r, lT));
+}, MT = Zw({
+	init: (e) => oS(e, NT, $w, !0).map((t) => {
+		let n = Qw.register(t, () => _S(t, (t) => {
+			let [r, i, a, o] = cS(t);
+			if (r !== tT) {
+				let t = `${Ix}: relay failure from ${n.url} - `, s = r === "CLOSED" && typeof a == "string" ? a : o, c = r === "OK" && a === !1, l = (c || r === "CLOSED") && s?.startsWith("rate-limited:"), u = c && s?.startsWith("duplicate:"), d = s && /^(blocked|restricted|auth-required|pow):/.test(s);
+				if (r === "OK" && a === !0 && mT(n) === 0 && uT.delete(n), (c || r === "CLOSED") && d && !_T(n)) return;
+				if (l) pT(n);
 				else if (r === "EOSE") {
-					let e = ST[n.url];
-					e?.pendingEose.delete(i) && e.pendingEose.size === 0 && (e.retryMs = uT, e.retryTimer !== null && (clearTimeout(e.retryTimer), e.retryTimer = null), Date.now() - e.requestedAt >= 1e3 && AT(n));
+					let e = xT[n.url];
+					e?.pendingEose.delete(i) && e.pendingEose.size === 0 && (e.retryMs = lT, e.retryTimer !== null && (clearTimeout(e.retryTimer), e.retryTimer = null), Date.now() - e.requestedAt >= 1e3 && kT(n));
 				}
-				r === "CLOSED" && !d && MT(n, !!l), !u && e.relayConfig?.warnOnRelayFailure !== !1 && (r === "NOTICE" ? console.warn(t + i) : (c || r === "CLOSED") && console.warn(t + s));
+				r === "CLOSED" && !d && jT(n, !!l), !u && e.relayConfig?.warnOnRelayFailure !== !1 && (r === "NOTICE" ? console.warn(t + i) : (c || r === "CLOSED") && console.warn(t + s));
 			} else if (a && typeof a == "object" && "content" in a) {
-				let e = ST[n.url];
+				let e = xT[n.url];
 				if (e?.subIds.includes(i) && a.tags) {
-					let t = a.tags.find((e) => e[0] === tT);
+					let t = a.tags.find((e) => e[0] === eT);
 					t?.[1] && e.topics.get(t[1])?.(t[1], a.content);
 				}
 			}
-		}, () => kT(n)));
+		}, () => OT(n)));
 		return n.ready;
 	}),
 	subscribeTopic: (e, t, n, r) => {
 		let i = (e, t) => void n(e, t);
-		wT(e, t, i);
+		CT(e, t, i);
 		let a = () => {
-			ST[e.url]?.topics.get(t) === i && TT(e, t);
+			xT[e.url]?.topics.get(t) === i && wT(e, t);
 		};
-		return r.kind === "root" ? DT(e).then(() => a) : a;
+		return r.kind === "root" ? ET(e).then(() => a) : a;
 	},
 	publishTopic: (e, t, n, { kind: r }) => {
-		let i = typeof n == "string" ? n : cS(n);
-		return r === "announce" && (fT.forRelay(e)[t] = i), jT(e, t, i, r === "announce");
+		let i = typeof n == "string" ? n : sS(n);
+		return r === "announce" && (dT.forRelay(e)[t] = i), AT(e, t, i, r === "announce");
 	},
 	unpublishTopic: (e, t) => {
-		delete fT.forRelay(e)[t];
+		delete dT.forRelay(e)[t];
 	}
 });
-$w.getSockets;
-var PT = (/* @__PURE__ */ "0x-nostr-relay.fly.dev,bendernostur.duckdns.org:8443,cdn.satellite.earth,nos.lol,nostr.chaima.info,nostr.christiansass.de,nostr.rblb.it,nostr.red5d.dev,nostr.robosats.org,nostr.stakey.net,nostrcity-club.fly.dev,relay-dev.gulugulu.moe,relay.aarpia.com,relay.agentry.com,relay.bitmacro.cloud,relay.bullishbounty.com,relay.degmods.com,relay.flashapp.me,relay.grigic.org,relay.hackshed.dev,relay.kaleidoswap.com,relay.layer.systems,relay.nostr.blockhenge.com,relay.nostr.dev.br,relay.nostrmap.net,relay.novospes.com,relay.piazza.today,relay.routstr.com,testr.nymble.world".split(",")).map((e) => "wss://" + e);
+Qw.getSockets;
+var NT = (/* @__PURE__ */ "0x-nostr-relay.fly.dev,bendernostur.duckdns.org:8443,cdn.satellite.earth,nos.lol,nostr.chaima.info,nostr.christiansass.de,nostr.rblb.it,nostr.red5d.dev,nostr.robosats.org,nostr.stakey.net,nostrcity-club.fly.dev,relay-dev.gulugulu.moe,relay.aarpia.com,relay.agentry.com,relay.bitmacro.cloud,relay.bullishbounty.com,relay.degmods.com,relay.flashapp.me,relay.grigic.org,relay.hackshed.dev,relay.kaleidoswap.com,relay.layer.systems,relay.nostr.blockhenge.com,relay.nostr.dev.br,relay.nostrmap.net,relay.novospes.com,relay.piazza.today,relay.routstr.com,testr.nymble.world".split(",")).map((e) => "wss://" + e);
 // src/presence.js
-function FT({ appId: e = "flffkaos-web-art-ocean", roomId: t = "beach-v1", password: n, onJoin: r, onLeave: i, onState: a, onStatus: o } = {}) {
+function PT({ appId: e = "flffkaos-web-art-ocean", roomId: t = "beach-v1", password: n, onJoin: r, onLeave: i, onState: a, onStatus: o } = {}) {
 	let s = null, c = null, l = null, u = 0, d = 0, f = /* @__PURE__ */ new Map();
 	function p() {
 		try {
@@ -23886,7 +23868,7 @@ function FT({ appId: e = "flffkaos-web-art-ocean", roomId: t = "beach-v1", passw
 		if (!(!l && m - d < 3e3)) {
 			d = m, p();
 			try {
-				s = NT({
+				s = MT({
 					appId: e,
 					password: n
 				}, t), c = s.makeAction("st"), c.onMessage = (e, t) => {
@@ -23931,1433 +23913,9 @@ function FT({ appId: e = "flffkaos-web-art-ocean", roomId: t = "beach-v1", passw
 		}
 	};
 }
-// node_modules/three/examples/jsm/utils/SkeletonUtils.js
-var IT = /* @__PURE__ */ t({
-	clone: () => BT,
-	retarget: () => RT,
-	retargetClip: () => zT
-});
-function LT(e, t) {
-	return t.getBoneName === void 0 ? t.names[e.name] : t.getBoneName(e);
-}
-function RT(e, t, n = {}) {
-	let r = new hn(), i = new q(), a = new J(), o = new J();
-	n.preserveBoneMatrix = n.preserveBoneMatrix === void 0 || n.preserveBoneMatrix, n.preserveBonePositions = n.preserveBonePositions === void 0 || n.preserveBonePositions, n.useTargetMatrix = n.useTargetMatrix !== void 0 && n.useTargetMatrix, n.hip = n.hip === void 0 ? "hip" : n.hip, n.hipInfluence = n.hipInfluence === void 0 ? new q(1, 1, 1) : n.hipInfluence, n.scale = n.scale === void 0 ? 1 : n.scale, n.names = n.names || {};
-	let s = t.isObject3D ? t.skeleton.bones : HT(t), c = e.isObject3D ? e.skeleton.bones : HT(e), l, u, d, f;
-	if (e.isObject3D ? e.skeleton.pose() : (n.useTargetMatrix = !0, n.preserveBoneMatrix = !1), n.preserveBonePositions) {
-		f = [];
-		for (let e = 0; e < c.length; e++) f.push(c[e].position.clone());
-	}
-	if (n.preserveBoneMatrix) {
-		e.updateMatrixWorld(), e.matrixWorld.identity();
-		for (let t = 0; t < e.children.length; ++t) e.children[t].updateMatrixWorld(!0);
-	}
-	for (let t = 0; t < c.length; ++t) l = c[t], u = LT(l, n), d = VT(u, s), o.copy(l.matrixWorld), d && (d.updateMatrixWorld(), n.useTargetMatrix ? a.copy(d.matrixWorld) : (a.copy(e.matrixWorld).invert(), a.multiply(d.matrixWorld)), i.setFromMatrixScale(a), a.scale(i.set(1 / i.x, 1 / i.y, 1 / i.z)), o.makeRotationFromQuaternion(r.setFromRotationMatrix(a)), e.isObject3D && n.localOffsets && n.localOffsets[l.name] && o.multiply(n.localOffsets[l.name]), o.copyPosition(a)), u === n.hip && (o.elements[12] *= n.scale * n.hipInfluence.x, o.elements[13] *= n.scale * n.hipInfluence.y, o.elements[14] *= n.scale * n.hipInfluence.z, n.hipPosition !== void 0 && (o.elements[12] += n.hipPosition.x * n.scale, o.elements[13] += n.hipPosition.y * n.scale, o.elements[14] += n.hipPosition.z * n.scale)), l.parent ? (l.matrix.copy(l.parent.matrixWorld).invert(), l.matrix.multiply(o)) : l.matrix.copy(o), l.matrix.decompose(l.position, l.quaternion, l.scale), l.updateMatrixWorld();
-	if (n.preserveBonePositions) for (let e = 0; e < c.length; ++e) l = c[e], u = LT(l, n) || l.name, u !== n.hip && l.position.copy(f[e]);
-	n.preserveBoneMatrix && e.updateMatrixWorld(!0);
-}
-function zT(e, t, n, r = {}) {
-	r.useFirstFramePosition = r.useFirstFramePosition !== void 0 && r.useFirstFramePosition, r.fps = r.fps === void 0 ? Math.max(...n.tracks.map((e) => e.times.length)) / n.duration : r.fps, r.names = r.names || [], t.isObject3D || (t = UT(t));
-	let i = Math.round(n.duration * (r.fps / 1e3) * 1e3), a = n.duration / (i - 1), o = [], s = new Cd(t), c = HT(e.skeleton), l = [], u, d, f, p, m;
-	s.clipAction(n).play();
-	let h = 0, g = i;
-	r.trim === void 0 ? s.update(0) : (h = Math.round(r.trim[0] * r.fps), g = Math.min(Math.round(r.trim[1] * r.fps), i) - h, s.update(r.trim[0])), t.updateMatrixWorld();
-	for (let n = 0; n < g; ++n) {
-		let i = n * a;
-		RT(e, t, r);
-		for (let e = 0; e < c.length; ++e) d = c[e], m = LT(d, r) || d.name, f = VT(m, t.skeleton), f && (p = l[e] = l[e] || { bone: d }, r.hip === m && (p.pos || (p.pos = {
-			times: new Float32Array(g),
-			values: new Float32Array(g * 3)
-		}), r.useFirstFramePosition && (n === 0 && (u = d.position.clone()), d.position.sub(u)), p.pos.times[n] = i, d.position.toArray(p.pos.values, n * 3)), p.quat || (p.quat = {
-			times: new Float32Array(g),
-			values: new Float32Array(g * 4)
-		}), p.quat.times[n] = i, d.quaternion.toArray(p.quat.values, n * 4));
-		n === g - 2 ? s.update(a - 1e-7) : s.update(a), t.updateMatrixWorld();
-	}
-	for (let e = 0; e < l.length; ++e) p = l[e], p && (p.pos && o.push(new Nl(".bones[" + p.bone.name + "].position", p.pos.times, p.pos.values)), o.push(new jl(".bones[" + p.bone.name + "].quaternion", p.quat.times, p.quat.values)));
-	return s.uncacheAction(n), new Pl(n.name, -1, o);
-}
-function BT(e) {
-	let t = /* @__PURE__ */ new Map(), n = /* @__PURE__ */ new Map(), r = e.clone();
-	return WT(e, r, function(e, r) {
-		t.set(r, e), n.set(e, r);
-	}), r.traverse(function(e) {
-		if (!e.isSkinnedMesh) return;
-		let r = e, i = t.get(e), a = i.skeleton.bones;
-		r.skeleton = i.skeleton.clone(), r.bindMatrix.copy(i.bindMatrix), r.skeleton.bones = a.map(function(e) {
-			return n.get(e);
-		}), r.bind(r.skeleton, r.bindMatrix);
-	}), r;
-}
-function VT(e, t) {
-	for (let n = 0, r = HT(t); n < r.length; n++) if (e === r[n].name) return r[n];
-}
-function HT(e) {
-	return Array.isArray(e) ? e : e.bones;
-}
-function UT(e) {
-	let t = new $d(e.bones[0]);
-	return t.skeleton = e, t;
-}
-function WT(e, t, n) {
-	n(e, t);
-	for (let r = 0; r < e.children.length; r++) WT(e.children[r], t.children[r], n);
-}
-// node_modules/three/examples/jsm/loaders/GLTFLoader.js
-var GT = class extends Vl {
-	constructor(e) {
-		super(e), this.dracoLoader = null, this.ktx2Loader = null, this.meshoptDecoder = null, this.pluginCallbacks = [], this.register(function(e) {
-			return new QT(e);
-		}), this.register(function(e) {
-			return new $T(e);
-		}), this.register(function(e) {
-			return new cE(e);
-		}), this.register(function(e) {
-			return new lE(e);
-		}), this.register(function(e) {
-			return new uE(e);
-		}), this.register(function(e) {
-			return new tE(e);
-		}), this.register(function(e) {
-			return new nE(e);
-		}), this.register(function(e) {
-			return new rE(e);
-		}), this.register(function(e) {
-			return new iE(e);
-		}), this.register(function(e) {
-			return new ZT(e);
-		}), this.register(function(e) {
-			return new aE(e);
-		}), this.register(function(e) {
-			return new eE(e);
-		}), this.register(function(e) {
-			return new sE(e);
-		}), this.register(function(e) {
-			return new oE(e);
-		}), this.register(function(e) {
-			return new YT(e);
-		}), this.register(function(e) {
-			return new dE(e, JT.EXT_MESHOPT_COMPRESSION);
-		}), this.register(function(e) {
-			return new dE(e, JT.KHR_MESHOPT_COMPRESSION);
-		}), this.register(function(e) {
-			return new fE(e);
-		});
-	}
-	load(e, t, n, r) {
-		let i = this, a;
-		if (this.resourcePath !== "") a = this.resourcePath;
-		else if (this.path !== "") {
-			let t = Tu.extractUrlBase(e);
-			a = Tu.resolveURL(t, this.path);
-		} else a = Tu.extractUrlBase(e);
-		this.manager.itemStart(e);
-		let o = function(t) {
-			r ? r(t) : console.error(t), i.manager.itemError(e), i.manager.itemEnd(e);
-		}, s = new Wl(this.manager);
-		s.setPath(this.path), s.setResponseType("arraybuffer"), s.setRequestHeader(this.requestHeader), s.setWithCredentials(this.withCredentials), s.load(e, function(n) {
-			try {
-				i.parse(n, a, function(n) {
-					t(n), i.manager.itemEnd(e);
-				}, o);
-			} catch (e) {
-				o(e);
-			}
-		}, n, o);
-	}
-	setDRACOLoader(e) {
-		return this.dracoLoader = e, this;
-	}
-	setKTX2Loader(e) {
-		return this.ktx2Loader = e, this;
-	}
-	setMeshoptDecoder(e) {
-		return this.meshoptDecoder = e, this;
-	}
-	register(e) {
-		return this.pluginCallbacks.indexOf(e) === -1 && this.pluginCallbacks.push(e), this;
-	}
-	unregister(e) {
-		return this.pluginCallbacks.indexOf(e) !== -1 && this.pluginCallbacks.splice(this.pluginCallbacks.indexOf(e), 1), this;
-	}
-	parse(e, t, n, r) {
-		let i, a = {}, o = {}, s = new TextDecoder();
-		if (typeof e == "string") i = JSON.parse(e);
-		else if (e instanceof ArrayBuffer) {
-			if (s.decode(new Uint8Array(e, 0, 4)) === pE) {
-				try {
-					a[JT.KHR_BINARY_GLTF] = new gE(e);
-				} catch (e) {
-					r && r(e);
-					return;
-				}
-				i = JSON.parse(a[JT.KHR_BINARY_GLTF].content);
-			} else i = JSON.parse(s.decode(e));
-		} else i = e;
-		if (i.asset === void 0 || i.asset.version[0] < 2) {
-			r && r(/* @__PURE__ */ Error("THREE.GLTFLoader: Unsupported asset. glTF versions >=2.0 are supported."));
-			return;
-		}
-		let c = new HE(i, {
-			path: t || this.resourcePath || "",
-			crossOrigin: this.crossOrigin,
-			requestHeader: this.requestHeader,
-			manager: this.manager,
-			ktx2Loader: this.ktx2Loader,
-			meshoptDecoder: this.meshoptDecoder
-		});
-		c.fileLoader.setRequestHeader(this.requestHeader);
-		for (let e = 0; e < this.pluginCallbacks.length; e++) {
-			let t = this.pluginCallbacks[e](c);
-			t.name || console.error("THREE.GLTFLoader: Invalid plugin found: missing name"), o[t.name] = t, a[t.name] = !0;
-		}
-		if (i.extensionsUsed) for (let e = 0; e < i.extensionsUsed.length; ++e) {
-			let t = i.extensionsUsed[e], n = i.extensionsRequired || [];
-			switch (t) {
-				case JT.KHR_MATERIALS_UNLIT:
-					a[t] = new XT();
-					break;
-				case JT.KHR_DRACO_MESH_COMPRESSION:
-					a[t] = new _E(i, this.dracoLoader);
-					break;
-				case JT.KHR_TEXTURE_TRANSFORM:
-					a[t] = new vE();
-					break;
-				case JT.KHR_MESH_QUANTIZATION:
-					a[t] = new yE();
-					break;
-				default: n.indexOf(t) >= 0 && o[t] === void 0 && console.warn("THREE.GLTFLoader: Unknown extension \"" + t + "\".");
-			}
-		}
-		c.setExtensions(a), c.setPlugins(o), c.parse(n, r);
-	}
-	parseAsync(e, t) {
-		let n = this;
-		return new Promise(function(r, i) {
-			n.parse(e, t, r, i);
-		});
-	}
-};
-function KT() {
-	let e = {};
-	return {
-		get: function(t) {
-			return e[t];
-		},
-		add: function(t, n) {
-			e[t] = n;
-		},
-		remove: function(t) {
-			delete e[t];
-		},
-		removeAll: function() {
-			e = {};
-		}
-	};
-}
-function qT(e, t, n) {
-	let r = e.json.materials[t];
-	return r.extensions && r.extensions[n] ? r.extensions[n] : null;
-}
-var JT = {
-	KHR_BINARY_GLTF: "KHR_binary_glTF",
-	KHR_DRACO_MESH_COMPRESSION: "KHR_draco_mesh_compression",
-	KHR_LIGHTS_PUNCTUAL: "KHR_lights_punctual",
-	KHR_MATERIALS_CLEARCOAT: "KHR_materials_clearcoat",
-	KHR_MATERIALS_DISPERSION: "KHR_materials_dispersion",
-	KHR_MATERIALS_IOR: "KHR_materials_ior",
-	KHR_MATERIALS_SHEEN: "KHR_materials_sheen",
-	KHR_MATERIALS_SPECULAR: "KHR_materials_specular",
-	KHR_MATERIALS_TRANSMISSION: "KHR_materials_transmission",
-	KHR_MATERIALS_IRIDESCENCE: "KHR_materials_iridescence",
-	KHR_MATERIALS_ANISOTROPY: "KHR_materials_anisotropy",
-	KHR_MATERIALS_UNLIT: "KHR_materials_unlit",
-	KHR_MATERIALS_VOLUME: "KHR_materials_volume",
-	KHR_TEXTURE_BASISU: "KHR_texture_basisu",
-	KHR_TEXTURE_TRANSFORM: "KHR_texture_transform",
-	KHR_MESH_QUANTIZATION: "KHR_mesh_quantization",
-	KHR_MATERIALS_EMISSIVE_STRENGTH: "KHR_materials_emissive_strength",
-	EXT_MATERIALS_BUMP: "EXT_materials_bump",
-	EXT_TEXTURE_WEBP: "EXT_texture_webp",
-	EXT_TEXTURE_AVIF: "EXT_texture_avif",
-	EXT_MESHOPT_COMPRESSION: "EXT_meshopt_compression",
-	KHR_MESHOPT_COMPRESSION: "KHR_meshopt_compression",
-	EXT_MESH_GPU_INSTANCING: "EXT_mesh_gpu_instancing"
-}, YT = class {
-	constructor(e) {
-		this.parser = e, this.name = JT.KHR_LIGHTS_PUNCTUAL, this.cache = {
-			refs: {},
-			uses: {}
-		};
-	}
-	_markDefs() {
-		let e = this.parser, t = this.parser.json.nodes || [];
-		for (let n = 0, r = t.length; n < r; n++) {
-			let r = t[n];
-			r.extensions && r.extensions[this.name] && r.extensions[this.name].light !== void 0 && e._addNodeRef(this.cache, r.extensions[this.name].light);
-		}
-	}
-	_loadLight(e) {
-		let t = this.parser, n = "light:" + e, r = t.cache.get(n);
-		if (r) return r;
-		let i = t.json, a = ((i.extensions && i.extensions[this.name] || {}).lights || [])[e], o, s = new Y(16777215);
-		a.color !== void 0 && s.setRGB(a.color[0], a.color[1], a.color[2], $e);
-		let c = a.range === void 0 ? 0 : a.range;
-		switch (a.type) {
-			case "directional":
-				o = new vu(s), o.target.position.set(0, 0, -1), o.add(o.target);
-				break;
-			case "point":
-				o = new hu(s), o.distance = c;
-				break;
-			case "spot":
-				o = new pu(s), o.distance = c, a.spot = a.spot || {}, a.spot.innerConeAngle = a.spot.innerConeAngle === void 0 ? 0 : a.spot.innerConeAngle, a.spot.outerConeAngle = a.spot.outerConeAngle === void 0 ? Math.PI / 4 : a.spot.outerConeAngle, o.angle = a.spot.outerConeAngle, o.penumbra = 1 - a.spot.innerConeAngle / a.spot.outerConeAngle, o.target.position.set(0, 0, -1), o.add(o.target);
-				break;
-			default: throw Error("THREE.GLTFLoader: Unexpected light type: " + a.type);
-		}
-		return o.position.set(0, 0, 0), PE(o, a), a.intensity !== void 0 && (o.intensity = a.intensity), o.name = t.createUniqueName(a.name || "light_" + e), r = Promise.resolve(o), t.cache.add(n, r), r;
-	}
-	getDependency(e, t) {
-		if (e === "light") return this._loadLight(t);
-	}
-	createNodeAttachment(e) {
-		let t = this, n = this.parser, r = n.json.nodes[e], i = (r.extensions && r.extensions[this.name] || {}).light;
-		return i === void 0 ? null : this._loadLight(i).then(function(e) {
-			return n._getNodeRef(t.cache, i, e);
-		});
-	}
-}, XT = class {
-	constructor() {
-		this.name = JT.KHR_MATERIALS_UNLIT;
-	}
-	getMaterialType() {
-		return ca;
-	}
-	extendParams(e, t, n) {
-		let r = [];
-		e.color = new Y(1, 1, 1), e.opacity = 1;
-		let i = t.pbrMetallicRoughness;
-		if (i) {
-			if (Array.isArray(i.baseColorFactor)) {
-				let t = i.baseColorFactor;
-				e.color.setRGB(t[0], t[1], t[2], $e), e.opacity = t[3];
-			}
-			i.baseColorTexture !== void 0 && r.push(n.assignTexture(e, "map", i.baseColorTexture, Qe));
-		}
-		return Promise.all(r);
-	}
-}, ZT = class {
-	constructor(e) {
-		this.parser = e, this.name = JT.KHR_MATERIALS_EMISSIVE_STRENGTH;
-	}
-	extendMaterialParams(e, t) {
-		let n = qT(this.parser, e, this.name);
-		return n === null || n.emissiveStrength !== void 0 && (t.emissiveIntensity = n.emissiveStrength), Promise.resolve();
-	}
-}, QT = class {
-	constructor(e) {
-		this.parser = e, this.name = JT.KHR_MATERIALS_CLEARCOAT;
-	}
-	getMaterialType(e) {
-		return qT(this.parser, e, this.name) === null ? null : el;
-	}
-	extendMaterialParams(e, t) {
-		let n = qT(this.parser, e, this.name);
-		if (n === null) return Promise.resolve();
-		let r = [];
-		if (n.clearcoatFactor !== void 0 && (t.clearcoat = n.clearcoatFactor), n.clearcoatTexture !== void 0 && r.push(this.parser.assignTexture(t, "clearcoatMap", n.clearcoatTexture)), n.clearcoatRoughnessFactor !== void 0 && (t.clearcoatRoughness = n.clearcoatRoughnessFactor), n.clearcoatRoughnessTexture !== void 0 && r.push(this.parser.assignTexture(t, "clearcoatRoughnessMap", n.clearcoatRoughnessTexture)), n.clearcoatNormalTexture !== void 0 && (r.push(this.parser.assignTexture(t, "clearcoatNormalMap", n.clearcoatNormalTexture)), n.clearcoatNormalTexture.scale !== void 0)) {
-			let e = n.clearcoatNormalTexture.scale;
-			t.clearcoatNormalScale = new K(e, e);
-		}
-		return Promise.all(r);
-	}
-}, $T = class {
-	constructor(e) {
-		this.parser = e, this.name = JT.KHR_MATERIALS_DISPERSION;
-	}
-	getMaterialType(e) {
-		return qT(this.parser, e, this.name) === null ? null : el;
-	}
-	extendMaterialParams(e, t) {
-		let n = qT(this.parser, e, this.name);
-		return n === null || (t.dispersion = n.dispersion === void 0 ? 0 : n.dispersion), Promise.resolve();
-	}
-}, eE = class {
-	constructor(e) {
-		this.parser = e, this.name = JT.KHR_MATERIALS_IRIDESCENCE;
-	}
-	getMaterialType(e) {
-		return qT(this.parser, e, this.name) === null ? null : el;
-	}
-	extendMaterialParams(e, t) {
-		let n = qT(this.parser, e, this.name);
-		if (n === null) return Promise.resolve();
-		let r = [];
-		return n.iridescenceFactor !== void 0 && (t.iridescence = n.iridescenceFactor), n.iridescenceTexture !== void 0 && r.push(this.parser.assignTexture(t, "iridescenceMap", n.iridescenceTexture)), n.iridescenceIor !== void 0 && (t.iridescenceIOR = n.iridescenceIor), t.iridescenceThicknessRange === void 0 && (t.iridescenceThicknessRange = [100, 400]), n.iridescenceThicknessMinimum !== void 0 && (t.iridescenceThicknessRange[0] = n.iridescenceThicknessMinimum), n.iridescenceThicknessMaximum !== void 0 && (t.iridescenceThicknessRange[1] = n.iridescenceThicknessMaximum), n.iridescenceThicknessTexture !== void 0 && r.push(this.parser.assignTexture(t, "iridescenceThicknessMap", n.iridescenceThicknessTexture)), Promise.all(r);
-	}
-}, tE = class {
-	constructor(e) {
-		this.parser = e, this.name = JT.KHR_MATERIALS_SHEEN;
-	}
-	getMaterialType(e) {
-		return qT(this.parser, e, this.name) === null ? null : el;
-	}
-	extendMaterialParams(e, t) {
-		let n = qT(this.parser, e, this.name);
-		if (n === null) return Promise.resolve();
-		let r = [];
-		if (t.sheenColor = new Y(0, 0, 0), t.sheenRoughness = 0, t.sheen = 1, n.sheenColorFactor !== void 0) {
-			let e = n.sheenColorFactor;
-			t.sheenColor.setRGB(e[0], e[1], e[2], $e);
-		}
-		return n.sheenRoughnessFactor !== void 0 && (t.sheenRoughness = n.sheenRoughnessFactor), n.sheenColorTexture !== void 0 && r.push(this.parser.assignTexture(t, "sheenColorMap", n.sheenColorTexture, Qe)), n.sheenRoughnessTexture !== void 0 && r.push(this.parser.assignTexture(t, "sheenRoughnessMap", n.sheenRoughnessTexture)), Promise.all(r);
-	}
-}, nE = class {
-	constructor(e) {
-		this.parser = e, this.name = JT.KHR_MATERIALS_TRANSMISSION;
-	}
-	getMaterialType(e) {
-		return qT(this.parser, e, this.name) === null ? null : el;
-	}
-	extendMaterialParams(e, t) {
-		let n = qT(this.parser, e, this.name);
-		if (n === null) return Promise.resolve();
-		let r = [];
-		return n.transmissionFactor !== void 0 && (t.transmission = n.transmissionFactor), n.transmissionTexture !== void 0 && r.push(this.parser.assignTexture(t, "transmissionMap", n.transmissionTexture)), Promise.all(r);
-	}
-}, rE = class {
-	constructor(e) {
-		this.parser = e, this.name = JT.KHR_MATERIALS_VOLUME;
-	}
-	getMaterialType(e) {
-		return qT(this.parser, e, this.name) === null ? null : el;
-	}
-	extendMaterialParams(e, t) {
-		let n = qT(this.parser, e, this.name);
-		if (n === null) return Promise.resolve();
-		let r = [];
-		t.thickness = n.thicknessFactor === void 0 ? 0 : n.thicknessFactor, n.thicknessTexture !== void 0 && r.push(this.parser.assignTexture(t, "thicknessMap", n.thicknessTexture)), t.attenuationDistance = n.attenuationDistance || Infinity;
-		let i = n.attenuationColor || [
-			1,
-			1,
-			1
-		];
-		return t.attenuationColor = new Y().setRGB(i[0], i[1], i[2], $e), Promise.all(r);
-	}
-}, iE = class {
-	constructor(e) {
-		this.parser = e, this.name = JT.KHR_MATERIALS_IOR;
-	}
-	getMaterialType(e) {
-		return qT(this.parser, e, this.name) === null ? null : el;
-	}
-	extendMaterialParams(e, t) {
-		let n = qT(this.parser, e, this.name);
-		return n === null || (t.ior = n.ior === void 0 ? 1.5 : n.ior, t.ior === 0 && (t.ior = 1e3)), Promise.resolve();
-	}
-}, aE = class {
-	constructor(e) {
-		this.parser = e, this.name = JT.KHR_MATERIALS_SPECULAR;
-	}
-	getMaterialType(e) {
-		return qT(this.parser, e, this.name) === null ? null : el;
-	}
-	extendMaterialParams(e, t) {
-		let n = qT(this.parser, e, this.name);
-		if (n === null) return Promise.resolve();
-		let r = [];
-		t.specularIntensity = n.specularFactor === void 0 ? 1 : n.specularFactor, n.specularTexture !== void 0 && r.push(this.parser.assignTexture(t, "specularIntensityMap", n.specularTexture));
-		let i = n.specularColorFactor || [
-			1,
-			1,
-			1
-		];
-		return t.specularColor = new Y().setRGB(i[0], i[1], i[2], $e), n.specularColorTexture !== void 0 && r.push(this.parser.assignTexture(t, "specularColorMap", n.specularColorTexture, Qe)), Promise.all(r);
-	}
-}, oE = class {
-	constructor(e) {
-		this.parser = e, this.name = JT.EXT_MATERIALS_BUMP;
-	}
-	getMaterialType(e) {
-		return qT(this.parser, e, this.name) === null ? null : el;
-	}
-	extendMaterialParams(e, t) {
-		let n = qT(this.parser, e, this.name);
-		if (n === null) return Promise.resolve();
-		let r = [];
-		return t.bumpScale = n.bumpFactor === void 0 ? 1 : n.bumpFactor, n.bumpTexture !== void 0 && r.push(this.parser.assignTexture(t, "bumpMap", n.bumpTexture)), Promise.all(r);
-	}
-}, sE = class {
-	constructor(e) {
-		this.parser = e, this.name = JT.KHR_MATERIALS_ANISOTROPY;
-	}
-	getMaterialType(e) {
-		return qT(this.parser, e, this.name) === null ? null : el;
-	}
-	extendMaterialParams(e, t) {
-		let n = qT(this.parser, e, this.name);
-		if (n === null) return Promise.resolve();
-		let r = [];
-		return n.anisotropyStrength !== void 0 && (t.anisotropy = n.anisotropyStrength), n.anisotropyRotation !== void 0 && (t.anisotropyRotation = n.anisotropyRotation), n.anisotropyTexture !== void 0 && r.push(this.parser.assignTexture(t, "anisotropyMap", n.anisotropyTexture)), Promise.all(r);
-	}
-}, cE = class {
-	constructor(e) {
-		this.parser = e, this.name = JT.KHR_TEXTURE_BASISU;
-	}
-	loadTexture(e) {
-		let t = this.parser, n = t.json, r = n.textures[e];
-		if (!r.extensions || !r.extensions[this.name]) return null;
-		let i = r.extensions[this.name], a = t.options.ktx2Loader;
-		if (!a) {
-			if (n.extensionsRequired && n.extensionsRequired.indexOf(this.name) >= 0) throw Error("THREE.GLTFLoader: setKTX2Loader must be called before loading KTX2 textures");
-			return null;
-		}
-		return t.loadTextureImage(e, i.source, a);
-	}
-}, lE = class {
-	constructor(e) {
-		this.parser = e, this.name = JT.EXT_TEXTURE_WEBP;
-	}
-	loadTexture(e) {
-		let t = this.name, n = this.parser, r = n.json, i = r.textures[e];
-		if (!i.extensions || !i.extensions[t]) return null;
-		let a = i.extensions[t], o = r.images[a.source], s = n.textureLoader;
-		if (o.uri) {
-			let e = n.options.manager.getHandler(o.uri);
-			e !== null && (s = e);
-		}
-		return n.loadTextureImage(e, a.source, s);
-	}
-}, uE = class {
-	constructor(e) {
-		this.parser = e, this.name = JT.EXT_TEXTURE_AVIF;
-	}
-	loadTexture(e) {
-		let t = this.name, n = this.parser, r = n.json, i = r.textures[e];
-		if (!i.extensions || !i.extensions[t]) return null;
-		let a = i.extensions[t], o = r.images[a.source], s = n.textureLoader;
-		if (o.uri) {
-			let e = n.options.manager.getHandler(o.uri);
-			e !== null && (s = e);
-		}
-		return n.loadTextureImage(e, a.source, s);
-	}
-}, dE = class {
-	constructor(e, t) {
-		this.name = t, this.parser = e;
-	}
-	loadBufferView(e) {
-		let t = this.parser.json, n = t.bufferViews[e];
-		if (n.extensions && n.extensions[this.name]) {
-			let e = n.extensions[this.name], r = this.parser.getDependency("buffer", e.buffer), i = this.parser.options.meshoptDecoder;
-			if (!i || !i.supported) {
-				if (t.extensionsRequired && t.extensionsRequired.indexOf(this.name) >= 0) throw Error("THREE.GLTFLoader: setMeshoptDecoder must be called before loading compressed files");
-				return null;
-			}
-			return r.then(function(t) {
-				let n = e.byteOffset || 0, r = e.byteLength || 0, a = e.count, o = e.byteStride, s = new Uint8Array(t, n, r);
-				return i.decodeGltfBufferAsync ? i.decodeGltfBufferAsync(a, o, s, e.mode, e.filter).then(function(e) {
-					return e.buffer;
-				}) : i.ready.then(function() {
-					let t = new ArrayBuffer(a * o);
-					return i.decodeGltfBuffer(new Uint8Array(t), a, o, s, e.mode, e.filter), t;
-				});
-			});
-		}
-		return null;
-	}
-}, fE = class {
-	constructor(e) {
-		this.name = JT.EXT_MESH_GPU_INSTANCING, this.parser = e;
-	}
-	createNodeMesh(e) {
-		let t = this.parser.json, n = t.nodes[e];
-		if (!n.extensions || !n.extensions[this.name] || n.mesh === void 0) return null;
-		let r = t.meshes[n.mesh];
-		for (let e of r.primitives) if (e.mode !== CE.TRIANGLES && e.mode !== CE.TRIANGLE_STRIP && e.mode !== CE.TRIANGLE_FAN && e.mode !== void 0) return null;
-		let i = n.extensions[this.name].attributes, a = [], o = {};
-		for (let e in i) a.push(this.parser.getDependency("accessor", i[e]).then((t) => (o[e] = t, o[e])));
-		return a.length < 1 ? null : (a.push(this.parser.createNodeMesh(e)), Promise.all(a).then((e) => {
-			let t = e.pop(), n = t.isGroup ? t.children : [t], r = e[0].count, i = [];
-			for (let e of n) {
-				let t = new J(), n = new q(), a = new hn(), s = new q(1, 1, 1), c = new Ka(e.geometry, e.material, r);
-				for (let e = 0; e < r; e++) o.TRANSLATION && n.fromBufferAttribute(o.TRANSLATION, e), o.ROTATION && a.fromBufferAttribute(o.ROTATION, e), o.SCALE && s.fromBufferAttribute(o.SCALE, e), c.setMatrixAt(e, t.compose(n, a, s));
-				let l = null;
-				for (let e in o) if (e === "_COLOR_0") {
-					let t = o[e];
-					c.instanceColor = new Ra(t.array, t.itemSize, t.normalized);
-				} else if (e !== "TRANSLATION" && e !== "ROTATION" && e !== "SCALE") {
-					if (l === null) {
-						let e = c.geometry;
-						l = new Z(), l.name = e.name;
-						for (let t in e.attributes) l.setAttribute(t, e.attributes[t]);
-						for (let t in e.morphAttributes) l.morphAttributes[t] = e.morphAttributes[t];
-						e.index !== null && l.setIndex(e.index), l.morphTargetsRelative = e.morphTargetsRelative;
-						for (let t of e.groups) l.addGroup(t.start, t.count, t.materialIndex);
-						e.boundingBox !== null && (l.boundingBox = e.boundingBox.clone()), e.boundingSphere !== null && (l.boundingSphere = e.boundingSphere.clone()), l.drawRange.start = e.drawRange.start, l.drawRange.count = e.drawRange.count, l.userData = Object.assign({}, e.userData), c.geometry = l;
-					}
-					let t = o[e];
-					l.setAttribute(e, new Ra(t.array, t.itemSize, t.normalized));
-				}
-				mr.prototype.copy.call(c, e), this.parser.assignFinalMaterial(c), i.push(c);
-			}
-			return t.isGroup ? (t.clear(), t.add(...i), t) : i[0];
-		}));
-	}
-}, pE = "glTF", mE = 12, hE = {
-	JSON: 1313821514,
-	BIN: 5130562
-}, gE = class {
-	constructor(e) {
-		this.name = JT.KHR_BINARY_GLTF, this.content = null, this.body = null;
-		let t = new DataView(e, 0, mE), n = new TextDecoder();
-		if (this.header = {
-			magic: n.decode(new Uint8Array(e.slice(0, 4))),
-			version: t.getUint32(4, !0),
-			length: t.getUint32(8, !0)
-		}, this.header.magic !== pE) throw Error("THREE.GLTFLoader: Unsupported glTF-Binary header.");
-		if (this.header.version < 2) throw Error("THREE.GLTFLoader: Legacy binary file detected.");
-		let r = this.header.length - mE, i = new DataView(e, mE), a = 0;
-		for (; a < r;) {
-			let t = i.getUint32(a, !0);
-			a += 4;
-			let r = i.getUint32(a, !0);
-			if (a += 4, r === hE.JSON) {
-				let r = new Uint8Array(e, mE + a, t);
-				this.content = n.decode(r);
-			} else if (r === hE.BIN) {
-				let n = mE + a;
-				this.body = e.slice(n, n + t);
-			}
-			a += t;
-		}
-		if (this.content === null) throw Error("THREE.GLTFLoader: JSON content not found.");
-	}
-}, _E = class {
-	constructor(e, t) {
-		if (!t) throw Error("THREE.GLTFLoader: No DRACOLoader instance provided.");
-		this.name = JT.KHR_DRACO_MESH_COMPRESSION, this.json = e, this.dracoLoader = t, this.dracoLoader.preload();
-	}
-	decodePrimitive(e, t) {
-		let n = this.json, r = this.dracoLoader, i = e.extensions[this.name].bufferView, a = e.extensions[this.name].attributes, o = {}, s = {}, c = {};
-		for (let e in a) {
-			let t = OE[e] || e.toLowerCase();
-			o[t] = a[e];
-		}
-		for (let t in e.attributes) {
-			let r = OE[t] || t.toLowerCase();
-			if (a[t] !== void 0) {
-				let i = n.accessors[e.attributes[t]];
-				c[r] = wE[i.componentType].name, s[r] = i.normalized === !0;
-			}
-		}
-		return t.getDependency("bufferView", i).then(function(e) {
-			return new Promise(function(t, n) {
-				r.decodeDracoFile(e, function(e) {
-					for (let t in e.attributes) {
-						let n = e.attributes[t], r = s[t];
-						r !== void 0 && (n.normalized = r);
-					}
-					t(e);
-				}, o, c, $e, n);
-			});
-		});
-	}
-}, vE = class {
-	constructor() {
-		this.name = JT.KHR_TEXTURE_TRANSFORM;
-	}
-	extendTexture(e, t) {
-		if ((t.texCoord === void 0 || t.texCoord === e.channel) && t.offset === void 0 && t.rotation === void 0 && t.scale === void 0) return e;
-		if (e = e.clone(), t.texCoord !== void 0 && (e.channel = t.texCoord), t.offset !== void 0 && e.offset.fromArray(t.offset), t.rotation !== void 0 && (e.rotation = t.rotation), t.scale !== void 0 && e.repeat.fromArray(t.scale), t.rotation !== void 0) {
-			let t = Math.cos(e.rotation), n = Math.sin(e.rotation);
-			e.matrix.set(e.repeat.x * t, e.repeat.y * n, e.offset.x, -e.repeat.x * n, e.repeat.y * t, e.offset.y, 0, 0, 1), e.matrixAutoUpdate = !1;
-		}
-		return e.needsUpdate = !0, e;
-	}
-}, yE = class {
-	constructor() {
-		this.name = JT.KHR_MESH_QUANTIZATION;
-	}
-}, bE = class extends _l {
-	constructor(e, t, n, r) {
-		super(e, t, n, r);
-	}
-	copySampleValue_(e) {
-		let t = this.resultBuffer, n = this.sampleValues, r = this.valueSize, i = e * r * 3 + r;
-		for (let e = 0; e !== r; e++) t[e] = n[i + e];
-		return t;
-	}
-	interpolate_(e, t, n, r) {
-		let i = this.resultBuffer, a = this.sampleValues, o = this.valueSize, s = o * 2, c = o * 3, l = r - t, u = (n - t) / l, d = u * u, f = d * u, p = e * c, m = p - c, h = -2 * f + 3 * d, g = f - d, _ = 1 - h, v = g - d + u;
-		for (let e = 0; e !== o; e++) {
-			let t = a[m + e + o], n = a[m + e + s] * l, r = a[p + e + o], c = a[p + e] * l;
-			i[e] = _ * t + v * n + h * r + g * c;
-		}
-		return i;
-	}
-}, xE = new hn(), SE = class extends bE {
-	interpolate_(e, t, n, r) {
-		let i = super.interpolate_(e, t, n, r);
-		return xE.fromArray(i).normalize().toArray(i), i;
-	}
-}, CE = {
-	FLOAT: 5126,
-	FLOAT_MAT3: 35675,
-	FLOAT_MAT4: 35676,
-	FLOAT_VEC2: 35664,
-	FLOAT_VEC3: 35665,
-	FLOAT_VEC4: 35666,
-	LINEAR: 9729,
-	REPEAT: 10497,
-	SAMPLER_2D: 35678,
-	POINTS: 0,
-	LINES: 1,
-	LINE_LOOP: 2,
-	LINE_STRIP: 3,
-	TRIANGLES: 4,
-	TRIANGLE_STRIP: 5,
-	TRIANGLE_FAN: 6,
-	UNSIGNED_BYTE: 5121,
-	UNSIGNED_SHORT: 5123
-}, wE = {
-	5120: Int8Array,
-	5121: Uint8Array,
-	5122: Int16Array,
-	5123: Uint16Array,
-	5125: Uint32Array,
-	5126: Float32Array
-}, TE = {
-	9728: l,
-	9729: m,
-	9984: u,
-	9985: h,
-	9986: f,
-	9987: _
-}, EE = {
-	33071: s,
-	33648: c,
-	10497: o
-}, DE = {
-	SCALAR: 1,
-	VEC2: 2,
-	VEC3: 3,
-	VEC4: 4,
-	MAT2: 4,
-	MAT3: 9,
-	MAT4: 16
-}, OE = {
-	POSITION: "position",
-	NORMAL: "normal",
-	TANGENT: "tangent",
-	TEXCOORD_0: "uv",
-	TEXCOORD_1: "uv1",
-	TEXCOORD_2: "uv2",
-	TEXCOORD_3: "uv3",
-	COLOR_0: "color",
-	WEIGHTS_0: "skinWeight",
-	JOINTS_0: "skinIndex"
-}, kE = {
-	scale: "scale",
-	translation: "position",
-	rotation: "quaternion",
-	weights: "morphTargetInfluences"
-}, AE = {
-	CUBICSPLINE: void 0,
-	LINEAR: Be,
-	STEP: ze
-}, jE = {
-	OPAQUE: "OPAQUE",
-	MASK: "MASK",
-	BLEND: "BLEND"
-};
-function ME(e) {
-	return e.DefaultMaterial === void 0 && (e.DefaultMaterial = new $c({
-		color: 16777215,
-		emissive: 0,
-		metalness: 1,
-		roughness: 1,
-		transparent: !1,
-		depthTest: !0,
-		side: 0
-	})), e.DefaultMaterial;
-}
-function NE(e, t, n) {
-	for (let r in n.extensions) e[r] === void 0 && (t.userData.gltfExtensions = t.userData.gltfExtensions || {}, t.userData.gltfExtensions[r] = n.extensions[r]);
-}
-function PE(e, t) {
-	t.extras !== void 0 && (typeof t.extras == "object" ? Object.assign(e.userData, t.extras) : console.warn("THREE.GLTFLoader: Ignoring primitive type .extras, " + t.extras));
-}
-function FE(e, t, n) {
-	let r = !1, i = !1, a = !1;
-	for (let e = 0, n = t.length; e < n; e++) {
-		let n = t[e];
-		if (n.POSITION !== void 0 && (r = !0), n.NORMAL !== void 0 && (i = !0), n.COLOR_0 !== void 0 && (a = !0), r && i && a) break;
-	}
-	if (!r && !i && !a) return Promise.resolve(e);
-	let o = [], s = [], c = [];
-	for (let l = 0, u = t.length; l < u; l++) {
-		let u = t[l];
-		if (r) {
-			let t = u.POSITION === void 0 ? e.attributes.position : n.getDependency("accessor", u.POSITION);
-			o.push(t);
-		}
-		if (i) {
-			let t = u.NORMAL === void 0 ? e.attributes.normal : n.getDependency("accessor", u.NORMAL);
-			s.push(t);
-		}
-		if (a) {
-			let t = u.COLOR_0 === void 0 ? e.attributes.color : n.getDependency("accessor", u.COLOR_0);
-			c.push(t);
-		}
-	}
-	return Promise.all([
-		Promise.all(o),
-		Promise.all(s),
-		Promise.all(c)
-	]).then(function(t) {
-		let n = t[0], o = t[1], s = t[2];
-		return r && (e.morphAttributes.position = n), i && (e.morphAttributes.normal = o), a && (e.morphAttributes.color = s), e.morphTargetsRelative = !0, e;
-	});
-}
-function IE(e, t) {
-	if (e.updateMorphTargets(), t.weights !== void 0) for (let n = 0, r = t.weights.length; n < r; n++) e.morphTargetInfluences[n] = t.weights[n];
-	if (t.extras && Array.isArray(t.extras.targetNames)) {
-		let n = t.extras.targetNames;
-		if (e.morphTargetInfluences.length === n.length) {
-			e.morphTargetDictionary = {};
-			for (let t = 0, r = n.length; t < r; t++) e.morphTargetDictionary[n[t]] = t;
-		} else console.warn("THREE.GLTFLoader: Invalid extras.targetNames length. Ignoring names.");
-	}
-}
-function LE(e) {
-	let t, n = e.extensions && e.extensions[JT.KHR_DRACO_MESH_COMPRESSION];
-	if (t = n ? "draco:" + n.bufferView + ":" + n.indices + ":" + RE(n.attributes) : e.indices + ":" + RE(e.attributes) + ":" + e.mode, e.targets !== void 0) for (let n = 0, r = e.targets.length; n < r; n++) t += ":" + RE(e.targets[n]);
-	return t;
-}
-function RE(e) {
-	let t = "", n = Object.keys(e).sort();
-	for (let r = 0, i = n.length; r < i; r++) t += n[r] + ":" + e[n[r]] + ";";
-	return t;
-}
-function zE(e) {
-	switch (e) {
-		case Int8Array: return 1 / 127;
-		case Uint8Array: return 1 / 255;
-		case Int16Array: return 1 / 32767;
-		case Uint16Array: return 1 / 65535;
-		default: throw Error("THREE.GLTFLoader: Unsupported normalized accessor component type.");
-	}
-}
-function BE(e) {
-	return e.search(/\.jpe?g($|\?)/i) > 0 || e.search(/^data\:image\/jpeg/) === 0 ? "image/jpeg" : e.search(/\.webp($|\?)/i) > 0 || e.search(/^data\:image\/webp/) === 0 ? "image/webp" : e.search(/\.ktx2($|\?)/i) > 0 || e.search(/^data\:image\/ktx2/) === 0 ? "image/ktx2" : "image/png";
-}
-var VE = new J(), HE = class {
-	constructor(e = {}, t = {}) {
-		this.json = e, this.extensions = {}, this.plugins = {}, this.options = t, this.cache = new KT(), this.associations = /* @__PURE__ */ new Map(), this.primitiveCache = {}, this.nodeCache = {}, this.meshCache = {
-			refs: {},
-			uses: {}
-		}, this.cameraCache = {
-			refs: {},
-			uses: {}
-		}, this.lightCache = {
-			refs: {},
-			uses: {}
-		}, this.sourceCache = {}, this.textureCache = {}, this.nodeNamesUsed = {};
-		let n = !1, r = -1, i = !1, a = -1;
-		if (typeof navigator < "u" && navigator.userAgent !== void 0) {
-			let e = navigator.userAgent;
-			n = /^((?!chrome|android).)*safari/i.test(e) === !0;
-			let t = e.match(/Version\/(\d+)/);
-			r = n && t ? parseInt(t[1], 10) : -1, i = e.indexOf("Firefox") > -1, a = i ? e.match(/Firefox\/([0-9]+)\./)[1] : -1;
-		}
-		this.textureLoader = typeof createImageBitmap > "u" || n && r < 17 || i && a < 98 ? new Zl(this.options.manager) : new Pu(this.options.manager), this.textureLoader.setCrossOrigin(this.options.crossOrigin), this.textureLoader.setRequestHeader(this.options.requestHeader), this.fileLoader = new Wl(this.options.manager), this.fileLoader.setResponseType("arraybuffer"), this.options.crossOrigin === "use-credentials" && this.fileLoader.setWithCredentials(!0);
-	}
-	setExtensions(e) {
-		this.extensions = e;
-	}
-	setPlugins(e) {
-		this.plugins = e;
-	}
-	parse(e, t) {
-		let n = this, r = this.json, i = this.extensions;
-		this.cache.removeAll(), this.nodeCache = {}, this._invokeAll(function(e) {
-			return e._markDefs && e._markDefs();
-		}), Promise.all(this._invokeAll(function(e) {
-			return e.beforeRoot && e.beforeRoot();
-		})).then(function() {
-			return Promise.all([
-				n.getDependencies("scene"),
-				n.getDependencies("animation"),
-				n.getDependencies("camera")
-			]);
-		}).then(function(t) {
-			let a = {
-				scene: t[0][r.scene || 0],
-				scenes: t[0],
-				animations: t[1],
-				cameras: t[2],
-				asset: r.asset,
-				parser: n,
-				userData: {}
-			};
-			return NE(i, a, r), PE(a, r), Promise.all(n._invokeAll(function(e) {
-				return e.afterRoot && e.afterRoot(a);
-			})).then(function() {
-				for (let e of a.scenes) e.updateMatrixWorld();
-				e(a);
-			});
-		}).catch(t);
-	}
-	_markDefs() {
-		let e = this.json.nodes || [], t = this.json.skins || [], n = this.json.meshes || [];
-		for (let n = 0, r = t.length; n < r; n++) {
-			let r = t[n].joints;
-			for (let t = 0, n = r.length; t < n; t++) e[r[t]].isBone = !0;
-		}
-		for (let t = 0, r = e.length; t < r; t++) {
-			let r = e[t];
-			r.mesh !== void 0 && (this._addNodeRef(this.meshCache, r.mesh), r.skin !== void 0 && (n[r.mesh].isSkinnedMesh = !0)), r.camera !== void 0 && this._addNodeRef(this.cameraCache, r.camera);
-		}
-	}
-	_addNodeRef(e, t) {
-		t !== void 0 && (e.refs[t] === void 0 && (e.refs[t] = e.uses[t] = 0), e.refs[t]++);
-	}
-	_getNodeRef(e, t, n) {
-		if (e.refs[t] <= 1) return n;
-		let r = n.clone(), i = (e, t) => {
-			let n = this.associations.get(e);
-			n != null && this.associations.set(t, n);
-			for (let [n, r] of e.children.entries()) i(r, t.children[n]);
-		};
-		return i(n, r), r.name += "_instance_" + e.uses[t]++, r;
-	}
-	_invokeOne(e) {
-		let t = Object.values(this.plugins);
-		t.push(this);
-		for (let n = 0; n < t.length; n++) {
-			let r = e(t[n]);
-			if (r) return r;
-		}
-		return null;
-	}
-	_invokeAll(e) {
-		let t = Object.values(this.plugins);
-		t.unshift(this);
-		let n = [];
-		for (let r = 0; r < t.length; r++) {
-			let i = e(t[r]);
-			i && n.push(i);
-		}
-		return n;
-	}
-	getDependency(e, t) {
-		let n = e + ":" + t, r = this.cache.get(n);
-		if (!r) {
-			switch (e) {
-				case "scene":
-					r = this.loadScene(t);
-					break;
-				case "node":
-					r = this._invokeOne(function(e) {
-						return e.loadNode && e.loadNode(t);
-					});
-					break;
-				case "mesh":
-					r = this._invokeOne(function(e) {
-						return e.loadMesh && e.loadMesh(t);
-					});
-					break;
-				case "accessor":
-					r = this.loadAccessor(t);
-					break;
-				case "bufferView":
-					r = this._invokeOne(function(e) {
-						return e.loadBufferView && e.loadBufferView(t);
-					});
-					break;
-				case "buffer":
-					r = this.loadBuffer(t);
-					break;
-				case "material":
-					r = this._invokeOne(function(e) {
-						return e.loadMaterial && e.loadMaterial(t);
-					});
-					break;
-				case "texture":
-					r = this._invokeOne(function(e) {
-						return e.loadTexture && e.loadTexture(t);
-					});
-					break;
-				case "skin":
-					r = this.loadSkin(t);
-					break;
-				case "animation":
-					r = this._invokeOne(function(e) {
-						return e.loadAnimation && e.loadAnimation(t);
-					});
-					break;
-				case "camera":
-					r = this.loadCamera(t);
-					break;
-				default: if (r = this._invokeOne(function(n) {
-					return n != this && n.getDependency && n.getDependency(e, t);
-				}), !r) throw Error("Unknown type: " + e);
-			}
-			this.cache.add(n, r);
-		}
-		return r;
-	}
-	getDependencies(e) {
-		let t = this.cache.get(e);
-		if (!t) {
-			let n = this, r = this.json[e + (e === "mesh" ? "es" : "s")] || [];
-			t = Promise.all(r.map(function(t, r) {
-				return n.getDependency(e, r);
-			})), this.cache.add(e, t);
-		}
-		return t;
-	}
-	loadBuffer(e) {
-		let t = this.json.buffers[e], n = this.fileLoader;
-		if (t.type && t.type !== "arraybuffer") throw Error("THREE.GLTFLoader: " + t.type + " buffer type is not supported.");
-		if (t.uri === void 0 && e === 0) return Promise.resolve(this.extensions[JT.KHR_BINARY_GLTF].body);
-		let r = this.options;
-		return new Promise(function(e, i) {
-			n.load(Tu.resolveURL(t.uri, r.path), e, void 0, function() {
-				i(/* @__PURE__ */ Error("THREE.GLTFLoader: Failed to load buffer \"" + t.uri + "\"."));
-			});
-		});
-	}
-	loadBufferView(e) {
-		let t = this.json.bufferViews[e];
-		return this.getDependency("buffer", t.buffer).then(function(e) {
-			let n = t.byteLength || 0, r = t.byteOffset || 0;
-			return e.slice(r, r + n);
-		});
-	}
-	loadAccessor(e) {
-		let t = this, n = this.json, r = this.json.accessors[e];
-		if (r.bufferView === void 0 && r.sparse === void 0) {
-			let e = DE[r.type], t = wE[r.componentType], n = r.normalized === !0, i = new t(r.count * e);
-			return Promise.resolve(new li(i, e, n));
-		}
-		let i = [];
-		return r.bufferView === void 0 ? i.push(null) : i.push(this.getDependency("bufferView", r.bufferView)), r.sparse !== void 0 && (i.push(this.getDependency("bufferView", r.sparse.indices.bufferView)), i.push(this.getDependency("bufferView", r.sparse.values.bufferView))), Promise.all(i).then(function(e) {
-			let i = e[0], a = DE[r.type], o = wE[r.componentType], s = o.BYTES_PER_ELEMENT, c = s * a, l = r.byteOffset || 0, u = r.bufferView === void 0 ? void 0 : n.bufferViews[r.bufferView].byteStride, d = r.normalized === !0, f, p;
-			if (u && u !== c) {
-				let e = Math.floor(l / u), n = "InterleavedBuffer:" + r.bufferView + ":" + r.componentType + ":" + e + ":" + r.count, c = t.cache.get(n);
-				c || (f = new o(i, e * u, r.count * u / s), c = new ki(f, u / s), t.cache.add(n, c)), p = new ji(c, a, l % u / s, d);
-			} else f = i === null ? new o(r.count * a) : new o(i, l, r.count * a), p = new li(f, a, d);
-			if (r.sparse !== void 0) {
-				let t = DE.SCALAR, n = wE[r.sparse.indices.componentType], s = r.sparse.indices.byteOffset || 0, c = r.sparse.values.byteOffset || 0, l = new n(e[1], s, r.sparse.count * t), u = new o(e[2], c, r.sparse.count * a);
-				i !== null && (p = new li(p.array.slice(), p.itemSize, p.normalized)), p.normalized = !1;
-				for (let e = 0, t = l.length; e < t; e++) {
-					let t = l[e];
-					if (p.setX(t, u[e * a]), a >= 2 && p.setY(t, u[e * a + 1]), a >= 3 && p.setZ(t, u[e * a + 2]), a >= 4 && p.setW(t, u[e * a + 3]), a >= 5) throw Error("THREE.GLTFLoader: Unsupported itemSize in sparse BufferAttribute.");
-				}
-				p.normalized = d;
-			}
-			return p;
-		});
-	}
-	loadTexture(e) {
-		let t = this.json, n = this.options, r = t.textures[e].source, i = t.images[r], a = this.textureLoader;
-		if (i.uri) {
-			let e = n.manager.getHandler(i.uri);
-			e !== null && (a = e);
-		}
-		return this.loadTextureImage(e, r, a);
-	}
-	loadTextureImage(e, t, n) {
-		let r = this, i = this.json, a = i.textures[e], o = i.images[t], s = (o.uri || o.bufferView) + ":" + a.sampler;
-		if (this.textureCache[s]) return this.textureCache[s];
-		let c = this.loadImageSource(t, n).then(function(t) {
-			t.flipY = !1, t.name = a.name || o.name || "", t.name === "" && typeof o.uri == "string" && o.uri.startsWith("data:image/") === !1 && (t.name = o.uri);
-			let n = (i.samplers || {})[a.sampler] || {};
-			return t.magFilter = TE[n.magFilter] || 1006, t.minFilter = TE[n.minFilter] || 1008, t.wrapS = EE[n.wrapS] || 1e3, t.wrapT = EE[n.wrapT] || 1e3, t.generateMipmaps = !t.isCompressedTexture && t.minFilter !== 1003 && t.minFilter !== 1006, r.associations.set(t, { textures: e }), t;
-		}).catch(function() {
-			return null;
-		});
-		return this.textureCache[s] = c, c;
-	}
-	loadImageSource(e, t) {
-		let n = this, r = this.json, i = this.options;
-		if (this.sourceCache[e] !== void 0) return this.sourceCache[e].then((e) => e.clone());
-		let a = r.images[e], o = self.URL || self.webkitURL, s = a.uri || "", c = !1;
-		if (a.bufferView !== void 0) s = n.getDependency("bufferView", a.bufferView).then(function(e) {
-			c = !0;
-			let t = new Blob([e], { type: a.mimeType });
-			return s = o.createObjectURL(t), s;
-		});
-		else if (a.uri === void 0) throw Error("THREE.GLTFLoader: Image " + e + " is missing URI and bufferView");
-		let l = Promise.resolve(s).then(function(e) {
-			return new Promise(function(n, r) {
-				let a = n;
-				t.isImageBitmapLoader === !0 && (a = function(e) {
-					let t = new Pn(e);
-					t.needsUpdate = !0, n(t);
-				}), t.load(Tu.resolveURL(e, i.path), a, void 0, r);
-			});
-		}).then(function(e) {
-			return c === !0 && o.revokeObjectURL(s), PE(e, a), e.userData.mimeType = a.mimeType || BE(a.uri), e;
-		}).catch(function(e) {
-			throw console.error("THREE.GLTFLoader: Couldn't load texture", s), e;
-		});
-		return this.sourceCache[e] = l, l;
-	}
-	assignTexture(e, t, n, r) {
-		let i = this;
-		return this.getDependency("texture", n.index).then(function(a) {
-			if (!a) return null;
-			if (n.texCoord !== void 0 && n.texCoord > 0 && (a = a.clone(), a.channel = n.texCoord), i.extensions[JT.KHR_TEXTURE_TRANSFORM]) {
-				let e = n.extensions === void 0 ? void 0 : n.extensions[JT.KHR_TEXTURE_TRANSFORM];
-				if (e) {
-					let t = i.associations.get(a);
-					a = i.extensions[JT.KHR_TEXTURE_TRANSFORM].extendTexture(a, e), i.associations.set(a, t);
-				}
-			}
-			return r !== void 0 && (a.colorSpace = r), e[t] = a, a;
-		});
-	}
-	assignFinalMaterial(e) {
-		let t = e.geometry, n = e.material, r = t.attributes.tangent === void 0, i = t.attributes.color !== void 0, a = t.attributes.normal === void 0;
-		if (e.isPoints) {
-			let e = "PointsMaterial:" + n.uuid, t = this.cache.get(e);
-			t || (t = new No(), Li.prototype.copy.call(t, n), t.color.copy(n.color), t.map = n.map, t.sizeAttenuation = !1, this.cache.add(e, t)), n = t;
-		} else if (e.isLine) {
-			let e = "LineBasicMaterial:" + n.uuid, t = this.cache.get(e);
-			t || (t = new yo(), Li.prototype.copy.call(t, n), t.color.copy(n.color), t.map = n.map, this.cache.add(e, t)), n = t;
-		}
-		if (r || i || a) {
-			let e = "ClonedMaterial:" + n.uuid + ":";
-			r && (e += "derivative-tangents:"), i && (e += "vertex-colors:"), a && (e += "flat-shading:");
-			let t = this.cache.get(e);
-			t || (t = n.clone(), i && (t.vertexColors = !0), a && (t.flatShading = !0), r && (t.normalScale && (t.normalScale.y *= -1), t.clearcoatNormalScale && (t.clearcoatNormalScale.y *= -1)), this.cache.add(e, t), this.associations.set(t, this.associations.get(n))), n = t;
-		}
-		e.material = n;
-	}
-	getMaterialType() {
-		return $c;
-	}
-	loadMaterial(e) {
-		let t = this, n = this.json, r = this.extensions, i = n.materials[e], a, o = {}, s = i.extensions || {}, c = [];
-		if (s[JT.KHR_MATERIALS_UNLIT]) {
-			let e = r[JT.KHR_MATERIALS_UNLIT];
-			a = e.getMaterialType(), c.push(e.extendParams(o, i, t));
-		} else {
-			let n = i.pbrMetallicRoughness || {};
-			if (o.color = new Y(1, 1, 1), o.opacity = 1, Array.isArray(n.baseColorFactor)) {
-				let e = n.baseColorFactor;
-				o.color.setRGB(e[0], e[1], e[2], $e), o.opacity = e[3];
-			}
-			n.baseColorTexture !== void 0 && c.push(t.assignTexture(o, "map", n.baseColorTexture, Qe)), o.metalness = n.metallicFactor === void 0 ? 1 : n.metallicFactor, o.roughness = n.roughnessFactor === void 0 ? 1 : n.roughnessFactor, n.metallicRoughnessTexture !== void 0 && (c.push(t.assignTexture(o, "metalnessMap", n.metallicRoughnessTexture)), c.push(t.assignTexture(o, "roughnessMap", n.metallicRoughnessTexture))), a = this._invokeOne(function(t) {
-				return t.getMaterialType && t.getMaterialType(e);
-			}), c.push(Promise.all(this._invokeAll(function(t) {
-				return t.extendMaterialParams && t.extendMaterialParams(e, o);
-			})));
-		}
-		i.doubleSided === !0 && (o.side = 2);
-		let l = i.alphaMode || jE.OPAQUE;
-		if (l === jE.BLEND ? (o.transparent = !0, o.depthWrite = !1) : (o.transparent = !1, l === jE.MASK && (o.alphaTest = i.alphaCutoff === void 0 ? .5 : i.alphaCutoff)), i.normalTexture !== void 0 && a !== ca && (c.push(t.assignTexture(o, "normalMap", i.normalTexture)), o.normalScale = new K(1, 1), i.normalTexture.scale !== void 0)) {
-			let e = i.normalTexture.scale;
-			o.normalScale.set(e, e);
-		}
-		if (i.occlusionTexture !== void 0 && a !== ca && (c.push(t.assignTexture(o, "aoMap", i.occlusionTexture)), i.occlusionTexture.strength !== void 0 && (o.aoMapIntensity = i.occlusionTexture.strength)), i.emissiveFactor !== void 0 && a !== ca) {
-			let e = i.emissiveFactor;
-			o.emissive = new Y().setRGB(e[0], e[1], e[2], $e);
-		}
-		return i.emissiveTexture !== void 0 && a !== ca && c.push(t.assignTexture(o, "emissiveMap", i.emissiveTexture, Qe)), Promise.all(c).then(function() {
-			let n = new a(o);
-			return i.name && (n.name = i.name), PE(n, i), t.associations.set(n, { materials: e }), i.extensions && NE(r, n, i), n;
-		});
-	}
-	createUniqueName(e) {
-		let t = yd.sanitizeNodeName(e || "");
-		return t in this.nodeNamesUsed ? t + "_" + ++this.nodeNamesUsed[t] : (this.nodeNamesUsed[t] = 0, t);
-	}
-	loadGeometries(e) {
-		let t = this, n = this.extensions, r = this.primitiveCache;
-		function i(e) {
-			return n[JT.KHR_DRACO_MESH_COMPRESSION].decodePrimitive(e, t).then(function(n) {
-				return WE(n, e, t);
-			});
-		}
-		let a = [];
-		for (let n = 0, o = e.length; n < o; n++) {
-			let o = e[n], s = LE(o), c = r[s];
-			if (c) a.push(c.promise);
-			else {
-				let e;
-				e = o.extensions && o.extensions[JT.KHR_DRACO_MESH_COMPRESSION] ? i(o) : WE(new Z(), o, t), o.mode === CE.TRIANGLE_STRIP ? e = e.then((e) => xv(e, 1)) : o.mode === CE.TRIANGLE_FAN && (e = e.then((e) => xv(e, 2))), r[s] = {
-					primitive: o,
-					promise: e
-				}, a.push(e);
-			}
-		}
-		return Promise.all(a);
-	}
-	loadMesh(e) {
-		let t = this, n = this.json, r = this.extensions, i = n.meshes[e], a = i.primitives, o = [];
-		for (let e = 0, t = a.length; e < t; e++) {
-			let t = a[e].material === void 0 ? ME(this.cache) : this.getDependency("material", a[e].material);
-			o.push(t);
-		}
-		return o.push(t.loadGeometries(a)), Promise.all(o).then(async function(n) {
-			let o = n.slice(0, n.length - 1), s = n[n.length - 1], c = [];
-			for (let n = 0, l = s.length; n < l; n++) {
-				let l = s[n], u = a[n], d, f = o[n];
-				if (u.mode === CE.TRIANGLES || u.mode === CE.TRIANGLE_STRIP || u.mode === CE.TRIANGLE_FAN || u.mode === void 0) {
-					let e = i.isSkinnedMesh === !0, t = l.hasAttribute("skinIndex") && l.hasAttribute("skinWeight");
-					e && t === !1 && console.warn("THREE.GLTFLoader: Missing skinIndex or skinWeight attributes. Skinning disabled."), d = e && t ? new Ma(l, f) : new ba(l, f), d.isSkinnedMesh === !0 && d.normalizeSkinWeights();
-				} else if (u.mode === CE.LINES) d = new jo(l, f);
-				else if (u.mode === CE.LINE_STRIP) d = new Do(l, f);
-				else if (u.mode === CE.LINE_LOOP) d = new Mo(l, f);
-				else if (u.mode === CE.POINTS) d = new Ro(l, f);
-				else throw Error("THREE.GLTFLoader: Primitive mode unsupported: " + u.mode);
-				Object.keys(d.geometry.morphAttributes).length > 0 && IE(d, i), d.name = t.createUniqueName(i.name || "mesh_" + e), PE(d, i), u.extensions && NE(r, d, u), t.assignFinalMaterial(d), c.push(d);
-			}
-			for (let n = 0, r = c.length; n < r; n++) t.associations.set(c[n], {
-				meshes: e,
-				primitives: n
-			});
-			if (c.length === 1) return i.extensions && NE(r, c[0], i), c[0];
-			let l = new hr();
-			i.extensions && NE(r, l, i), t.associations.set(l, { meshes: e });
-			for (let e = 0, t = c.length; e < t; e++) l.add(c[e]);
-			return l;
-		});
-	}
-	loadCamera(e) {
-		let t, n = this.json.cameras[e], r = n[n.type];
-		if (!r) console.warn("THREE.GLTFLoader: Missing camera parameters.");
-		else return n.type === "perspective" ? t = new du(mn.radToDeg(r.yfov), r.aspectRatio || 1, r.znear || 1, r.zfar || 2e6) : n.type === "orthographic" && (t = new gu(-r.xmag, r.xmag, r.ymag, -r.ymag, r.znear, r.zfar)), n.name && (t.name = this.createUniqueName(n.name)), PE(t, n), Promise.resolve(t);
-	}
-	loadSkin(e) {
-		let t = this.json.skins[e], n = [];
-		for (let e = 0, r = t.joints.length; e < r; e++) n.push(this._loadNodeShallow(t.joints[e]));
-		return t.inverseBindMatrices === void 0 ? n.push(null) : n.push(this.getDependency("accessor", t.inverseBindMatrices)), Promise.all(n).then(function(e) {
-			let n = e.pop(), r = e, i = [], a = [];
-			for (let e = 0, o = r.length; e < o; e++) {
-				let o = r[e];
-				if (o) {
-					i.push(o);
-					let t = new J();
-					n !== null && t.fromArray(n.array, e * 16), a.push(t);
-				} else console.warn("THREE.GLTFLoader: Joint \"%s\" could not be found.", t.joints[e]);
-			}
-			return new La(i, a);
-		});
-	}
-	loadAnimation(e) {
-		let t = this.json, n = this, r = t.animations[e], i = r.name ? r.name : "animation_" + e, a = [], o = [], s = [], c = [], l = [];
-		for (let e = 0, t = r.channels.length; e < t; e++) {
-			let t = r.channels[e], n = r.samplers[t.sampler], i = t.target, u = i.node, d = r.parameters === void 0 ? n.input : r.parameters[n.input], f = r.parameters === void 0 ? n.output : r.parameters[n.output];
-			i.node !== void 0 && (a.push(this.getDependency("node", u)), o.push(this.getDependency("accessor", d)), s.push(this.getDependency("accessor", f)), c.push(n), l.push(i));
-		}
-		return Promise.all([
-			Promise.all(a),
-			Promise.all(o),
-			Promise.all(s),
-			Promise.all(c),
-			Promise.all(l)
-		]).then(function(e) {
-			let t = e[0], a = e[1], o = e[2], s = e[3], c = e[4], l = [];
-			for (let e = 0, r = t.length; e < r; e++) {
-				let r = t[e], i = a[e], u = o[e], d = s[e], f = c[e];
-				if (r === void 0) continue;
-				r.updateMatrix && r.updateMatrix();
-				let p = n._createAnimationTracks(r, i, u, d, f);
-				if (p) for (let e = 0; e < p.length; e++) l.push(p[e]);
-			}
-			let u = new Pl(i, void 0, l);
-			return PE(u, r), u;
-		});
-	}
-	createNodeMesh(e) {
-		let t = this.json, n = this, r = t.nodes[e];
-		return r.mesh === void 0 ? null : n.getDependency("mesh", r.mesh).then(function(e) {
-			let t = n._getNodeRef(n.meshCache, r.mesh, e);
-			return r.weights !== void 0 && t.traverse(function(e) {
-				if (e.isMesh) for (let t = 0, n = r.weights.length; t < n; t++) e.morphTargetInfluences[t] = r.weights[t];
-			}), t;
-		});
-	}
-	loadNode(e) {
-		let t = this.json, n = this, r = t.nodes[e], i = n._loadNodeShallow(e), a = [], o = r.children || [];
-		for (let e = 0, t = o.length; e < t; e++) a.push(n.getDependency("node", o[e]));
-		let s = r.skin === void 0 ? Promise.resolve(null) : n.getDependency("skin", r.skin);
-		return Promise.all([
-			i,
-			Promise.all(a),
-			s
-		]).then(function(e) {
-			let t = e[0], n = e[1], r = e[2];
-			r !== null && t.traverse(function(e) {
-				e.isSkinnedMesh && e.bind(r, VE);
-			});
-			for (let e = 0, r = n.length; e < r; e++) t.add(n[e]);
-			if (t.userData.pivot !== void 0 && n.length > 0) {
-				let e = t.userData.pivot, r = n[0];
-				t.pivot = new q().fromArray(e), t.position.x -= e[0], t.position.y -= e[1], t.position.z -= e[2], r.position.set(0, 0, 0), delete t.userData.pivot;
-			}
-			return t;
-		});
-	}
-	_loadNodeShallow(e) {
-		let t = this.json, n = this.extensions, r = this;
-		if (this.nodeCache[e] !== void 0) return this.nodeCache[e];
-		let i = t.nodes[e], a = i.name ? r.createUniqueName(i.name) : "", o = [], s = r._invokeOne(function(t) {
-			return t.createNodeMesh && t.createNodeMesh(e);
-		});
-		return s && o.push(s), i.camera !== void 0 && o.push(r.getDependency("camera", i.camera).then(function(e) {
-			return r._getNodeRef(r.cameraCache, i.camera, e);
-		})), r._invokeAll(function(t) {
-			return t.createNodeAttachment && t.createNodeAttachment(e);
-		}).forEach(function(e) {
-			o.push(e);
-		}), this.nodeCache[e] = Promise.all(o).then(function(t) {
-			let o;
-			if (o = i.isBone === !0 ? new Na() : t.length > 1 ? new hr() : t.length === 1 ? t[0] : new mr(), o !== t[0]) for (let e = 0, n = t.length; e < n; e++) o.add(t[e]);
-			if (i.name && (o.userData.name = i.name, o.name = a), PE(o, i), i.extensions && NE(n, o, i), i.matrix !== void 0) {
-				let e = new J();
-				e.fromArray(i.matrix), o.applyMatrix4(e);
-			} else i.translation !== void 0 && o.position.fromArray(i.translation), i.rotation !== void 0 && o.quaternion.fromArray(i.rotation), i.scale !== void 0 && o.scale.fromArray(i.scale);
-			if (!r.associations.has(o)) r.associations.set(o, {});
-			else if (i.mesh !== void 0 && r.meshCache.refs[i.mesh] > 1) {
-				let e = r.associations.get(o);
-				r.associations.set(o, { ...e });
-			}
-			return r.associations.get(o).nodes = e, o;
-		}), this.nodeCache[e];
-	}
-	loadScene(e) {
-		let t = this.extensions, n = this.json.scenes[e], r = this, i = new hr();
-		n.name && (i.name = r.createUniqueName(n.name)), PE(i, n), n.extensions && NE(t, i, n);
-		let a = n.nodes || [], o = [];
-		for (let e = 0, t = a.length; e < t; e++) o.push(r.getDependency("node", a[e]));
-		return Promise.all(o).then(function(e) {
-			for (let t = 0, n = e.length; t < n; t++) {
-				let n = e[t];
-				n.parent === null ? i.add(n) : i.add(BT(n));
-			}
-			return r.associations = ((e) => {
-				let t = /* @__PURE__ */ new Map();
-				for (let [e, n] of r.associations) (e instanceof Li || e instanceof Pn) && t.set(e, n);
-				return e.traverse((e) => {
-					let n = r.associations.get(e);
-					n != null && t.set(e, n);
-				}), t;
-			})(i), i;
-		});
-	}
-	_createAnimationTracks(e, t, n, r, i) {
-		let a = [], o = e.name ? e.name : e.uuid, s = [];
-		function c(e) {
-			e.morphTargetInfluences && s.push(e.name ? e.name : e.uuid);
-		}
-		kE[i.path] === kE.weights ? (c(e), e.isGroup && e.children.forEach(c)) : s.push(o);
-		let l;
-		switch (kE[i.path]) {
-			case kE.weights:
-				l = kl;
-				break;
-			case kE.rotation:
-				l = jl;
-				break;
-			case kE.translation:
-			case kE.scale:
-				l = Nl;
-				break;
-			default: switch (n.itemSize) {
-				case 1:
-					l = kl;
-					break;
-				default: l = Nl;
-			}
-		}
-		let u = r.interpolation === void 0 ? Be : AE[r.interpolation], d = this._getArrayFromAccessor(n);
-		for (let e = 0, n = s.length; e < n; e++) {
-			let n = new l(s[e] + "." + kE[i.path], t.array, d, u);
-			r.interpolation === "CUBICSPLINE" && this._createCubicSplineTrackInterpolant(n), a.push(n);
-		}
-		return a;
-	}
-	_getArrayFromAccessor(e) {
-		let t = e.array;
-		if (e.normalized) {
-			let e = zE(t.constructor), n = new Float32Array(t.length);
-			for (let r = 0, i = t.length; r < i; r++) n[r] = t[r] * e;
-			t = n;
-		}
-		return t;
-	}
-	_createCubicSplineTrackInterpolant(e) {
-		e.createInterpolant = function(e) {
-			return new (this instanceof jl ? SE : bE)(this.times, this.values, this.getValueSize() / 3, e);
-		}, e.createInterpolant.isInterpolantFactoryMethodGLTFCubicSpline = !0;
-	}
-};
-function UE(e, t, n) {
-	let r = t.attributes, i = new Br();
-	if (r.POSITION !== void 0) {
-		let e = n.json.accessors[r.POSITION], t = e.min, a = e.max;
-		if (t !== void 0 && a !== void 0) {
-			if (i.set(new q(t[0], t[1], t[2]), new q(a[0], a[1], a[2])), e.normalized) {
-				let t = zE(wE[e.componentType]);
-				i.min.multiplyScalar(t), i.max.multiplyScalar(t);
-			}
-		} else {
-			console.warn("THREE.GLTFLoader: Missing min/max properties for accessor POSITION.");
-			return;
-		}
-	} else return;
-	let a = t.targets;
-	if (a !== void 0) {
-		let e = new q(), t = new q();
-		for (let r = 0, i = a.length; r < i; r++) {
-			let i = a[r];
-			if (i.POSITION !== void 0) {
-				let r = n.json.accessors[i.POSITION], a = r.min, o = r.max;
-				if (a !== void 0 && o !== void 0) {
-					if (t.setX(Math.max(Math.abs(a[0]), Math.abs(o[0]))), t.setY(Math.max(Math.abs(a[1]), Math.abs(o[1]))), t.setZ(Math.max(Math.abs(a[2]), Math.abs(o[2]))), r.normalized) {
-						let e = zE(wE[r.componentType]);
-						t.multiplyScalar(e);
-					}
-					e.max(t);
-				} else console.warn("THREE.GLTFLoader: Missing min/max properties for accessor POSITION.");
-			}
-		}
-		i.expandByVector(e);
-	}
-	e.boundingBox = i;
-	let o = new xi();
-	i.getCenter(o.center), o.radius = i.min.distanceTo(i.max) / 2, e.boundingSphere = o;
-}
-function WE(e, t, n) {
-	let r = t.attributes, i = [];
-	function a(t, r) {
-		return n.getDependency("accessor", t).then(function(t) {
-			e.setAttribute(r, t);
-		});
-	}
-	for (let t in r) {
-		let n = OE[t] || t.toLowerCase();
-		n in e.attributes || i.push(a(r[t], n));
-	}
-	if (t.indices !== void 0 && !e.index) {
-		let r = n.getDependency("accessor", t.indices).then(function(t) {
-			e.setIndex(t);
-		});
-		i.push(r);
-	}
-	return Cn.workingColorSpace !== "srgb-linear" && "COLOR_0" in r && console.warn(`THREE.GLTFLoader: Converting vertex colors from "srgb-linear" to "${Cn.workingColorSpace}" not supported.`), PE(e, t), UE(e, t, n), Promise.all(i).then(function() {
-		return t.targets === void 0 ? e : FE(e, t.targets, n);
-	});
-}
 // src/experience.js
-var GE = 1;
-function KE(e = {}) {
+var FT = 1;
+function IT(e = {}) {
 	let t = e.canvas;
 	if (!t) throw Error("createOcean: options.canvas is required");
 	let n = e.container || null, r = e.showGui !== !1, i = e.title || "Water", a = e.hud || {}, o = typeof e.onStats == "function" ? e.onStats : null, s = typeof e.onReady == "function" ? e.onReady : null, c = e.autostart !== !1, l = new Qh({
@@ -25384,17 +23942,17 @@ function KE(e = {}) {
 	document.body.classList.toggle("mobile", d);
 	let p = new du(50, 1, .5, 8e4), m = new lg(p, t);
 	m.enableDamping = !0, m.maxDistance = 6e3;
-	let h = new _v(l), g = H_(Ov, 1800, 512), _ = G_(l), v = new t_(l, e_()), y = new Uv(l, v), b = new i_(), x = new g_(v, g, h, b.uniforms);
+	let h = new _v(l), g = H_(Dv, 1800, 512), _ = G_(l), v = new t_(l, e_()), y = new Hv(l, v), b = new i_(), x = new g_(v, g, h, b.uniforms);
 	x.uniforms.uFoamTex.value = _.foam;
 	let S = new Tr();
 	S.environment = h.cube, S.add(h.background);
-	let C = ny({
+	let C = ty({
 		sky: h,
 		caustics: y.uniforms,
 		floatShadow: b.uniforms,
 		water: x.uniforms,
 		absorption: x.uniforms.uAbsorption.value,
-		reflectionLayer: GE
+		reflectionLayer: FT
 	});
 	S.add(C.group);
 	let w = new vu(16777215, Math.PI);
@@ -25406,19 +23964,19 @@ function KE(e = {}) {
 		near: 10,
 		far: 5e3
 	}), w.shadow.bias = -4e-4, w.shadow.normalBias = .6, S.add(w, w.target), x.uniforms.uShadowMatrix.value = C.uniforms.uSunShadowMatrix.value = w.shadow.matrix, x.uniforms.uShadowBias.value = .05 / (w.shadow.camera.far - w.shadow.camera.near);
-	let D = new Ty(l, x, 512), O = new vb({
+	let D = new wy(l, x, 512), O = new _b({
 		scene: S,
-		heightAt: Ov,
+		heightAt: Dv,
 		patchMaterial: C.patchProp
-	}), k = new Ay(x, p, y.uniforms), A = 0, j = !1, ee = 1, M = { underwater: .55 }, N = new dy(GE);
+	}), k = new ky(x, p, y.uniforms), A = 0, j = !1, ee = 1, M = { underwater: .55 }, N = new uy(FT);
 	x.uniforms.uReflMatrix.value = N.textureMatrix;
 	let P = new Pa(/* @__PURE__ */ new Uint8Array(4), 1, 1);
 	P.needsUpdate = !0;
 	let te = new Tr(), ne = new Hg(Vg("\nprecision highp float;\nuniform sampler2D uTex;\nin vec2 vUv;\nout vec4 outColor;\nvoid main() { outColor = texture(uTex, vUv); }", { uTex: { value: null } }));
 	ne.mesh.renderOrder = -1, /OculusBrowser/.test(navigator.userAgent) && te.add(ne.mesh);
-	let re = new Ly(x, g), ie = new Vy(x);
+	let re = new Iy(x, g), ie = new By(x);
 	te.add(x.mesh, re.mesh, re.splash, ie.mesh);
-	let F = x.uniforms, I = new Sy(l);
+	let F = x.uniforms, I = new xy(l);
 	I.params.bloomStrength = .05, I.params.bloomThreshold = 1.5, d && (I.params.bloomStrength = 0);
 	let ae = null;
 	function oe() {
@@ -25440,7 +23998,7 @@ function KE(e = {}) {
 	}
 	function ce(e) {
 		let t = mn.degToRad(e), n = 100;
-		for (; n < 800 && Ov(Math.cos(t) * n, Math.sin(t) * n) > 0;) n += 2;
+		for (; n < 800 && Dv(Math.cos(t) * n, Math.sin(t) * n) > 0;) n += 2;
 		return new K(Math.cos(t) * n, Math.sin(t) * n);
 	}
 	function le() {
@@ -25484,7 +24042,7 @@ function KE(e = {}) {
 		Underwater: () => {
 			ue(48, 205);
 			let e = le() + Math.PI + .3, t = 200;
-			for (; t < 1e3 && Ov(Math.cos(e) * t, Math.sin(e) * t) > -9;) t += 2;
+			for (; t < 1e3 && Dv(Math.cos(e) * t, Math.sin(e) * t) > -9;) t += 2;
 			let n = Math.cos(e) * t, r = Math.sin(e) * t;
 			p.position.set(n, -3.2, r), m.target.set(n - Math.cos(e) * 25, -1.8, r - Math.sin(e) * 25), O.spawn(p.position, m.target.clone().sub(p.position));
 		}
@@ -25643,7 +24201,7 @@ function KE(e = {}) {
 			return p.position.clone().addScaledVector(t, e);
 		}, b = {
 			spawn: () => O.spawn(p.position, p.getWorldDirection(new q())),
-			drop: () => O.add(Hy[Math.floor(Math.random() * Hy.length)], y(14).setY(Math.max(A, 0) + 4)),
+			drop: () => O.add(Vy[Math.floor(Math.random() * Vy.length)], y(14).setY(Math.max(A, 0) + 4)),
 			clear: () => O.clear()
 		};
 		_.add(b, "spawn").name("spawn flotsam ahead"), _.add(b, "drop").name("drop random prop"), _.add(b, "clear"), _.add(O.params, "drag", 0, 6, .01), _.add(O.params, "angularDrag", 0, 4, .01), _.add(O.params, "buoyancy", 0, 2, .01), _.add(k.params, "scattering", 0, .5, .001), _.add(k.params, "shafts", 0, 4, .01), _.add(k.params, "shaftRange", 5, 120, 1), _.add(k.params, "meniscus", 0, 1, .01), _.add(M, "underwater", .2, 2, .01).name("underwater exposure");
@@ -25662,7 +24220,7 @@ function KE(e = {}) {
 			x
 		].forEach((e) => e.close());
 	}
-	let ge = l.getContext(), _e = new Cy(ge), ve = 0;
+	let ge = l.getContext(), _e = new Sy(ge), ve = 0;
 	function ye(e) {
 		ve += e, R && se(), _e.beginFrame(), D.resultCount > 0 && (A = D.result[0]), O.ingest(D, 1), O.step(e), _e.begin("floatShadow"), b.update(l, O.scene, O.bodies, h.sunDir);
 		for (let e = 0; e < 8; e++) {
@@ -25678,7 +24236,7 @@ function KE(e = {}) {
 		i && (_e.begin("underwater"), a = k.render(l, ae, n < A - .8)), _e.begin("post"), I.render(a, e), _e.endFrame();
 	}
 	function be() {
-		let e = Ov(p.position.x, p.position.z) + .8;
+		let e = Dv(p.position.x, p.position.z) + .8;
 		p.position.y < e && (p.position.y = e);
 	}
 	async function xe() {
@@ -25828,8 +24386,8 @@ function KE(e = {}) {
 		gui: pe,
 		sunLight: w,
 		THREE: Pf,
-		islandHeight: Ov,
-		createRoom: FT,
+		islandHeight: Dv,
+		createRoom: PT,
 		camWater: () => A,
 		markSun: () => R = !0,
 		setView: Ue,
@@ -25838,4 +24396,4 @@ function KE(e = {}) {
 	};
 	return window.app = Ge, window.runBenchmark = Ce, c && (Re = requestAnimationFrame(ze)), Ge;
 }
-export { GT as GLTFLoader, IT as SkeletonUtils, KE as createOcean, KE as default };
+export { IT as createOcean, IT as default };
