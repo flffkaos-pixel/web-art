@@ -327,7 +327,7 @@ let playStep = null;
     if (!AC) return;
     ctx = new AC();
     master = ctx.createGain(); master.gain.value = 0; master.connect(ctx.destination);
-    stepGain = ctx.createGain(); stepGain.gain.value = 0.9; stepGain.connect(ctx.destination);
+    stepGain = ctx.createGain(); stepGain.gain.value = 1.1; stepGain.connect(ctx.destination);
     buf = brown();
     layer('lowpass', 360, 0.45, 0.055);
     hiss = layer('bandpass', 920, 0.3, 0.1);
@@ -353,15 +353,18 @@ let playStep = null;
   function step(){
     if (!ctx || ctx.state !== 'running') return;
     const t = ctx.currentTime;
-    const src = ctx.createBufferSource(); src.buffer = buf; src.loop = true;
-    src.playbackRate.value = 0.9 + Math.random() * 0.4;
-    const f = ctx.createBiquadFilter(); f.type = 'bandpass'; f.frequency.value = 700 + Math.random() * 700; f.Q.value = 0.7;
-    const g = ctx.createGain();
-    g.gain.setValueAtTime(0.0001, t);
-    g.gain.linearRampToValueAtTime(0.8, t + 0.02);
-    g.gain.exponentialRampToValueAtTime(0.0001, t + 0.2);
-    src.connect(f); f.connect(g); g.connect(stepGain);
-    src.start(t, Math.random() * 2); src.stop(t + 0.25);
+    // low thump (body of the step)
+    const s1 = ctx.createBufferSource(); s1.buffer = buf; s1.loop = true; s1.playbackRate.value = 0.8 + Math.random() * 0.4;
+    const lp = ctx.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 420; lp.Q.value = 1.0;
+    const g1 = ctx.createGain(); g1.gain.setValueAtTime(0.0001, t); g1.gain.linearRampToValueAtTime(1.1, t + 0.015); g1.gain.exponentialRampToValueAtTime(0.0001, t + 0.22);
+    s1.connect(lp); lp.connect(g1); g1.connect(stepGain);
+    s1.start(t, Math.random() * 2); s1.stop(t + 0.26);
+    // bright sploosh (hiss of the water)
+    const s2 = ctx.createBufferSource(); s2.buffer = buf; s2.loop = true; s2.playbackRate.value = 1.0 + Math.random() * 0.5;
+    const bp = ctx.createBiquadFilter(); bp.type = 'bandpass'; bp.frequency.value = 1500 + Math.random() * 1200; bp.Q.value = 0.6;
+    const g2 = ctx.createGain(); g2.gain.setValueAtTime(0.0001, t); g2.gain.linearRampToValueAtTime(1.2, t + 0.012); g2.gain.exponentialRampToValueAtTime(0.0001, t + 0.16);
+    s2.connect(bp); bp.connect(g2); g2.connect(stepGain);
+    s2.start(t, Math.random() * 2); s2.stop(t + 0.2);
   }
   playStep = step;
   function toggle(e){
@@ -720,9 +723,9 @@ if (app){
       }
     }
     // water footsteps: splash cadence while walking in the shallows
-    if (moving && playStep && hAt(player.g.position.x, player.g.position.z) < -0.05){
+    if (moving && playStep && hAt(player.g.position.x, player.g.position.z) < 0.1){
       stepTimer -= dt;
-      if (stepTimer <= 0){ stepTimer = 0.42; playStep(); }
+      if (stepTimer <= 0){ stepTimer = 0.36; playStep(); }
     } else stepTimer = 0;
     for (const r of remotes.values()){
       r.p.g.position.lerp(r.tp, Math.min(1, dt * 6));
