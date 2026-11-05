@@ -289,7 +289,7 @@ let playStep = null;
 /* ---------- procedural surf — waves only, no music ---------- */
 {
   const btn = document.getElementById('sound-toggle'), lbl = document.getElementById('sound-label');
-  let ctx = null, master = null, hiss = null, buf = null, swell = 0, on = false, audioEl = null;
+  let ctx = null, master = null, stepGain = null, hiss = null, buf = null, swell = 0, on = false, audioEl = null;
 
   function brown(){
     const sr = ctx.sampleRate, len = sr * 4, b = ctx.createBuffer(2, len, sr);
@@ -327,6 +327,7 @@ let playStep = null;
     if (!AC) return;
     ctx = new AC();
     master = ctx.createGain(); master.gain.value = 0; master.connect(ctx.destination);
+    stepGain = ctx.createGain(); stepGain.gain.value = 0.9; stepGain.connect(ctx.destination);
     buf = brown();
     layer('lowpass', 360, 0.45, 0.055);
     hiss = layer('bandpass', 920, 0.3, 0.1);
@@ -350,16 +351,16 @@ let playStep = null;
     if (lbl) lbl.textContent = on ? 'waves on' : 'waves off';
   }
   function step(){
-    if (!on || !ctx || ctx.state !== 'running') return;
+    if (!ctx || ctx.state !== 'running') return;
     const t = ctx.currentTime;
     const src = ctx.createBufferSource(); src.buffer = buf; src.loop = true;
     src.playbackRate.value = 0.9 + Math.random() * 0.4;
     const f = ctx.createBiquadFilter(); f.type = 'bandpass'; f.frequency.value = 700 + Math.random() * 700; f.Q.value = 0.7;
     const g = ctx.createGain();
     g.gain.setValueAtTime(0.0001, t);
-    g.gain.linearRampToValueAtTime(0.7, t + 0.02);
+    g.gain.linearRampToValueAtTime(0.8, t + 0.02);
     g.gain.exponentialRampToValueAtTime(0.0001, t + 0.2);
-    src.connect(f); f.connect(g); g.connect(master);
+    src.connect(f); f.connect(g); g.connect(stepGain);
     src.start(t, Math.random() * 2); src.stop(t + 0.25);
   }
   playStep = step;
@@ -382,6 +383,7 @@ let playStep = null;
   }
   if (btn) btn.addEventListener('click', toggle);
   addEventListener('pointerdown', () => { build(); if (ctx && ctx.state !== 'running') ctx.resume().catch(() => {}); }, { once: true });
+  addEventListener('keydown', () => { build(); if (ctx && ctx.state !== 'running') ctx.resume().catch(() => {}); }, { once: true });
 }
 
 /* ---------- ambience: sun follows the clock; the sea drifts calm ↔ stormy ---------- */
