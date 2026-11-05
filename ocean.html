@@ -482,25 +482,24 @@ if (app){
     const stub = (r, len, mat) => new T.Mesh(new T.CapsuleGeometry(r, len, 6, 12), mat);
 
     // lower body (pants) + upper body (shirt) — rounded, Animal-Crossing-ish
-    const hip = new T.Mesh(new T.SphereGeometry(0.21, 18, 14), pants); hip.position.y = 0.40; hip.scale.set(1.0, 0.9, 0.92); root.add(hip);
-    const torso = new T.Mesh(new T.SphereGeometry(0.24, 18, 14), shirt); torso.position.y = 0.64; torso.scale.set(1.0, 1.05, 0.9); root.add(torso);
+    const hip = new T.Mesh(new T.SphereGeometry(0.22, 18, 14), pants); hip.position.y = 0.40; hip.scale.set(1.0, 0.86, 0.94); root.add(hip);
+    const torso = new T.Mesh(new T.SphereGeometry(0.25, 18, 14), shirt); torso.position.y = 0.64; torso.scale.set(1.0, 1.12, 0.92); root.add(torso);
 
-    // stubby legs (pants) with rounded shoe feet
+    // short, rounded, slim limbs (Animal-Crossing-ish) with mitten hands and rounded feet
     const legL = new T.Group(), legR = new T.Group();
-    legL.position.set(-0.11, 0.30, 0); legR.position.set(0.11, 0.30, 0);
+    legL.position.set(-0.115, 0.36, 0); legR.position.set(0.115, 0.36, 0);
     for (const lg of [legL, legR]){
-      const m = stub(0.09, 0.06, pants); m.position.y = -0.10; lg.add(m);
-      const shoe = new T.Mesh(new T.SphereGeometry(0.11, 12, 10), dark);
-      shoe.position.set(0, -0.21, 0.05); shoe.scale.set(1, 0.6, 1.35); lg.add(shoe);
+      const m = stub(0.085, 0.15, pants); m.position.y = -0.14; lg.add(m);
+      const shoe = new T.Mesh(new T.SphereGeometry(0.105, 12, 10), dark);
+      shoe.position.set(0, -0.30, 0.05); shoe.scale.set(1, 0.62, 1.35); lg.add(shoe);
       root.add(lg);
     }
-    // stubby arms: shirt sleeves + skin hands
     const armL = new T.Group(), armR = new T.Group();
-    armL.position.set(-0.25, 0.72, 0); armR.position.set(0.25, 0.72, 0);
-    armL.rotation.z = -0.28; armR.rotation.z = 0.28;
+    armL.position.set(-0.26, 0.72, 0); armR.position.set(0.26, 0.72, 0);
+    armL.rotation.z = -0.2; armR.rotation.z = 0.2;
     for (const am of [armL, armR]){
-      const m = stub(0.08, 0.08, shirt); m.position.y = -0.10; am.add(m);
-      const hand = new T.Mesh(new T.SphereGeometry(0.095, 10, 8), skin); hand.position.y = -0.22; am.add(hand);
+      const m = stub(0.075, 0.16, shirt); m.position.y = -0.14; am.add(m);
+      const hand = new T.Mesh(new T.SphereGeometry(0.1, 12, 10), skin); hand.position.y = -0.28; am.add(hand);
       root.add(am);
     }
 
@@ -537,7 +536,7 @@ if (app){
   function pose(p, t, walking){
     const L = p.legL, R = p.legR, AL = p.armL, AR = p.armR;
     if (p.sit){
-      p.root.position.y = -0.18 + Math.sin(t * 1.3 + p.phase) * 0.008;
+      p.root.position.y = -0.26 + Math.sin(t * 1.3 + p.phase) * 0.008;
       p.root.rotation.z = Math.sin(t * 0.8 + p.phase) * 0.03;
       L.rotation.set(-1.5, 0, 0.12); R.rotation.set(-1.5, 0, -0.12);
       AL.rotation.x = AR.rotation.x = -0.3;
