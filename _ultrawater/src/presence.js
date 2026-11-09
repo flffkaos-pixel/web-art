@@ -7,10 +7,12 @@ export function createRoom({
   onJoin,
   onLeave,
   onState,
+  onEvent,
   onStatus,
 } = {}) {
   let room = null;
   let action = null;
+  let eventAction = null;
   let retryTimer = null;
   let retry = 0;
   let lastStart = 0;
@@ -20,6 +22,7 @@ export function createRoom({
     try { room?.leave(); } catch (e) {}
     room = null;
     action = null;
+    eventAction = null;
   }
 
   function start(force) {
@@ -35,6 +38,10 @@ export function createRoom({
         if (!id) return;
         peers.set(id, Date.now());
         onState?.(id, data);
+      };
+      eventAction = room.makeAction('ev');
+      eventAction.onMessage = (data, ctx) => {
+        onEvent?.(data, ctx && ctx.peerId);
       };
       room.onPeerJoin = (id) => { peers.set(id, Date.now()); onStatus?.('online', peers.size); onJoin?.(id); };
       room.onPeerLeave = (id) => { peers.delete(id); onStatus?.('online', peers.size); onLeave?.(id); };
@@ -57,6 +64,10 @@ export function createRoom({
     send(state) {
       if (!action) return;
       try { action.send(state); } catch (e) { onStatus?.('offline', peers.size); scheduleRetry(); }
+    },
+    emit(data) {
+      if (!eventAction) return;
+      try { eventAction.send(data); } catch (e) {}
     },
     restart() { start(true); },
     leave() { teardown(); clearTimeout(retryTimer); retryTimer = null; },

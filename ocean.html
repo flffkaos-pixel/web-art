@@ -391,6 +391,7 @@ let playStep = null;
 
 /* ---------- ambience: sun follows the clock; the sea drifts calm ↔ stormy ---------- */
 let seaTick = null;
+let netRoom = null, netEvent = null;
 if (app){
   const auto = true;
   const KEYS = [  // hour → wind, waves, chop, swell, sun intensity, clouds, haze, spray
@@ -675,7 +676,9 @@ if (app){
       r.seen = performance.now();
     },
     onStatus: (s) => { netUp = (s === 'online'); setPeersText(); },
+    onEvent: (data) => { if (netEvent) netEvent(data); },
   });
+  netRoom = room;
   setInterval(() => room.send(selfState()), 150);
   setInterval(() => {
     const now = performance.now();
@@ -745,6 +748,179 @@ if (app){
     requestAnimationFrame(tick);
   }
   requestAnimationFrame(tick);
+}
+
+/* ---------- fireworks system + shop (shared with everyone in the room) ---------- */
+if (app){
+  const T = app.THREE, scene = app.scene;
+
+  // soft round sprite
+  const dotTex = (() => {
+    const c = document.createElement('canvas'); c.width = c.height = 64;
+    const g = c.getContext('2d'); const gr = g.createRadialGradient(32, 32, 0, 32, 32, 32);
+    gr.addColorStop(0, 'rgba(255,255,255,1)'); gr.addColorStop(0.3, 'rgba(255,255,255,0.85)'); gr.addColorStop(1, 'rgba(255,255,255,0)');
+    g.fillStyle = gr; g.beginPath(); g.arc(32, 32, 32, 0, Math.PI * 2); g.fill();
+    return new T.CanvasTexture(c);
+  })();
+
+  const MAX = 8000;
+  const fpos = new Float32Array(MAX * 3), fcol = new Float32Array(MAX * 3), fsiz = new Float32Array(MAX), falp = new Float32Array(MAX);
+  const fvel = new Float32Array(MAX * 3), flife = new Float32Array(MAX), fmax = new Float32Array(MAX);
+  const fgrav = new Float32Array(MAX), fdrag = new Float32Array(MAX), ftw = new Float32Array(MAX), fseed = new Float32Array(MAX);
+  const geo = new T.BufferGeometry();
+  geo.setAttribute('position', new T.BufferAttribute(fpos, 3));
+  geo.setAttribute('aColor', new T.BufferAttribute(fcol, 3));
+  geo.setAttribute('aSize', new T.BufferAttribute(fsiz, 1));
+  geo.setAttribute('aAlpha', new T.BufferAttribute(falp, 1));
+  const fmat = new T.ShaderMaterial({
+    uniforms: { uTex: { value: dotTex }, uScale: { value: 600 } },
+    transparent: true, depthWrite: false, depthTest: true, blending: T.AdditiveBlending,
+    vertexShader: `attribute float aSize; attribute float aAlpha; attribute vec3 aColor;
+      varying vec3 vColor; varying float vAlpha; uniform float uScale;
+      void main(){ vColor=aColor; vAlpha=aAlpha; vec4 mv=modelViewMatrix*vec4(position,1.0);
+        gl_PointSize = max(1.0, aSize * uScale / max(0.1, -mv.z)); gl_Position = projectionMatrix*mv; }`,
+    fragmentShader: `uniform sampler2D uTex; varying vec3 vColor; varying float vAlpha;
+      void main(){ vec4 t=texture2D(uTex, gl_PointCoord); if (t.a < 0.01) discard; gl_FragColor=vec4(vColor, t.a*vAlpha); }`,
+  });
+  const fpoints = new T.Points(geo, fmat);
+  fpoints.frustumCulled = false;
+  scene.add(fpoints);
+
+  let fcursor = 0;
+  function emit1(x, y, z, vx, vy, vz, r, g, b, size, lifeSec, grav, dragK, tw) {
+    for (let k = 0; k < MAX; k++) {
+      const i = (fcursor + k) % MAX;
+      if (flife[i] <= 0) {
+        fcursor = (i + 1) % MAX;
+        const i3 = i * 3; fpos[i3] = x; fpos[i3 + 1] = y; fpos[i3 + 2] = z;
+        fvel[i3] = vx; fvel[i3 + 1] = vy; fvel[i3 + 2] = vz;
+        fcol[i3] = r; fcol[i3 + 1] = g; fcol[i3 + 2] = b;
+        fsiz[i] = size; falp[i] = 1; flife[i] = lifeSec; fmax[i] = lifeSec;
+        fgrav[i] = grav; fdrag[i] = dragK; ftw[i] = tw; fseed[i] = Math.random() * 10;
+        return;
+      }
+    }
+  }
+  const randUnit = () => { const u = Math.random() * 2 - 1, a = Math.random() * Math.PI * 2, s = Math.sqrt(1 - u * u); return [s * Math.cos(a), u, s * Math.sin(a)]; };
+  const randColor = () => { const c = new T.Color().setHSL(Math.random(), 0.85, 0.6); return [c.r, c.g, c.b]; };
+
+  const TYPES = [
+    { id: 'peony', name: '모란 피오니', price: 1000, shape: 'sphere', count: 150, speed: 9, life: 1.7, size: 0.55, grav: -6, drag: 0.7, tw: 0 },
+    { id: 'ring', name: '고리 링', price: 1500, shape: 'ring', count: 130, speed: 8.5, life: 1.7, size: 0.55, grav: -5, drag: 0.7, tw: 0 },
+    { id: 'willow', name: '버들 (금색)', price: 2500, shape: 'sphere', count: 130, speed: 6, life: 3.0, size: 0.6, grav: -11, drag: 0.5, tw: 0, color: () => [1, 0.82, 0.32] },
+    { id: 'palm', name: '야자수', price: 2000, shape: 'palm', count: 22, speed: 9.5, life: 2.1, size: 1.15, grav: -8, drag: 0.6, tw: 0 },
+    { id: 'heart', name: '하트', price: 3000, shape: 'heart', count: 150, speed: 7.5, life: 1.9, size: 0.5, grav: -5, drag: 0.75, tw: 0, color: () => [1, 0.28, 0.5] },
+    { id: 'double', name: '이중 (2색)', price: 2000, shape: 'double', count: 180, speed: 9.5, life: 1.8, size: 0.52, grav: -6, drag: 0.7, tw: 0 },
+    { id: 'glitter', name: '반짝 글리터', price: 1500, shape: 'sphere', count: 240, speed: 8, life: 1.5, size: 0.3, grav: -6, drag: 0.7, tw: 1 },
+    { id: 'crackle', name: '파직 크래클', price: 1800, shape: 'sphere', count: 200, speed: 10.5, life: 1.2, size: 0.32, grav: -7, drag: 0.7, tw: 2 },
+  ];
+
+  function burst(x, y, z, ty) {
+    const base = ty.color ? ty.color() : randColor();
+    const c2 = randColor();
+    const n = ty.count, sp = ty.speed;
+    if (ty.shape === 'ring') {
+      const ax = randUnit();
+      const t1 = (() => { const u = Math.abs(ax[1]) < 0.9 ? [0, 1, 0] : [1, 0, 0]; const c = [ax[1] * u[2] - ax[2] * u[1], ax[2] * u[0] - ax[0] * u[2], ax[0] * u[1] - ax[1] * u[0]]; const l = Math.hypot(c[0], c[1], c[2]) || 1; return [c[0] / l, c[1] / l, c[2] / l]; })();
+      const t2 = [ax[1] * t1[2] - ax[2] * t1[1], ax[2] * t1[0] - ax[0] * t1[2], ax[0] * t1[1] - ax[1] * t1[0]];
+      for (let i = 0; i < n; i++) { const a = i / n * Math.PI * 2, ca = Math.cos(a), sa = Math.sin(a); const dx = t1[0] * ca + t2[0] * sa, dy = t1[1] * ca + t2[1] * sa, dz = t1[2] * ca + t2[2] * sa; emit1(x, y, z, dx * sp, dy * sp, dz * sp, base[0], base[1], base[2], ty.size, ty.life, ty.grav, ty.drag, ty.tw); }
+    } else if (ty.shape === 'heart') {
+      const c = new T.Color().setHSL(Math.random(), 0.7, 0.6); base[0] = 1; base[1] = 0.28; base[2] = 0.5;
+      for (let i = 0; i < n; i++) { const t = i / n * Math.PI * 2; const hx = 16 * Math.pow(Math.sin(t), 3); const hy = 13 * Math.cos(t) - 5 * Math.cos(2 * t) - 2 * Math.cos(3 * t) - Math.cos(4 * t); const k = sp / 16; const dz = (Math.random() - 0.5) * 1.2; emit1(x, y, z, hx * k, hy * k, dz, base[0], base[1], base[2], ty.size, ty.life, ty.grav, ty.drag, ty.tw); }
+    } else if (ty.shape === 'double') {
+      for (let i = 0; i < n; i++) { const u = randUnit(); const inner = i % 2 === 0; const v = sp * (inner ? 0.55 : 1.0); const cc = inner ? base : c2; emit1(x, y, z, u[0] * v, u[1] * v, u[2] * v, cc[0], cc[1], cc[2], ty.size, ty.life, ty.grav, ty.drag, ty.tw); }
+    } else if (ty.shape === 'palm') {
+      for (let i = 0; i < n; i++) { const u = randUnit(); emit1(x, y, z, u[0] * sp, u[1] * sp, u[2] * sp, base[0], base[1], base[2], ty.size, ty.life, ty.grav, ty.drag, ty.tw); }
+    } else {
+      for (let i = 0; i < n; i++) { const u = randUnit(); emit1(x, y, z, u[0] * sp, u[1] * sp, u[2] * sp, base[0], base[1], base[2], ty.size, ty.life, ty.grav, ty.drag, ty.tw); }
+    }
+  }
+
+  const pending = [];
+  function launch(typeId, x, z) {
+    const ty = TYPES.find((t) => t.id === typeId) || TYPES[0];
+    pending.push({ t: 0, dur: 0.9 + Math.random() * 0.35, x, z, y0: 3, y1: 30 + Math.random() * 12, ty, trail: 0 });
+  }
+  function launchAhead(typeId) {
+    const cam = app.camera, d = new T.Vector3(); cam.getWorldDirection(d); d.y = 0; d.normalize();
+    const x = cam.position.x + d.x * 75 + (Math.random() - 0.5) * 40;
+    const z = cam.position.z + d.z * 75 + (Math.random() - 0.5) * 40;
+    launch(typeId, x, z);
+    if (netRoom) netRoom.emit({ k: 'fw', t: typeId, x: +x.toFixed(1), z: +z.toFixed(1) });
+  }
+  netEvent = (data) => { if (data && data.k === 'fw') launch(data.t, +data.x || 0, +data.z || 0); };
+
+  function fwUpdate(dt) {
+    // rockets
+    for (let i = pending.length - 1; i >= 0; i--) {
+      const p = pending[i]; p.t += dt; const f = Math.min(1, p.t / p.dur);
+      const y = p.y0 + (p.y1 - p.y0) * f;
+      p.trail -= dt;
+      if (p.trail <= 0) { p.trail = 0.02; emit1(p.x + (Math.random() - 0.5) * 0.3, y, p.z + (Math.random() - 0.5) * 0.3, 0, -1, 0, 1, 0.7, 0.3, 0.5, 0.4, 0, 0.5, 1); }
+      if (f >= 1) { burst(p.x, p.y1, p.z, p.ty); pending.splice(i, 1); }
+    }
+    // particles
+    for (let i = 0; i < MAX; i++) {
+      if (flife[i] <= 0) { if (falp[i] !== 0) falp[i] = 0; continue; }
+      flife[i] -= dt;
+      if (flife[i] <= 0) { falp[i] = 0; continue; }
+      const i3 = i * 3;
+      fvel[i3 + 1] += fgrav[i] * dt;
+      const dk = Math.max(0, 1 - fdrag[i] * dt);
+      fvel[i3] *= dk; fvel[i3 + 1] *= dk; fvel[i3 + 2] *= dk;
+      fpos[i3] += fvel[i3] * dt; fpos[i3 + 1] += fvel[i3 + 1] * dt; fpos[i3 + 2] += fvel[i3 + 2] * dt;
+      let a = Math.min(1, flife[i] / (0.55 * fmax[i]));
+      if (ftw[i] === 1) a *= 0.55 + 0.45 * Math.sin((fmax[i] - flife[i]) * 40 + fseed[i] * 9);
+      else if (ftw[i] === 2) a *= Math.random() < 0.35 ? 0.25 : 1;
+      falp[i] = a;
+    }
+    geo.attributes.position.needsUpdate = true;
+    geo.attributes.aColor.needsUpdate = true;
+    geo.attributes.aSize.needsUpdate = true;
+    geo.attributes.aAlpha.needsUpdate = true;
+    const gl = app.renderer.getContext();
+    fmat.uniforms.uScale.value = (gl.drawingBufferHeight || 600) / (2 * Math.tan((app.camera.fov || 50) * Math.PI / 360));
+  }
+
+  let flast = 0;
+  function fwLoop(now) {
+    const dt = flast ? Math.min(0.05, Math.max(0, (now - flast) / 1000)) : 0; flast = now;
+    fwUpdate(dt);
+    requestAnimationFrame(fwLoop);
+  }
+  requestAnimationFrame(fwLoop);
+
+  // ---- shop UI ----
+  const css = document.createElement('style');
+  css.textContent = `#shop{position:fixed;right:12px;bottom:12px;z-index:30;width:230px;max-height:70vh;overflow-y:auto;
+    background:rgba(10,16,22,.86);border:1px solid rgba(140,200,230,.2);border-radius:12px;padding:12px 12px 14px;
+    backdrop-filter:blur(12px);color:#cfe3ee;font:12px/1.4 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;box-shadow:0 18px 50px rgba(0,0,0,.5)}
+    #shop h3{margin:0 0 4px;font-size:12px;letter-spacing:.16em;color:#ffd76a;text-transform:uppercase}
+    #shop .sub{font-size:9px;color:#7d95a4;margin-bottom:9px}
+    #shop button{display:flex;justify-content:space-between;align-items:center;gap:8px;width:100%;margin:5px 0;padding:8px 10px;
+      border:1px solid rgba(140,200,230,.18);border-radius:8px;background:rgba(140,200,230,.06);color:#dcecf4;font:inherit;cursor:pointer;text-align:left;transition:.15s}
+    #shop button:hover{background:rgba(255,215,106,.12);border-color:rgba(255,215,106,.5);color:#fff}
+    #shop button:active{transform:scale(.98)}
+    #shop .pn{color:#ffd76a;font-weight:700}
+    #shop .fire{position:absolute;right:12px;bottom:12px;z-index:29;padding:10px 14px;border-radius:12px;border:1px solid rgba(255,215,106,.5);
+      background:rgba(10,16,22,.86);color:#ffd76a;font:700 12px ui-monospace,monospace;letter-spacing:.1em;cursor:pointer}
+    @media (max-width:620px){#shop{left:10px;right:10px;width:auto;max-height:44vh;bottom:64px}#shop .fire{left:50%;transform:translateX(-50%);bottom:14px}}`;
+  document.head.appendChild(css);
+
+  const shop = document.createElement('div');
+  shop.id = 'shop';
+  const items = TYPES.map((t) => `<button data-id="${t.id}"><span>${t.name}</span><span class="pn">₩${t.price.toLocaleString()}</span></button>`).join('');
+  shop.innerHTML = `<h3>불꽃놀이 상점</h3><div class="sub">결제 연동 예정 · 지금은 무료 발사 · 접속자 모두에게 보임</div>${items}`;
+  document.body.appendChild(shop);
+  shop.addEventListener('click', (e) => { const b = e.target.closest('button'); if (b && b.dataset.id) launchAhead(b.dataset.id); });
+
+  const shopBtn = document.createElement('button');
+  shopBtn.className = 'fire'; shopBtn.textContent = '불꽃 상점';
+  document.body.appendChild(shopBtn);
+  let shopOpen = true;
+  function applyShop(){ shop.style.display = shopOpen ? 'block' : 'none'; }
+  shopBtn.addEventListener('click', () => { shopOpen = !shopOpen; applyShop(); });
+  applyShop();
 }
 
 window.addEventListener('error', (e) => { if (!app) fatal('Startup failed:<br><code style="color:#ffb">' + (e.message || e) + '</code>'); });

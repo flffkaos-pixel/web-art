@@ -23855,61 +23855,68 @@ var ex = (e, t, n) => Qb.multiply(t, !1).add(e.multiply(n, !1)).assertValidity()
 Qw.getSockets;
 var NT = (/* @__PURE__ */ "0x-nostr-relay.fly.dev,bendernostur.duckdns.org:8443,cdn.satellite.earth,nos.lol,nostr.chaima.info,nostr.christiansass.de,nostr.rblb.it,nostr.red5d.dev,nostr.robosats.org,nostr.stakey.net,nostrcity-club.fly.dev,relay-dev.gulugulu.moe,relay.aarpia.com,relay.agentry.com,relay.bitmacro.cloud,relay.bullishbounty.com,relay.degmods.com,relay.flashapp.me,relay.grigic.org,relay.hackshed.dev,relay.kaleidoswap.com,relay.layer.systems,relay.nostr.blockhenge.com,relay.nostr.dev.br,relay.nostrmap.net,relay.novospes.com,relay.piazza.today,relay.routstr.com,testr.nymble.world".split(",")).map((e) => "wss://" + e);
 // src/presence.js
-function PT({ appId: e = "flffkaos-web-art-ocean", roomId: t = "beach-v1", password: n, onJoin: r, onLeave: i, onState: a, onStatus: o } = {}) {
-	let s = null, c = null, l = null, u = 0, d = 0, f = /* @__PURE__ */ new Map();
-	function p() {
+function PT({ appId: e = "flffkaos-web-art-ocean", roomId: t = "beach-v1", password: n, onJoin: r, onLeave: i, onState: a, onEvent: o, onStatus: s } = {}) {
+	let c = null, l = null, u = null, d = null, f = 0, p = 0, m = /* @__PURE__ */ new Map();
+	function h() {
 		try {
-			s?.leave();
+			c?.leave();
 		} catch {}
-		s = null, c = null;
+		c = null, l = null, u = null;
 	}
-	function m(l) {
-		let m = Date.now();
-		if (!(!l && m - d < 3e3)) {
-			d = m, p();
+	function g(d) {
+		let g = Date.now();
+		if (!(!d && g - p < 3e3)) {
+			p = g, h();
 			try {
-				s = MT({
+				c = MT({
 					appId: e,
 					password: n
-				}, t), c = s.makeAction("st"), c.onMessage = (e, t) => {
+				}, t), l = c.makeAction("st"), l.onMessage = (e, t) => {
 					let n = t && t.peerId;
-					n && (f.set(n, Date.now()), a?.(n, e));
-				}, s.onPeerJoin = (e) => {
-					f.set(e, Date.now()), o?.("online", f.size), r?.(e);
-				}, s.onPeerLeave = (e) => {
-					f.delete(e), o?.("online", f.size), i?.(e);
-				}, u = 0, o?.("online", f.size);
+					n && (m.set(n, Date.now()), a?.(n, e));
+				}, u = c.makeAction("ev"), u.onMessage = (e, t) => {
+					o?.(e, t && t.peerId);
+				}, c.onPeerJoin = (e) => {
+					m.set(e, Date.now()), s?.("online", m.size), r?.(e);
+				}, c.onPeerLeave = (e) => {
+					m.delete(e), s?.("online", m.size), i?.(e);
+				}, f = 0, s?.("online", m.size);
 			} catch (e) {
 				try {
 					console.error("[presence] joinRoom failed:", e && (e.stack || e.message || e));
 				} catch {}
-				o?.("offline", f.size), h();
+				s?.("offline", m.size), _();
 			}
 		}
 	}
-	function h() {
-		l ||= (u++, setTimeout(() => {
-			l = null, m(!0);
-		}, Math.min(3e4, 1500 * u)));
+	function _() {
+		d ||= (f++, setTimeout(() => {
+			d = null, g(!0);
+		}, Math.min(3e4, 1500 * f)));
 	}
-	return m(!0), addEventListener("online", () => m(!1)), addEventListener("offline", () => o?.("offline", f.size)), addEventListener("visibilitychange", () => {
-		document.hidden || m(!1);
+	return g(!0), addEventListener("online", () => g(!1)), addEventListener("offline", () => s?.("offline", m.size)), addEventListener("visibilitychange", () => {
+		document.hidden || g(!1);
 	}), {
 		send(e) {
-			if (c) try {
-				c.send(e);
+			if (l) try {
+				l.send(e);
 			} catch {
-				o?.("offline", f.size), h();
+				s?.("offline", m.size), _();
 			}
 		},
+		emit(e) {
+			if (u) try {
+				u.send(e);
+			} catch {}
+		},
 		restart() {
-			m(!0);
+			g(!0);
 		},
 		leave() {
-			p(), clearTimeout(l), l = null;
+			h(), clearTimeout(d), d = null;
 		},
 		get size() {
-			return f.size;
+			return m.size;
 		}
 	};
 }
