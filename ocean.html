@@ -482,30 +482,30 @@ if (app){
     const stub = (r, len, mat) => new T.Mesh(new T.CapsuleGeometry(r, len, 6, 12), mat);
 
     // lower body (pants) + upper body (shirt) — rounded, Animal-Crossing-ish
-    const hip = new T.Mesh(new T.SphereGeometry(0.22, 18, 14), pants); hip.position.y = 0.40; hip.scale.set(1.0, 0.86, 0.94); root.add(hip);
-    const torso = new T.Mesh(new T.SphereGeometry(0.25, 18, 14), shirt); torso.position.y = 0.64; torso.scale.set(1.0, 1.12, 0.92); root.add(torso);
+    const hip = new T.Mesh(new T.SphereGeometry(0.21, 20, 16), pants); hip.position.y = 0.40; hip.scale.set(1.0, 0.86, 0.94); root.add(hip);
+    const torso = new T.Mesh(new T.SphereGeometry(0.23, 20, 16), shirt); torso.position.y = 0.62; torso.scale.set(1.0, 1.16, 0.92); root.add(torso);
 
-    // short, rounded, slim limbs (Animal-Crossing-ish) with mitten hands and rounded feet
+    // short, thin, rounded limbs (Animal-Crossing-ish) with mitten hands and rounded feet
     const legL = new T.Group(), legR = new T.Group();
-    legL.position.set(-0.115, 0.36, 0); legR.position.set(0.115, 0.36, 0);
+    legL.position.set(-0.105, 0.34, 0); legR.position.set(0.105, 0.34, 0);
     for (const lg of [legL, legR]){
-      const m = stub(0.085, 0.15, pants); m.position.y = -0.14; lg.add(m);
-      const shoe = new T.Mesh(new T.SphereGeometry(0.105, 12, 10), dark);
-      shoe.position.set(0, -0.30, 0.05); shoe.scale.set(1, 0.62, 1.35); lg.add(shoe);
+      const m = stub(0.072, 0.16, pants); m.position.y = -0.15; lg.add(m);
+      const shoe = new T.Mesh(new T.SphereGeometry(0.09, 12, 10), dark);
+      shoe.position.set(0, -0.31, 0.05); shoe.scale.set(1, 0.62, 1.4); lg.add(shoe);
       root.add(lg);
     }
     const armL = new T.Group(), armR = new T.Group();
-    armL.position.set(-0.26, 0.72, 0); armR.position.set(0.26, 0.72, 0);
-    armL.rotation.z = -0.2; armR.rotation.z = 0.2;
+    armL.position.set(-0.235, 0.72, 0); armR.position.set(0.235, 0.72, 0);
+    armL.rotation.z = -0.13; armR.rotation.z = 0.13;
     for (const am of [armL, armR]){
-      const m = stub(0.075, 0.16, shirt); m.position.y = -0.14; am.add(m);
-      const hand = new T.Mesh(new T.SphereGeometry(0.1, 12, 10), skin); hand.position.y = -0.28; am.add(hand);
+      const m = stub(0.062, 0.18, shirt); m.position.y = -0.15; am.add(m);
+      const hand = new T.Mesh(new T.SphereGeometry(0.082, 12, 10), skin); hand.position.y = -0.30; am.add(hand);
       root.add(am);
     }
 
     // big round head
-    const HY = 1.16, HR = 0.42, HY0 = 1.08, k = HR / 0.34;
-    const head = new T.Mesh(new T.SphereGeometry(HR, 24, 20), skin); head.position.y = HY; root.add(head);
+    const HY = 1.15, HR = 0.42, HY0 = 1.08, k = HR / 0.34;
+    const head = new T.Mesh(new T.SphereGeometry(HR, 24, 20), skin); head.position.y = HY; head.scale.set(1.02, 1.04, 1.0); root.add(head);
     const hy = (y) => HY + (y - HY0) * k, hk = (v) => v * k;
     const addHair = (geo, x, y, z, sx, sy, sz) => { const m = new T.Mesh(geo, hair); m.position.set(x, y, z); if (sx !== undefined) m.scale.set(sx, sy, sz); root.add(m); return m; };
     addHair(new T.SphereGeometry(hk(0.355), 24, 18, 0, Math.PI * 2, 0, Math.PI * 0.44), 0, hy(1.09), hk(-0.02));
@@ -519,17 +519,17 @@ if (app){
     else if (style === 7){ addHair(new T.SphereGeometry(hk(0.15), 14, 12), hk(0.34), hy(1.02), hk(-0.20), 0.9, 1.6, 0.9); addHair(new T.SphereGeometry(hk(0.07), 10, 8), hk(0.30), hy(1.22), hk(-0.14)); addHair(new T.SphereGeometry(hk(0.31), 18, 14, 0, Math.PI * 2, 0, Math.PI * 0.5), hk(0.05), hy(1.10), hk(-0.02), 1.0, 1.0, 1.0); }
     else { addHair(new T.SphereGeometry(hk(0.20), 14, 12), -hk(0.30), hy(1.02), hk(-0.10), 1.0, 1.3, 1.0); addHair(new T.SphereGeometry(hk(0.20), 14, 12), hk(0.30), hy(1.02), hk(-0.10), 1.0, 1.3, 1.0); addHair(new T.SphereGeometry(hk(0.16), 12, 10), -hk(0.30), hy(0.80), hk(-0.02), 1.0, 1.4, 1.0); addHair(new T.SphereGeometry(hk(0.16), 12, 10), hk(0.30), hy(0.80), hk(-0.02), 1.0, 1.4, 1.0); }
 
-    // big Animal-Crossing eyes + cute face
+    // simple Animal-Crossing face: modest black oval eyes + tiny highlight, small nose/mouth
     for (const s of [-1, 1]){
-      const eye = new T.Mesh(new T.SphereGeometry(0.082, 12, 10), dark);
-      eye.position.set(s * 0.15, 1.18, 0.355); eye.scale.set(0.85, 1.1, 0.7); root.add(eye);
-      const hi = new T.Mesh(new T.SphereGeometry(0.026, 8, 6), white);
-      hi.position.set(s * 0.15 + 0.03, 1.205, 0.40); root.add(hi);
-      const cheek = new T.Mesh(new T.SphereGeometry(0.062, 8, 8), blush);
-      cheek.position.set(s * 0.25, 1.045, 0.335); cheek.scale.set(0.9, 0.7, 0.45); root.add(cheek);
+      const eye = new T.Mesh(new T.SphereGeometry(0.062, 12, 10), dark);
+      eye.position.set(s * 0.145, 1.135, 0.365); eye.scale.set(0.8, 1.15, 0.6); root.add(eye);
+      const hi = new T.Mesh(new T.SphereGeometry(0.019, 8, 6), white);
+      hi.position.set(s * 0.145 + 0.02, 1.16, 0.41); root.add(hi);
+      const cheek = new T.Mesh(new T.SphereGeometry(0.052, 8, 8), blush);
+      cheek.position.set(s * 0.235, 1.035, 0.33); cheek.scale.set(0.95, 0.7, 0.45); root.add(cheek);
     }
-    const nose = new T.Mesh(new T.SphereGeometry(0.03, 8, 6), skin); nose.position.set(0, 1.13, 0.405); root.add(nose);
-    const mouth = new T.Mesh(new T.SphereGeometry(0.03, 8, 6), dark); mouth.position.set(0, 1.08, 0.40); mouth.scale.set(1.6, 0.5, 0.5); root.add(mouth);
+    const nose = new T.Mesh(new T.SphereGeometry(0.02, 8, 6), skin); nose.position.set(0, 1.10, 0.415); root.add(nose);
+    const mouth = new T.Mesh(new T.SphereGeometry(0.026, 8, 6), dark); mouth.position.set(0, 1.055, 0.405); mouth.scale.set(1.5, 0.5, 0.5); root.add(mouth);
     g.traverse((o) => { if (o.isMesh){ o.castShadow = true; o.receiveShadow = true; } });
     return { g, root, legL, legR, armL, armR, sit: false, phase: Math.random() * 9 };
   }
