@@ -508,7 +508,7 @@ if (app){
     const head = new T.Mesh(new T.SphereGeometry(HR, 24, 20), skin); head.position.y = HY; head.scale.set(1.02, 1.04, 1.0); root.add(head);
     const hy = (y) => HY + (y - HY0) * k, hk = (v) => v * k;
     const addHair = (geo, x, y, z, sx, sy, sz) => { const m = new T.Mesh(geo, hair); m.position.set(x, y, z); if (sx !== undefined) m.scale.set(sx, sy, sz); root.add(m); return m; };
-    addHair(new T.SphereGeometry(hk(0.355), 24, 18, 0, Math.PI * 2, 0, Math.PI * 0.44), 0, hy(1.09), hk(-0.02));
+    addHair(new T.SphereGeometry(hk(0.40), 30, 22, 0, Math.PI * 2, 0, Math.PI * 0.47), 0, hy(1.085), hk(-0.02), 1.0, 1.04, 1.0);
     if (style === 0) addHair(new T.SphereGeometry(hk(0.36), 22, 16, 0, Math.PI * 2, 0, Math.PI * 0.62), 0, hy(1.06), hk(-0.12), 1.0, 1.15, 1.0);
     else if (style === 1){ addHair(new T.SphereGeometry(hk(0.16), 14, 12), 0, hy(1.03), hk(-0.42), 0.9, 1.7, 0.9); addHair(new T.SphereGeometry(hk(0.075), 10, 8), 0, hy(1.22), hk(-0.30)); }
     else if (style === 2) for (const s of [-1, 1]){ addHair(new T.SphereGeometry(hk(0.14), 14, 12), s * hk(0.34), hy(0.98), hk(-0.16), 0.9, 1.5, 0.9); addHair(new T.SphereGeometry(hk(0.06), 10, 8), s * hk(0.30), hy(1.18), hk(-0.10)); }
@@ -521,15 +521,14 @@ if (app){
 
     // simple Animal-Crossing face: modest black oval eyes + tiny highlight, small nose/mouth
     for (const s of [-1, 1]){
-      const eye = new T.Mesh(new T.SphereGeometry(0.068, 14, 12), dark);
-      eye.position.set(s * 0.15, 1.115, 0.37); eye.scale.set(0.82, 1.24, 0.72); root.add(eye);
-      const hi = new T.Mesh(new T.SphereGeometry(0.021, 8, 6), white);
-      hi.position.set(s * 0.134, 1.153, 0.412); root.add(hi);
-      const cheek = new T.Mesh(new T.SphereGeometry(0.052, 8, 8), blush);
-      cheek.position.set(s * 0.235, 1.03, 0.325); cheek.scale.set(0.95, 0.7, 0.45); root.add(cheek);
+      const eye = new T.Mesh(new T.SphereGeometry(0.066, 14, 12), dark);
+      eye.position.set(s * 0.15, 1.12, 0.375); eye.scale.set(0.85, 1.2, 0.7); root.add(eye);
+      const hi = new T.Mesh(new T.SphereGeometry(0.027, 8, 6), white);
+      hi.position.set(s * 0.132, 1.152, 0.42); hi.scale.set(1, 1.1, 1); root.add(hi);
+      const cheek = new T.Mesh(new T.SphereGeometry(0.05, 8, 8), blush);
+      cheek.position.set(s * 0.245, 1.025, 0.30); cheek.scale.set(0.9, 0.6, 0.3); root.add(cheek);
     }
-    const nose = new T.Mesh(new T.SphereGeometry(0.02, 8, 6), skin); nose.position.set(0, 1.10, 0.415); root.add(nose);
-    const mouth = new T.Mesh(new T.SphereGeometry(0.026, 8, 6), dark); mouth.position.set(0, 1.055, 0.405); mouth.scale.set(1.5, 0.5, 0.5); root.add(mouth);
+    const mouth = new T.Mesh(new T.SphereGeometry(0.026, 8, 6), dark); mouth.position.set(0, 1.06, 0.405); mouth.scale.set(1.5, 0.5, 0.5); root.add(mouth);
     g.traverse((o) => { if (o.isMesh){ o.castShadow = true; o.receiveShadow = true; } });
     return { g, root, legL, legR, armL, armR, sit: false, phase: Math.random() * 9 };
   }
