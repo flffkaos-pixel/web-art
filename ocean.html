@@ -528,7 +528,7 @@ if (app){
       const cheek = new T.Mesh(new T.SphereGeometry(0.05, 8, 8), blush);
       cheek.position.set(s * 0.245, 1.025, 0.30); cheek.scale.set(0.9, 0.6, 0.3); root.add(cheek);
     }
-    const mouth = new T.Mesh(new T.SphereGeometry(0.026, 8, 6), dark); mouth.position.set(0, 1.06, 0.405); mouth.scale.set(1.5, 0.5, 0.5); root.add(mouth);
+    const mouth = new T.Mesh(new T.SphereGeometry(0.026, 8, 6), dark); mouth.position.set(0, 0.99, 0.40); mouth.scale.set(1.6, 0.5, 0.5); root.add(mouth);
     g.traverse((o) => { if (o.isMesh){ o.castShadow = true; o.receiveShadow = true; } });
     return { g, root, legL, legR, armL, armR, sit: false, phase: Math.random() * 9 };
   }
