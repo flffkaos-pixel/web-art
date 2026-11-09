@@ -763,10 +763,11 @@ if (app){
     g.fillStyle = gr; g.beginPath(); g.arc(32, 32, 32, 0, Math.PI * 2); g.fill();
     return new T.CanvasTexture(c);
   })();
-  const MAX = 12000;
+  const MAX = 18000;
   const fpos = new Float32Array(MAX * 3), fcol = new Float32Array(MAX * 3), fsiz = new Float32Array(MAX), falp = new Float32Array(MAX);
   const fvel = new Float32Array(MAX * 3), flife = new Float32Array(MAX), fmax = new Float32Array(MAX);
   const fgrav = new Float32Array(MAX), fdrag = new Float32Array(MAX), ftw = new Float32Array(MAX), fseed = new Float32Array(MAX);
+  const fbase = new Float32Array(MAX * 3);
   const geo = new T.BufferGeometry();
   geo.setAttribute('position', new T.BufferAttribute(fpos, 3));
   geo.setAttribute('aColor', new T.BufferAttribute(fcol, 3));
@@ -793,6 +794,7 @@ if (app){
         fpos[i3] = x; fpos[i3 + 1] = y; fpos[i3 + 2] = z;
         fvel[i3] = vx; fvel[i3 + 1] = vy; fvel[i3 + 2] = vz;
         fcol[i3] = r; fcol[i3 + 1] = g; fcol[i3 + 2] = b;
+        fbase[i3] = r; fbase[i3 + 1] = g; fbase[i3 + 2] = b;
         fsiz[i] = size; falp[i] = 1; flife[i] = lifeSec; fmax[i] = lifeSec;
         fgrav[i] = grav; fdrag[i] = dragK; ftw[i] = tw; fseed[i] = Math.random() * 10;
         return;
@@ -836,19 +838,20 @@ if (app){
 
   // ---- aerial types ----
   const AERIAL = [
-    { id: 'peony', name: '모란 피오니', price: 1000, shape: 'sphere', count: 150, speed: 9, life: 1.7, size: 0.55, grav: -6, drag: 0.7, tw: 0 },
-    { id: 'ring', name: '고리 링', price: 1500, shape: 'ring', count: 130, speed: 8.5, life: 1.7, size: 0.55, grav: -5, drag: 0.7, tw: 0 },
-    { id: 'willow', name: '버들 (금색)', price: 2500, shape: 'sphere', count: 130, speed: 6, life: 3.0, size: 0.6, grav: -11, drag: 0.5, tw: 0, color: () => [1, 0.82, 0.32] },
-    { id: 'palm', name: '야자수', price: 2000, shape: 'palm', count: 22, speed: 9.5, life: 2.1, size: 1.15, grav: -8, drag: 0.6, tw: 0 },
-    { id: 'heart', name: '하트', price: 3000, shape: 'heart', count: 150, speed: 7.5, life: 1.9, size: 0.5, grav: -5, drag: 0.75, tw: 0, color: () => [1, 0.28, 0.5] },
-    { id: 'double', name: '이중 (2색)', price: 2000, shape: 'double', count: 180, speed: 9.5, life: 1.8, size: 0.52, grav: -6, drag: 0.7, tw: 0 },
-    { id: 'glitter', name: '반짝 글리터', price: 1500, shape: 'sphere', count: 240, speed: 8, life: 1.5, size: 0.3, grav: -6, drag: 0.7, tw: 1 },
-    { id: 'crackle', name: '파직 크래클', price: 1800, shape: 'sphere', count: 200, speed: 10.5, life: 1.2, size: 0.32, grav: -7, drag: 0.7, tw: 2 },
+    { id: 'peony', name: '모란 피오니', price: 1000, shape: 'sphere', count: 230, speed: 9.5, life: 1.8, size: 0.62, grav: -6, drag: 0.7, tw: 0 },
+    { id: 'ring', name: '고리 링', price: 1500, shape: 'ring', count: 200, speed: 9, life: 1.8, size: 0.62, grav: -5, drag: 0.7, tw: 0 },
+    { id: 'willow', name: '버들 (금색)', price: 2500, shape: 'sphere', count: 180, speed: 6.5, life: 3.2, size: 0.7, grav: -11, drag: 0.5, tw: 0, color: () => [1, 0.82, 0.32] },
+    { id: 'palm', name: '야자수', price: 2000, shape: 'palm', count: 30, speed: 10, life: 2.2, size: 1.3, grav: -8, drag: 0.6, tw: 0 },
+    { id: 'heart', name: '하트', price: 3000, shape: 'heart', count: 210, speed: 8, life: 2.0, size: 0.56, grav: -5, drag: 0.75, tw: 0, color: () => [1, 0.28, 0.5] },
+    { id: 'double', name: '이중 (2색)', price: 2000, shape: 'double', count: 260, speed: 10, life: 1.9, size: 0.58, grav: -6, drag: 0.7, tw: 0 },
+    { id: 'glitter', name: '반짝 글리터', price: 1500, shape: 'sphere', count: 340, speed: 8.5, life: 1.6, size: 0.34, grav: -6, drag: 0.7, tw: 1 },
+    { id: 'crackle', name: '파직 크래클', price: 1800, shape: 'sphere', count: 280, speed: 11, life: 1.3, size: 0.36, grav: -7, drag: 0.7, tw: 2 },
   ];
   const aerialById = (id) => AERIAL.find((t) => t.id === id) || AERIAL[0];
 
   function burst(x, y, z, ty) {
     const base = ty.color ? ty.color() : randColor(); const c2 = randColor();
+    for (let i = 0; i < 7; i++) { const u = randUnit(); emit1(x, y, z, u[0] * 2.2, u[1] * 2.2, u[2] * 2.2, 1, 1, 1, 2.8 - i * 0.25, 0.16 + i * 0.02, 0, 1.6, 0); }
     const n = ty.count, sp = ty.speed;
     if (ty.shape === 'ring') {
       const ax = randUnit(); const u = Math.abs(ax[1]) < 0.9 ? [0, 1, 0] : [1, 0, 0];
@@ -928,7 +931,14 @@ if (app){
       const i3 = i * 3; fvel[i3 + 1] += fgrav[i] * dt; const dk = Math.max(0, 1 - fdrag[i] * dt);
       fvel[i3] *= dk; fvel[i3 + 1] *= dk; fvel[i3 + 2] *= dk;
       fpos[i3] += fvel[i3] * dt; fpos[i3 + 1] += fvel[i3 + 1] * dt; fpos[i3 + 2] += fvel[i3 + 2] * dt;
-      let a = Math.min(1, flife[i] / (0.55 * fmax[i]));
+      const age = fmax[i] - flife[i];
+      const hot = Math.max(0, 1 - age / 0.22);
+      fcol[i3] = fbase[i3] + (1 - fbase[i3]) * hot;
+      fcol[i3 + 1] = fbase[i3 + 1] + (1 - fbase[i3 + 1]) * hot;
+      fcol[i3 + 2] = fbase[i3 + 2] + (1 - fbase[i3 + 2]) * hot;
+      const sp2 = fvel[i3] * fvel[i3] + fvel[i3 + 1] * fvel[i3 + 1] + fvel[i3 + 2] * fvel[i3 + 2];
+      if (sp2 > 6 && age < fmax[i] * 0.7 && Math.random() < dt * 16) emit1(fpos[i3], fpos[i3 + 1], fpos[i3 + 2], fvel[i3] * 0.1, fvel[i3 + 1] * 0.1, fvel[i3 + 2] * 0.1, fbase[i3], fbase[i3 + 1], fbase[i3 + 2], fsiz[i] * 0.5, 0.32, fgrav[i] * 0.5, 0.9, 1);
+      let a = Math.min(1, flife[i] / (0.6 * fmax[i]));
       if (ftw[i] === 1) a *= 0.55 + 0.45 * Math.sin((fmax[i] - flife[i]) * 40 + fseed[i] * 9);
       else if (ftw[i] === 2) a *= Math.random() < 0.35 ? 0.25 : 1;
       falp[i] = a;
@@ -960,6 +970,14 @@ if (app){
     const signCv = document.createElement('canvas'); signCv.width = 512; signCv.height = 128; const sg = signCv.getContext('2d');
     sg.fillStyle = '#20160c'; sg.fillRect(0, 0, 512, 128); sg.fillStyle = '#ffd76a'; sg.font = '700 52px system-ui, sans-serif'; sg.textAlign = 'center'; sg.textBaseline = 'middle'; sg.fillText('FIREWORKS', 256, 44); sg.font = '600 30px system-ui, sans-serif'; sg.fillStyle = '#ffb0a0'; sg.fillText('불꽃놀이', 256, 92);
     const sign = new T.Mesh(new T.PlaneGeometry(3.6, 0.9), new T.MeshBasicMaterial({ map: new T.CanvasTexture(signCv) })); sign.position.set(0, 2.55, 1.35); g.add(sign);
+    // shelves + displayed goods (firework tubes & gift boxes)
+    const shelfM = new T.MeshStandardMaterial({ color: 0x7a5432, roughness: 0.9 });
+    const sh1 = new T.Mesh(new T.BoxGeometry(3.8, 0.08, 0.55), shelfM); sh1.position.set(0, 1.5, -1.2); g.add(sh1);
+    const sh2 = new T.Mesh(new T.BoxGeometry(3.8, 0.08, 0.55), shelfM); sh2.position.set(0, 2.15, -1.2); g.add(sh2);
+    const tubeGeo = new T.CylinderGeometry(0.08, 0.08, 0.42, 8);
+    const goods = [0xd23b3b, 0xffd76a, 0x4aa3ff, 0x6ad46a, 0xb07aff, 0xff8f4a, 0xffffff, 0x5fd0e8];
+    for (let s = 0; s < 2; s++) for (let i = 0; i < 8; i++) { const m = new T.Mesh(tubeGeo, new T.MeshStandardMaterial({ color: goods[(i + s * 3) % goods.length], roughness: 0.6 })); m.position.set(-1.6 + i * 0.46, (s ? 2.15 : 1.5) + 0.21, -1.2); m.rotation.z = 0.06 * ((i % 3) - 1); g.add(m); }
+    for (let i = 0; i < 3; i++) { const b = new T.Mesh(new T.BoxGeometry(0.5, 0.36, 0.36), new T.MeshStandardMaterial({ color: goods[(i * 2 + 1) % goods.length], roughness: 0.8 })); b.position.set(-1.3 + i * 1.3, 1.43, 1.3); b.rotation.y = (i - 1) * 0.22; g.add(b); }
     g.traverse((o) => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } });
     g.position.copy(shopPos); g.lookAt(shopPos.x, shopPos.y, shopPos.z + 100); g.rotateY(Math.atan2(-Math.sin(205 * Math.PI / 180), -Math.cos(205 * Math.PI / 180)) + Math.PI); scene.add(g);
   }
