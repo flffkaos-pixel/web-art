@@ -521,12 +521,12 @@ if (app){
 
     // simple Animal-Crossing face: modest black oval eyes + tiny highlight, small nose/mouth
     for (const s of [-1, 1]){
-      const eye = new T.Mesh(new T.SphereGeometry(0.062, 12, 10), dark);
-      eye.position.set(s * 0.145, 1.135, 0.365); eye.scale.set(0.8, 1.15, 0.6); root.add(eye);
-      const hi = new T.Mesh(new T.SphereGeometry(0.019, 8, 6), white);
-      hi.position.set(s * 0.145 + 0.02, 1.16, 0.41); root.add(hi);
+      const eye = new T.Mesh(new T.SphereGeometry(0.068, 14, 12), dark);
+      eye.position.set(s * 0.15, 1.115, 0.37); eye.scale.set(0.82, 1.24, 0.72); root.add(eye);
+      const hi = new T.Mesh(new T.SphereGeometry(0.021, 8, 6), white);
+      hi.position.set(s * 0.134, 1.153, 0.412); root.add(hi);
       const cheek = new T.Mesh(new T.SphereGeometry(0.052, 8, 8), blush);
-      cheek.position.set(s * 0.235, 1.035, 0.33); cheek.scale.set(0.95, 0.7, 0.45); root.add(cheek);
+      cheek.position.set(s * 0.235, 1.03, 0.325); cheek.scale.set(0.95, 0.7, 0.45); root.add(cheek);
     }
     const nose = new T.Mesh(new T.SphereGeometry(0.02, 8, 6), skin); nose.position.set(0, 1.10, 0.415); root.add(nose);
     const mouth = new T.Mesh(new T.SphereGeometry(0.026, 8, 6), dark); mouth.position.set(0, 1.055, 0.405); mouth.scale.set(1.5, 0.5, 0.5); root.add(mouth);
