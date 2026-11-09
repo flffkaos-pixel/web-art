@@ -391,7 +391,7 @@ let playStep = null;
 
 /* ---------- ambience: sun follows the clock; the sea drifts calm ↔ stormy ---------- */
 let seaTick = null;
-let netRoom = null, netEvent = null;
+let netRoom = null, netEvent = null, handR = null, playerRef = null;
 if (app){
   const auto = true;
   const KEYS = [  // hour → wind, waves, chop, swell, sun intensity, clouds, haze, spray
@@ -571,6 +571,7 @@ if (app){
   const MY_SHIRT = pick(PASTELS);
   const MY_STYLE = Math.floor(Math.random() * 9);
   const player = makePerson(MY_SHIRT, pick(PANTS), pick(SKINS), pick(HAIRS), MY_STYLE);
+  handR = player.armR; playerRef = player;
   player.sit = true;
   player.g.position.copy(spawn);
   player.g.lookAt(spawn.clone().add(outward));
@@ -750,11 +751,11 @@ if (app){
   requestAnimationFrame(tick);
 }
 
-/* ---------- fireworks system + shop (shared with everyone in the room) ---------- */
+/* ---------- fireworks: sparklers, fountains, aerial shells + island shop (shared) ---------- */
 if (app){
-  const T = app.THREE, scene = app.scene;
+  const T = app.THREE, scene = app.scene, camera = app.camera, hAt = app.islandHeight;
 
-  // soft round sprite
+  // ---- particle pool ----
   const dotTex = (() => {
     const c = document.createElement('canvas'); c.width = c.height = 64;
     const g = c.getContext('2d'); const gr = g.createRadialGradient(32, 32, 0, 32, 32, 32);
@@ -762,8 +763,7 @@ if (app){
     g.fillStyle = gr; g.beginPath(); g.arc(32, 32, 32, 0, Math.PI * 2); g.fill();
     return new T.CanvasTexture(c);
   })();
-
-  const MAX = 8000;
+  const MAX = 12000;
   const fpos = new Float32Array(MAX * 3), fcol = new Float32Array(MAX * 3), fsiz = new Float32Array(MAX), falp = new Float32Array(MAX);
   const fvel = new Float32Array(MAX * 3), flife = new Float32Array(MAX), fmax = new Float32Array(MAX);
   const fgrav = new Float32Array(MAX), fdrag = new Float32Array(MAX), ftw = new Float32Array(MAX), fseed = new Float32Array(MAX);
@@ -774,25 +774,23 @@ if (app){
   geo.setAttribute('aAlpha', new T.BufferAttribute(falp, 1));
   const fmat = new T.ShaderMaterial({
     uniforms: { uTex: { value: dotTex }, uScale: { value: 600 } },
-    transparent: true, depthWrite: false, depthTest: true, blending: T.AdditiveBlending,
+    transparent: true, depthWrite: false, blending: T.AdditiveBlending,
     vertexShader: `attribute float aSize; attribute float aAlpha; attribute vec3 aColor;
       varying vec3 vColor; varying float vAlpha; uniform float uScale;
       void main(){ vColor=aColor; vAlpha=aAlpha; vec4 mv=modelViewMatrix*vec4(position,1.0);
-        gl_PointSize = max(1.0, aSize * uScale / max(0.1, -mv.z)); gl_Position = projectionMatrix*mv; }`,
+        gl_PointSize=max(1.0, aSize*uScale/max(0.1,-mv.z)); gl_Position=projectionMatrix*mv; }`,
     fragmentShader: `uniform sampler2D uTex; varying vec3 vColor; varying float vAlpha;
-      void main(){ vec4 t=texture2D(uTex, gl_PointCoord); if (t.a < 0.01) discard; gl_FragColor=vec4(vColor, t.a*vAlpha); }`,
+      void main(){ vec4 t=texture2D(uTex, gl_PointCoord); if(t.a<0.01) discard; gl_FragColor=vec4(vColor, t.a*vAlpha); }`,
   });
-  const fpoints = new T.Points(geo, fmat);
-  fpoints.frustumCulled = false;
-  scene.add(fpoints);
+  const fpoints = new T.Points(geo, fmat); fpoints.frustumCulled = false; scene.add(fpoints);
 
   let fcursor = 0;
   function emit1(x, y, z, vx, vy, vz, r, g, b, size, lifeSec, grav, dragK, tw) {
     for (let k = 0; k < MAX; k++) {
       const i = (fcursor + k) % MAX;
       if (flife[i] <= 0) {
-        fcursor = (i + 1) % MAX;
-        const i3 = i * 3; fpos[i3] = x; fpos[i3 + 1] = y; fpos[i3 + 2] = z;
+        fcursor = (i + 1) % MAX; const i3 = i * 3;
+        fpos[i3] = x; fpos[i3 + 1] = y; fpos[i3 + 2] = z;
         fvel[i3] = vx; fvel[i3 + 1] = vy; fvel[i3 + 2] = vz;
         fcol[i3] = r; fcol[i3 + 1] = g; fcol[i3 + 2] = b;
         fsiz[i] = size; falp[i] = 1; flife[i] = lifeSec; fmax[i] = lifeSec;
@@ -804,7 +802,40 @@ if (app){
   const randUnit = () => { const u = Math.random() * 2 - 1, a = Math.random() * Math.PI * 2, s = Math.sqrt(1 - u * u); return [s * Math.cos(a), u, s * Math.sin(a)]; };
   const randColor = () => { const c = new T.Color().setHSL(Math.random(), 0.85, 0.6); return [c.r, c.g, c.b]; };
 
-  const TYPES = [
+  // ---- audio ----
+  let actx = null, noise = null, othersSound = true;
+  function audioEnsure() {
+    if (actx) return;
+    const AC = window.AudioContext || window.webkitAudioContext; if (!AC) return;
+    if (navigator.audioSession) { try { navigator.audioSession.type = 'playback'; } catch (e) {} }
+    actx = new AC(); const len = actx.sampleRate;
+    noise = actx.createBuffer(1, len, actx.sampleRate); const d = noise.getChannelData(0);
+    for (let i = 0; i < len; i++) d[i] = Math.random() * 2 - 1;
+  }
+  function pop(vol) {
+    if (!actx || actx.state !== 'running') return;
+    const t = actx.currentTime; const s = actx.createBufferSource(); s.buffer = noise;
+    const f = actx.createBiquadFilter(); f.type = 'bandpass'; f.frequency.value = 2200 + Math.random() * 3500; f.Q.value = 1.1;
+    const g = actx.createGain(); g.gain.setValueAtTime(0.0001, t); g.gain.linearRampToValueAtTime(vol, t + 0.004); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.06);
+    s.connect(f); f.connect(g); g.connect(actx.destination); s.start(t, Math.random(), 0.08); s.stop(t + 0.09);
+  }
+  function boom(remote) {
+    if (remote && !othersSound) return;
+    if (!actx || actx.state !== 'running') return;
+    const t = actx.currentTime;
+    const o = actx.createOscillator(); o.type = 'sine'; o.frequency.setValueAtTime(130, t); o.frequency.exponentialRampToValueAtTime(38, t + 0.3);
+    const og = actx.createGain(); og.gain.setValueAtTime(0.0001, t); og.gain.linearRampToValueAtTime(0.7, t + 0.012); og.gain.exponentialRampToValueAtTime(0.0001, t + 0.5);
+    o.connect(og); og.connect(actx.destination); o.start(t); o.stop(t + 0.55);
+    const s = actx.createBufferSource(); s.buffer = noise; const f = actx.createBiquadFilter(); f.type = 'highpass'; f.frequency.value = 900;
+    const g = actx.createGain(); g.gain.setValueAtTime(0.5, t); g.gain.exponentialRampToValueAtTime(0.0001, t + 1.2);
+    s.connect(f); f.connect(g); g.connect(actx.destination); s.start(t); s.stop(t + 1.3);
+    for (let i = 0; i < 8; i++) { const tt = t + 0.08 + Math.random() * 0.9; const s2 = actx.createBufferSource(); s2.buffer = noise; const g2 = actx.createGain(); g2.gain.setValueAtTime(0.0001, tt); g2.gain.linearRampToValueAtTime(0.28, tt + 0.004); g2.gain.exponentialRampToValueAtTime(0.0001, tt + 0.06); s2.connect(g2); g2.connect(actx.destination); s2.start(tt, Math.random(), 0.08); s2.stop(tt + 0.1); }
+  }
+  addEventListener('pointerdown', audioEnsure, { once: true });
+  addEventListener('keydown', audioEnsure, { once: true });
+
+  // ---- aerial types ----
+  const AERIAL = [
     { id: 'peony', name: '모란 피오니', price: 1000, shape: 'sphere', count: 150, speed: 9, life: 1.7, size: 0.55, grav: -6, drag: 0.7, tw: 0 },
     { id: 'ring', name: '고리 링', price: 1500, shape: 'ring', count: 130, speed: 8.5, life: 1.7, size: 0.55, grav: -5, drag: 0.7, tw: 0 },
     { id: 'willow', name: '버들 (금색)', price: 2500, shape: 'sphere', count: 130, speed: 6, life: 3.0, size: 0.6, grav: -11, drag: 0.5, tw: 0, color: () => [1, 0.82, 0.32] },
@@ -814,59 +845,87 @@ if (app){
     { id: 'glitter', name: '반짝 글리터', price: 1500, shape: 'sphere', count: 240, speed: 8, life: 1.5, size: 0.3, grav: -6, drag: 0.7, tw: 1 },
     { id: 'crackle', name: '파직 크래클', price: 1800, shape: 'sphere', count: 200, speed: 10.5, life: 1.2, size: 0.32, grav: -7, drag: 0.7, tw: 2 },
   ];
+  const aerialById = (id) => AERIAL.find((t) => t.id === id) || AERIAL[0];
 
   function burst(x, y, z, ty) {
-    const base = ty.color ? ty.color() : randColor();
-    const c2 = randColor();
+    const base = ty.color ? ty.color() : randColor(); const c2 = randColor();
     const n = ty.count, sp = ty.speed;
     if (ty.shape === 'ring') {
-      const ax = randUnit();
-      const t1 = (() => { const u = Math.abs(ax[1]) < 0.9 ? [0, 1, 0] : [1, 0, 0]; const c = [ax[1] * u[2] - ax[2] * u[1], ax[2] * u[0] - ax[0] * u[2], ax[0] * u[1] - ax[1] * u[0]]; const l = Math.hypot(c[0], c[1], c[2]) || 1; return [c[0] / l, c[1] / l, c[2] / l]; })();
-      const t2 = [ax[1] * t1[2] - ax[2] * t1[1], ax[2] * t1[0] - ax[0] * t1[2], ax[0] * t1[1] - ax[1] * t1[0]];
-      for (let i = 0; i < n; i++) { const a = i / n * Math.PI * 2, ca = Math.cos(a), sa = Math.sin(a); const dx = t1[0] * ca + t2[0] * sa, dy = t1[1] * ca + t2[1] * sa, dz = t1[2] * ca + t2[2] * sa; emit1(x, y, z, dx * sp, dy * sp, dz * sp, base[0], base[1], base[2], ty.size, ty.life, ty.grav, ty.drag, ty.tw); }
+      const ax = randUnit(); const u = Math.abs(ax[1]) < 0.9 ? [0, 1, 0] : [1, 0, 0];
+      const c = [ax[1] * u[2] - ax[2] * u[1], ax[2] * u[0] - ax[0] * u[2], ax[0] * u[1] - ax[1] * u[0]]; const l = Math.hypot(c[0], c[1], c[2]) || 1;
+      const t1 = [c[0] / l, c[1] / l, c[2] / l]; const t2 = [ax[1] * t1[2] - ax[2] * t1[1], ax[2] * t1[0] - ax[0] * t1[2], ax[0] * t1[1] - ax[1] * t1[0]];
+      for (let i = 0; i < n; i++) { const a = i / n * Math.PI * 2, ca = Math.cos(a), sa = Math.sin(a); emit1(x, y, z, (t1[0] * ca + t2[0] * sa) * sp, (t1[1] * ca + t2[1] * sa) * sp, (t1[2] * ca + t2[2] * sa) * sp, base[0], base[1], base[2], ty.size, ty.life, ty.grav, ty.drag, ty.tw); }
     } else if (ty.shape === 'heart') {
-      const c = new T.Color().setHSL(Math.random(), 0.7, 0.6); base[0] = 1; base[1] = 0.28; base[2] = 0.5;
-      for (let i = 0; i < n; i++) { const t = i / n * Math.PI * 2; const hx = 16 * Math.pow(Math.sin(t), 3); const hy = 13 * Math.cos(t) - 5 * Math.cos(2 * t) - 2 * Math.cos(3 * t) - Math.cos(4 * t); const k = sp / 16; const dz = (Math.random() - 0.5) * 1.2; emit1(x, y, z, hx * k, hy * k, dz, base[0], base[1], base[2], ty.size, ty.life, ty.grav, ty.drag, ty.tw); }
+      for (let i = 0; i < n; i++) { const t = i / n * Math.PI * 2; const hx = 16 * Math.pow(Math.sin(t), 3); const hy = 13 * Math.cos(t) - 5 * Math.cos(2 * t) - 2 * Math.cos(3 * t) - Math.cos(4 * t); const k = sp / 16; emit1(x, y, z, hx * k, hy * k, (Math.random() - 0.5) * 1.2, 1, 0.28, 0.5, ty.size, ty.life, ty.grav, ty.drag, ty.tw); }
     } else if (ty.shape === 'double') {
       for (let i = 0; i < n; i++) { const u = randUnit(); const inner = i % 2 === 0; const v = sp * (inner ? 0.55 : 1.0); const cc = inner ? base : c2; emit1(x, y, z, u[0] * v, u[1] * v, u[2] * v, cc[0], cc[1], cc[2], ty.size, ty.life, ty.grav, ty.drag, ty.tw); }
-    } else if (ty.shape === 'palm') {
-      for (let i = 0; i < n; i++) { const u = randUnit(); emit1(x, y, z, u[0] * sp, u[1] * sp, u[2] * sp, base[0], base[1], base[2], ty.size, ty.life, ty.grav, ty.drag, ty.tw); }
     } else {
       for (let i = 0; i < n; i++) { const u = randUnit(); emit1(x, y, z, u[0] * sp, u[1] * sp, u[2] * sp, base[0], base[1], base[2], ty.size, ty.life, ty.grav, ty.drag, ty.tw); }
     }
   }
 
-  const pending = [];
-  function launch(typeId, x, z) {
-    const ty = TYPES.find((t) => t.id === typeId) || TYPES[0];
-    pending.push({ t: 0, dur: 0.9 + Math.random() * 0.35, x, z, y0: 3, y1: 30 + Math.random() * 12, ty, trail: 0 });
-  }
-  function launchAhead(typeId) {
-    const cam = app.camera, d = new T.Vector3(); cam.getWorldDirection(d); d.y = 0; d.normalize();
-    const x = cam.position.x + d.x * 75 + (Math.random() - 0.5) * 40;
-    const z = cam.position.z + d.z * 75 + (Math.random() - 0.5) * 40;
-    launch(typeId, x, z);
-    if (netRoom) netRoom.emit({ k: 'fw', t: typeId, x: +x.toFixed(1), z: +z.toFixed(1) });
-  }
-  netEvent = (data) => { if (data && data.k === 'fw') launch(data.t, +data.x || 0, +data.z || 0); };
+  // ---- active effects ----
+  const rockets = [], fountains = [], sparklers = [];
+  function launchAerial(typeId, x, y, z, vx, vy, vz, remote) { rockets.push({ t: 0, x, y, z, vx, vy, vz, ty: aerialById(typeId), remote, trail: 0 }); }
+  function placeFountain(x, z, remote) { fountains.push({ x, z, y: hAt(x, z), t: 0, dur: 6, remote, acc: 0, snd: 0 }); }
+  function startSparkler(x, y, z, follow, remote) { sparklers.push({ x, y, z, follow: follow || null, t: 0, dur: 7, remote, acc: 0, snd: 0 }); }
+  netEvent = (data) => {
+    if (!data || data.k !== 'fw') return;
+    audioEnsure();
+    if (data.kind === 'aerial') launchAerial(data.t, +data.x, +data.y, +data.z, +data.vx, +data.vy, +data.vz, true);
+    else if (data.kind === 'fountain') placeFountain(+data.x, +data.z, true);
+    else if (data.kind === 'sparkler') startSparkler(+data.x, +data.y, +data.z, null, true);
+  };
 
+  // ---- held item on the hand ----
+  let held = null, heldObj = null;
+  const rocketMesh = () => { const g = new T.Group(); const body = new T.Mesh(new T.CylinderGeometry(0.03, 0.03, 0.24, 8), new T.MeshStandardMaterial({ color: 0xd23b3b })); g.add(body); const tip = new T.Mesh(new T.ConeGeometry(0.045, 0.1, 8), new T.MeshStandardMaterial({ color: 0xffd76a })); tip.position.y = 0.17; g.add(tip); return g; };
+  const sparklerMesh = () => { const g = new T.Group(); const stick = new T.Mesh(new T.CylinderGeometry(0.008, 0.008, 0.34, 6), new T.MeshStandardMaterial({ color: 0x8a8f98 })); g.add(stick); const tip = new T.Mesh(new T.SphereGeometry(0.02, 8, 6), new T.MeshBasicMaterial({ color: 0xffe6a0 })); tip.position.y = 0.18; g.add(tip); return g; };
+  function clearHeld() { if (heldObj && handR) handR.remove(heldObj); heldObj = null; held = null; }
+  function heldWorld() { const v = new T.Vector3(); if (heldObj) heldObj.getWorldPosition(v); else if (handR) handR.getWorldPosition(v); else camera.getWorldPosition(v); return v; }
+  function buy(typeId) {
+    const a = aerialById(typeId);
+    if (AERIAL.some((t) => t.id === typeId) && handR) { clearHeld(); held = a; heldObj = rocketMesh(); heldObj.position.set(0, -0.30, 0.02); handR.add(heldObj); return; }
+    if (typeId === 'sparkler' && handR) { clearHeld(); held = { id: 'sparkler' }; heldObj = sparklerMesh(); heldObj.position.set(0, -0.30, 0.02); handR.add(heldObj); const wp = heldWorld(); startSparkler(wp.x, wp.y + 0.18, wp.z, heldObj, false); return; }
+    if (typeId === 'fountain') { const p = playerRef ? playerRef.g.position : camera.position; placeFountain(p.x, p.z, false); netRoom?.emit({ k: 'fw', kind: 'fountain', x: +p.x.toFixed(1), z: +p.z.toFixed(1) }); return; }
+  }
+  function aimDir() { const d = new T.Vector3(); camera.getWorldDirection(d); d.y = 0; if (d.lengthSq() < 1e-4) d.set(0, 0, -1); d.normalize(); const el = 64 * Math.PI / 180; return new T.Vector3(d.x * Math.cos(el), Math.sin(el), d.z * Math.cos(el)); }
+  function shoot() {
+    if (!held || held.id === 'sparkler') return;
+    const hw = heldWorld(); const dir = aimDir(); const sp = 34;
+    launchAerial(held.id, hw.x, hw.y, hw.z, dir.x * sp, dir.y * sp, dir.z * sp, false);
+    netRoom?.emit({ k: 'fw', kind: 'aerial', t: held.id, x: +hw.x.toFixed(1), y: +hw.y.toFixed(1), z: +hw.z.toFixed(1), vx: +(dir.x * sp).toFixed(1), vy: +(dir.y * sp).toFixed(1), vz: +(dir.z * sp).toFixed(1) });
+    clearHeld();
+  }
+  addEventListener('keydown', (e) => { if (e.code === 'Space') { e.preventDefault(); shoot(); } });
+
+  // ---- loop ----
   function fwUpdate(dt) {
-    // rockets
-    for (let i = pending.length - 1; i >= 0; i--) {
-      const p = pending[i]; p.t += dt; const f = Math.min(1, p.t / p.dur);
-      const y = p.y0 + (p.y1 - p.y0) * f;
+    for (let i = rockets.length - 1; i >= 0; i--) {
+      const p = rockets[i]; p.t += dt; p.vy += -20 * dt; p.x += p.vx * dt; p.y += p.vy * dt; p.z += p.vz * dt;
       p.trail -= dt;
-      if (p.trail <= 0) { p.trail = 0.02; emit1(p.x + (Math.random() - 0.5) * 0.3, y, p.z + (Math.random() - 0.5) * 0.3, 0, -1, 0, 1, 0.7, 0.3, 0.5, 0.4, 0, 0.5, 1); }
-      if (f >= 1) { burst(p.x, p.y1, p.z, p.ty); pending.splice(i, 1); }
+      if (p.trail <= 0) { p.trail = 0.02; emit1(p.x, p.y, p.z, 0, -1, 0, 1, 0.7, 0.3, 0.5, 0.4, 0, 0.6, 1); }
+      if (p.vy <= 0 || p.t > 4 || p.y < 0.5) { burst(p.x, p.y, p.z, p.ty); boom(p.remote); rockets.splice(i, 1); }
     }
-    // particles
+    for (let i = fountains.length - 1; i >= 0; i--) {
+      const f = fountains[i]; f.t += dt; f.acc += dt; f.snd += dt;
+      while (f.acc > 0.012) { f.acc -= 0.012; const a = Math.random() * Math.PI * 2, rr = Math.random() * 0.12; const up = 8 + Math.random() * 6; const cc = randColor(); emit1(f.x + Math.cos(a) * rr, f.y + 0.1, f.z + Math.sin(a) * rr, Math.cos(a) * 1.2, up, Math.sin(a) * 1.2, cc[0], cc[1], cc[2], 0.4 + Math.random() * 0.4, 1.0 + Math.random() * 0.8, -9, 0.5, 2); }
+      if (f.snd > 0.05) { f.snd = 0; if (!f.remote || othersSound) { pop(0.09); if (actx && Math.random() < 0.3) { const t = actx.currentTime; const s = actx.createBufferSource(); s.buffer = noise; const g = actx.createGain(); g.gain.setValueAtTime(0.06, t); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.4); s.connect(g); g.connect(actx.destination); s.start(t); s.stop(t + 0.45); } } }
+      if (f.t >= f.dur) fountains.splice(i, 1);
+    }
+    for (let i = sparklers.length - 1; i >= 0; i--) {
+      const s = sparklers[i]; s.t += dt; s.acc += dt; s.snd += dt;
+      if (s.follow) s.follow.getWorldPosition(new T.Vector3()).add(new T.Vector3(0, 0.18, 0));
+      let px = s.x, py = s.y, pz = s.z;
+      if (s.follow) { const w = s.follow.getWorldPosition(new T.Vector3()); px = w.x; py = w.y; pz = w.z; }
+      while (s.acc > 0.01) { s.acc -= 0.01; const dir = randUnit(); const v = 2 + Math.random() * 3; emit1(px, py, pz, dir[0] * v, Math.abs(dir[1]) * v + 0.5, dir[2] * v, 1, 0.85 + Math.random() * 0.15, 0.5, 0.22 + Math.random() * 0.2, 0.4 + Math.random() * 0.3, -2, 0.9, 1); }
+      if (s.snd > 0.07) { s.snd = 0; if (!s.remote || othersSound) pop(0.05); }
+      if (s.t >= s.dur) { if (s.follow && s.follow === heldObj) clearHeld(); sparklers.splice(i, 1); }
+    }
     for (let i = 0; i < MAX; i++) {
       if (flife[i] <= 0) { if (falp[i] !== 0) falp[i] = 0; continue; }
-      flife[i] -= dt;
-      if (flife[i] <= 0) { falp[i] = 0; continue; }
-      const i3 = i * 3;
-      fvel[i3 + 1] += fgrav[i] * dt;
-      const dk = Math.max(0, 1 - fdrag[i] * dt);
+      flife[i] -= dt; if (flife[i] <= 0) { falp[i] = 0; continue; }
+      const i3 = i * 3; fvel[i3 + 1] += fgrav[i] * dt; const dk = Math.max(0, 1 - fdrag[i] * dt);
       fvel[i3] *= dk; fvel[i3 + 1] *= dk; fvel[i3 + 2] *= dk;
       fpos[i3] += fvel[i3] * dt; fpos[i3 + 1] += fvel[i3 + 1] * dt; fpos[i3 + 2] += fvel[i3 + 2] * dt;
       let a = Math.min(1, flife[i] / (0.55 * fmax[i]));
@@ -874,53 +933,63 @@ if (app){
       else if (ftw[i] === 2) a *= Math.random() < 0.35 ? 0.25 : 1;
       falp[i] = a;
     }
-    geo.attributes.position.needsUpdate = true;
-    geo.attributes.aColor.needsUpdate = true;
-    geo.attributes.aSize.needsUpdate = true;
-    geo.attributes.aAlpha.needsUpdate = true;
-    const gl = app.renderer.getContext();
-    fmat.uniforms.uScale.value = (gl.drawingBufferHeight || 600) / (2 * Math.tan((app.camera.fov || 50) * Math.PI / 360));
+    geo.attributes.position.needsUpdate = true; geo.attributes.aColor.needsUpdate = true; geo.attributes.aSize.needsUpdate = true; geo.attributes.aAlpha.needsUpdate = true;
+    const gl = app.renderer.getContext(); fmat.uniforms.uScale.value = (gl.drawingBufferHeight || 600) / (2 * Math.tan((camera.fov || 50) * Math.PI / 360));
   }
-
   let flast = 0;
-  function fwLoop(now) {
-    const dt = flast ? Math.min(0.05, Math.max(0, (now - flast) / 1000)) : 0; flast = now;
-    fwUpdate(dt);
-    requestAnimationFrame(fwLoop);
-  }
+  function fwLoop(now) { const dt = flast ? Math.min(0.05, Math.max(0, (now - flast) / 1000)) : 0; flast = now; fwUpdate(dt); requestAnimationFrame(fwLoop); }
   requestAnimationFrame(fwLoop);
+
+  // ---- shop building on the island ----
+  const shopPos = (() => {
+    const a = 205 * Math.PI / 180; let r = 100;
+    while (r < 900 && hAt(Math.cos(a) * r, Math.sin(a) * r) > 0.6) r += 2;
+    const x = Math.cos(a) * (r - 16), z = Math.sin(a) * (r - 16);
+    return new T.Vector3(x, hAt(x, z), z);
+  })();
+  {
+    const wood = new T.MeshStandardMaterial({ color: 0x9a6b3f, roughness: 0.9 });
+    const darkw = new T.MeshStandardMaterial({ color: 0x5e3f24, roughness: 0.9 });
+    const roofM = new T.MeshStandardMaterial({ color: 0xc0392b, roughness: 0.8 });
+    const g = new T.Group();
+    const base = new T.Mesh(new T.BoxGeometry(4.2, 0.3, 3.4), darkw); base.position.y = 0.15; g.add(base);
+    for (const sx of [-1.8, 1.8]) for (const sz of [-1.4, 1.4]) { const p = new T.Mesh(new T.BoxGeometry(0.22, 2.6, 0.22), wood); p.position.set(sx, 1.5, sz); g.add(p); }
+    const counter = new T.Mesh(new T.BoxGeometry(4.2, 1.1, 0.4), wood); counter.position.set(0, 0.7, 1.3); g.add(counter);
+    const back = new T.Mesh(new T.BoxGeometry(4.0, 2.3, 0.25), darkw); back.position.set(0, 1.5, -1.4); g.add(back);
+    const roof = new T.Mesh(new T.BoxGeometry(4.8, 0.25, 4.0), roofM); roof.position.y = 2.95; g.add(roof);
+    const signCv = document.createElement('canvas'); signCv.width = 512; signCv.height = 128; const sg = signCv.getContext('2d');
+    sg.fillStyle = '#20160c'; sg.fillRect(0, 0, 512, 128); sg.fillStyle = '#ffd76a'; sg.font = '700 52px system-ui, sans-serif'; sg.textAlign = 'center'; sg.textBaseline = 'middle'; sg.fillText('FIREWORKS', 256, 44); sg.font = '600 30px system-ui, sans-serif'; sg.fillStyle = '#ffb0a0'; sg.fillText('불꽃놀이', 256, 92);
+    const sign = new T.Mesh(new T.PlaneGeometry(3.6, 0.9), new T.MeshBasicMaterial({ map: new T.CanvasTexture(signCv) })); sign.position.set(0, 2.55, 1.35); g.add(sign);
+    g.traverse((o) => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } });
+    g.position.copy(shopPos); g.lookAt(shopPos.x, shopPos.y, shopPos.z + 100); g.rotateY(Math.atan2(-Math.sin(205 * Math.PI / 180), -Math.cos(205 * Math.PI / 180)) + Math.PI); scene.add(g);
+  }
 
   // ---- shop UI ----
   const css = document.createElement('style');
-  css.textContent = `#shop{position:fixed;right:12px;bottom:12px;z-index:30;width:230px;max-height:70vh;overflow-y:auto;
-    background:rgba(10,16,22,.86);border:1px solid rgba(140,200,230,.2);border-radius:12px;padding:12px 12px 14px;
-    backdrop-filter:blur(12px);color:#cfe3ee;font:12px/1.4 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;box-shadow:0 18px 50px rgba(0,0,0,.5)}
-    #shop h3{margin:0 0 4px;font-size:12px;letter-spacing:.16em;color:#ffd76a;text-transform:uppercase}
-    #shop .sub{font-size:9px;color:#7d95a4;margin-bottom:9px}
-    #shop button{display:flex;justify-content:space-between;align-items:center;gap:8px;width:100%;margin:5px 0;padding:8px 10px;
-      border:1px solid rgba(140,200,230,.18);border-radius:8px;background:rgba(140,200,230,.06);color:#dcecf4;font:inherit;cursor:pointer;text-align:left;transition:.15s}
-    #shop button:hover{background:rgba(255,215,106,.12);border-color:rgba(255,215,106,.5);color:#fff}
-    #shop button:active{transform:scale(.98)}
-    #shop .pn{color:#ffd76a;font-weight:700}
-    #shop .fire{position:absolute;right:12px;bottom:12px;z-index:29;padding:10px 14px;border-radius:12px;border:1px solid rgba(255,215,106,.5);
-      background:rgba(10,16,22,.86);color:#ffd76a;font:700 12px ui-monospace,monospace;letter-spacing:.1em;cursor:pointer}
-    @media (max-width:620px){#shop{left:10px;right:10px;width:auto;max-height:44vh;bottom:64px}#shop .fire{left:50%;transform:translateX(-50%);bottom:14px}}`;
+  css.textContent = `#shop{position:fixed;right:12px;top:70px;z-index:30;width:236px;max-height:74vh;overflow-y:auto;background:rgba(10,16,22,.88);border:1px solid rgba(140,200,230,.2);border-radius:12px;padding:12px;backdrop-filter:blur(12px);color:#cfe3ee;font:12px/1.4 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;box-shadow:0 18px 50px rgba(0,0,0,.5)}
+    #shop h3{margin:0 0 3px;font-size:12px;letter-spacing:.16em;color:#ffd76a;text-transform:uppercase}#shop .sub{font-size:9px;color:#7d95a4;margin-bottom:8px}
+    #shop .sec{font-size:9px;letter-spacing:.14em;color:#8fd0ff;margin:9px 0 3px;text-transform:uppercase}
+    #shop button{display:flex;justify-content:space-between;align-items:center;gap:8px;width:100%;margin:4px 0;padding:7px 9px;border:1px solid rgba(140,200,230,.18);border-radius:8px;background:rgba(140,200,230,.06);color:#dcecf4;font:inherit;cursor:pointer;text-align:left}
+    #shop button:hover{background:rgba(255,215,106,.13);border-color:rgba(255,215,106,.5);color:#fff}#shop .pn{color:#ffd76a;font-weight:700}
+    #shop .row{display:flex;align-items:center;gap:8px;margin-top:9px;font-size:10px;color:#9fb6c4}
+    #shop .hint{font-size:10px;color:#7ee0c0;margin-top:8px}#shop .shoot{width:100%;margin-top:8px;background:rgba(255,215,106,.16);border-color:rgba(255,215,106,.5);color:#ffd76a;font-weight:700}
+    @media (max-width:620px){#shop{left:10px;right:10px;width:auto;top:auto;bottom:64px;max-height:46vh}}`;
   document.head.appendChild(css);
-
-  const shop = document.createElement('div');
-  shop.id = 'shop';
-  const items = TYPES.map((t) => `<button data-id="${t.id}"><span>${t.name}</span><span class="pn">₩${t.price.toLocaleString()}</span></button>`).join('');
-  shop.innerHTML = `<h3>불꽃놀이 상점</h3><div class="sub">결제 연동 예정 · 지금은 무료 발사 · 접속자 모두에게 보임</div>${items}`;
+  const shop = document.createElement('div'); shop.id = 'shop';
+  const aerialBtns = AERIAL.map((t) => `<button data-id="${t.id}"><span>${t.name}</span><span class="pn">₩${t.price.toLocaleString()}</span></button>`).join('');
+  shop.innerHTML = `<h3>불꽃놀이 상점</h3><div class="sub">결제 연동 예정 · 지금은 무료</div>
+    <div class="sec">하늘 불꽃 (사면 손에 들고, 발사 버튼으로 조준 발사)</div>${aerialBtns}
+    <div class="sec">손에 드는</div><button data-id="sparkler"><span>스파클러</span><span class="pn">₩800</span></button>
+    <div class="sec">바닥</div><button data-id="fountain"><span>분수 폭죽</span><span class="pn">₩2,500</span></button>
+    <button class="shoot" data-shoot="1">발사 (Space)</button>
+    <div class="row"><label><input type="checkbox" id="othersSound" checked> 남의 폭죽 소리</label></div>
+    <div class="hint" id="shopHint"></div>`;
   document.body.appendChild(shop);
-  shop.addEventListener('click', (e) => { const b = e.target.closest('button'); if (b && b.dataset.id) launchAhead(b.dataset.id); });
-
-  const shopBtn = document.createElement('button');
-  shopBtn.className = 'fire'; shopBtn.textContent = '불꽃 상점';
-  document.body.appendChild(shopBtn);
-  let shopOpen = true;
-  function applyShop(){ shop.style.display = shopOpen ? 'block' : 'none'; }
-  shopBtn.addEventListener('click', () => { shopOpen = !shopOpen; applyShop(); });
-  applyShop();
+  shop.addEventListener('click', (e) => { if (e.target.closest('[data-shoot]')) { shoot(); return; } const b = e.target.closest('button'); if (b && b.dataset.id) buy(b.dataset.id); });
+  const chk = shop.querySelector('#othersSound'); chk.addEventListener('change', () => { othersSound = chk.checked; });
+  const hintEl = shop.querySelector('#shopHint');
+  function updateShopVisibility() { const near = camera.position.distanceTo(shopPos) < 16; if (hintEl) hintEl.textContent = held ? (held.id === 'sparkler' ? '스파클러 사용 중…' : '손에 폭죽 들고 있음 — 발사(Space)로 쏘세요') : near ? '상점 근처! 위에서 구매하세요' : '섬의 불꽃 상점으로 걸어가 보세요'; }
+  setInterval(updateShopVisibility, 250);
 }
 
 window.addEventListener('error', (e) => { if (!app) fatal('Startup failed:<br><code style="color:#ffb">' + (e.message || e) + '</code>'); });
