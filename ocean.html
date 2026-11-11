@@ -976,7 +976,8 @@ if (app){
       if (s.follow) s.follow.getWorldPosition(new T.Vector3()).add(new T.Vector3(0, 0.18, 0));
       let px = s.x, py = s.y, pz = s.z;
       if (s.follow) { const w = s.follow.getWorldPosition(new T.Vector3()); px = w.x; py = w.y; pz = w.z; }
-      while (s.acc > 0.01) { s.acc -= 0.01; const dir = randUnit(); const v = 2 + Math.random() * 3; emit1(px, py, pz, dir[0] * v, Math.abs(dir[1]) * v + 0.5, dir[2] * v, 1, 0.85 + Math.random() * 0.15, 0.5, 0.22 + Math.random() * 0.2, 0.4 + Math.random() * 0.3, -2, 0.9, 1); }
+      while (s.acc > 0.008) { s.acc -= 0.008; const dir = randUnit(); const v = 6 + Math.random() * 9; emit1(px, py, pz, dir[0] * v, Math.abs(dir[1]) * v * 0.6 + 1.2, dir[2] * v, 1, 0.9, 0.55, 0.26 + Math.random() * 0.2, 0.5 + Math.random() * 0.7, -7, 0.45, 2); }
+      s.core = (s.core || 0) + dt; if (s.core > 0.02) { s.core = 0; emit1(px, py, pz, 0, 0, 0, 1, 0.95, 0.72, 1.9, 0.1, 0, 1, 0); }
       if (s.snd > 0.07) { s.snd = 0; if (!s.remote || othersSound) pop(0.05); }
       if (s.t >= s.dur) { if (s.follow && s.follow === heldObj) clearHeld(); sparklers.splice(i, 1); }
     }
@@ -992,7 +993,7 @@ if (app){
       fcol[i3 + 1] = fbase[i3 + 1] + (1 - fbase[i3 + 1]) * hot;
       fcol[i3 + 2] = fbase[i3 + 2] + (1 - fbase[i3 + 2]) * hot;
       const sp2 = fvel[i3] * fvel[i3] + fvel[i3 + 1] * fvel[i3 + 1] + fvel[i3 + 2] * fvel[i3 + 2];
-      if (sp2 > 6 && age < fmax[i] * 0.7 && Math.random() < dt * 16) emit1(fpos[i3], fpos[i3 + 1], fpos[i3 + 2], fvel[i3] * 0.1, fvel[i3 + 1] * 0.1, fvel[i3 + 2] * 0.1, fbase[i3], fbase[i3 + 1], fbase[i3 + 2], fsiz[i] * 0.5, 0.32, fgrav[i] * 0.5, 0.9, 1);
+      if (sp2 > 6 && age < fmax[i] * 0.75 && Math.random() < dt * 22) emit1(fpos[i3], fpos[i3 + 1], fpos[i3 + 2], fvel[i3] * 0.08, fvel[i3 + 1] * 0.08, fvel[i3 + 2] * 0.08, fbase[i3], fbase[i3 + 1], fbase[i3 + 2], fsiz[i] * 0.4, 0.3, fgrav[i] * 0.5, 0.92, 1);
       let a = Math.min(1, flife[i] / (0.6 * fmax[i]));
       if (ftw[i] === 1) a *= 0.55 + 0.45 * Math.sin((fmax[i] - flife[i]) * 40 + fseed[i] * 9);
       else if (ftw[i] === 2) a *= Math.random() < 0.35 ? 0.25 : 1;
