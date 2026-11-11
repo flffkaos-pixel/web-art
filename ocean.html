@@ -690,29 +690,6 @@ if (app){
   const head = new T.Vector3(), fwd = new T.Vector3(), dir = new T.Vector3(), right = new T.Vector3(), _look = new T.Vector3();
   let last = 0, stepTimer = 0;
 
-  // ---- first / third person view ----
-  let fpMode = false, fpYaw = 0, fpPitch = -0.15, fpDrag = false, fpPX = 0, fpPY = 0;
-  {
-    const cv = app.renderer.domElement;
-    cv.addEventListener('pointerdown', (e) => { if (!fpMode) return; fpDrag = true; fpPX = e.clientX; fpPY = e.clientY; try { cv.setPointerCapture(e.pointerId); } catch (err) {} });
-    cv.addEventListener('pointermove', (e) => { if (!fpMode || !fpDrag) return; fpYaw -= (e.clientX - fpPX) * 0.0032; fpPitch -= (e.clientY - fpPY) * 0.0032; fpPitch = Math.max(-1.45, Math.min(1.45, fpPitch)); fpPX = e.clientX; fpPY = e.clientY; });
-    cv.addEventListener('pointerup', () => { fpDrag = false; });
-    cv.addEventListener('pointercancel', () => { fpDrag = false; });
-  }
-  function toggleFP(){
-    fpMode = !fpMode;
-    if (player) player.g.visible = !fpMode;
-    if (fpMode){ const d = new T.Vector3(); camera.getWorldDirection(d); d.y = 0; if (d.lengthSq() < 1e-4) d.set(0, 0, -1); d.normalize(); fpYaw = Math.atan2(-d.x, -d.z); fpPitch = 0; controls.enabled = false; }
-    else if (player){ controls.enabled = true; const hx = player.g.position.x, hy = player.g.position.y + 1.3, hz = player.g.position.z; controls.target.set(hx, hy, hz); camera.position.set(hx + Math.sin(fpYaw) * 6, hy + 2, hz + Math.cos(fpYaw) * 6); controls.update(); }
-    const el = document.getElementById('viewMode'); if (el) el.textContent = fpMode ? '1인칭 (V)' : '3인칭 (V)';
-  }
-  addEventListener('keydown', (e) => { if (e.code === 'KeyV' && !e.repeat && player) toggleFP(); });
-  const viewBtn = document.createElement('button');
-  viewBtn.id = 'viewMode'; viewBtn.textContent = '3인칭 (V)';
-  viewBtn.style.cssText = 'position:fixed;right:12px;top:12px;z-index:31;padding:8px 12px;border-radius:10px;border:1px solid rgba(140,200,230,.25);background:rgba(10,16,22,.82);color:#cfe3ee;font:700 11px ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:.06em;cursor:pointer;backdrop-filter:blur(10px)';
-  viewBtn.addEventListener('click', () => { if (player) toggleFP(); });
-  document.body.appendChild(viewBtn);
-
   function blockedAt(x, z){
     if (!shopInfo) return false;
     const dx = x - shopInfo.x, dz = z - shopInfo.z;
@@ -740,15 +717,10 @@ if (app){
     if (seated && mag > 0.35) toggleSit();
     const moving = !seated && mag > 0.06;
     if (moving){
-      if (fpMode){
-        fwd.set(-Math.sin(fpYaw), 0, -Math.cos(fpYaw));
-        right.set(Math.cos(fpYaw), 0, -Math.sin(fpYaw));
-      } else {
-        camera.updateWorldMatrix(true, false);
-        camera.getWorldDirection(fwd); fwd.y = 0; fwd.normalize();
-        const e = camera.matrixWorld.elements;
-        right.set(e[0], e[1], e[2]); right.y = 0; right.normalize();
-      }
+      camera.updateWorldMatrix(true, false);
+      camera.getWorldDirection(fwd); fwd.y = 0; fwd.normalize();
+      const e = camera.matrixWorld.elements;
+      right.set(e[0], e[1], e[2]); right.y = 0; right.normalize();
       dir.copy(fwd).multiplyScalar(-iz).addScaledVector(right, ix).normalize();
       const swim = hAt(player.g.position.x, player.g.position.z) < -1.0;
       const sp = (swim ? 1.7 : (keys.ShiftLeft || keys.ShiftRight) ? 7.0 : 3.4) * mag;
@@ -779,17 +751,12 @@ if (app){
     }
     pose(player, t, moving);
 
-    if (fpMode){
-      camera.position.set(player.g.position.x, player.g.position.y + (seated ? 1.05 : 1.6), player.g.position.z);
-      camera.quaternion.setFromEuler(new T.Euler(fpPitch, fpYaw, 0, 'YXZ'));
-    } else {
-      head.copy(player.g.position); head.y += seated ? 0.85 : 1.3;
-      const fk = 1 - Math.pow(0.0005, dt);
-      const ddx = (head.x - controls.target.x) * fk, ddy = (head.y - controls.target.y) * fk, ddz = (head.z - controls.target.z) * fk;
-      controls.target.x += ddx; controls.target.y += ddy; controls.target.z += ddz;
-      camera.position.x += ddx; camera.position.y += ddy; camera.position.z += ddz;
-      controls.update();
-    }
+    head.copy(player.g.position); head.y += seated ? 0.85 : 1.3;
+    const fk = 1 - Math.pow(0.0005, dt);
+    const ddx = (head.x - controls.target.x) * fk, ddy = (head.y - controls.target.y) * fk, ddz = (head.z - controls.target.z) * fk;
+    controls.target.x += ddx; controls.target.y += ddy; controls.target.z += ddz;
+    camera.position.x += ddx; camera.position.y += ddy; camera.position.z += ddz;
+    controls.update();
     app.renderer.shadowMap.needsUpdate = true;
     requestAnimationFrame(tick);
   }
@@ -931,14 +898,22 @@ if (app){
   const sparklerMesh = () => { const g = new T.Group(); const stick = new T.Mesh(new T.CylinderGeometry(0.008, 0.008, 0.34, 6), new T.MeshStandardMaterial({ color: 0x8a8f98 })); g.add(stick); const tip = new T.Mesh(new T.SphereGeometry(0.02, 8, 6), new T.MeshBasicMaterial({ color: 0xffe6a0 })); tip.position.y = 0.18; g.add(tip); return g; };
   function clearHeld() { if (heldObj && handR) handR.remove(heldObj); heldObj = null; held = null; }
   function heldWorld() { const v = new T.Vector3(); if (heldObj) heldObj.getWorldPosition(v); else if (handR) handR.getWorldPosition(v); else camera.getWorldPosition(v); return v; }
+
+  // fountain placement marker on the ground
+  let placing = null;
+  const ringGeo = new T.RingGeometry(0.85, 1.05, 32);
+  const ringMat = new T.MeshBasicMaterial({ color: 0xffd76a, transparent: true, opacity: 0.85, side: T.DoubleSide, depthWrite: false });
+  function startPlacing() { removeMarker(); const m = new T.Mesh(ringGeo, ringMat); m.rotation.x = -Math.PI / 2; scene.add(m); placing = m; }
+  function removeMarker() { if (placing) { scene.remove(placing); placing = null; } }
   function buy(typeId) {
     const a = aerialById(typeId);
     if (AERIAL.some((t) => t.id === typeId) && handR) { clearHeld(); held = a; heldObj = rocketMesh(); heldObj.position.set(0, -0.30, 0.02); handR.add(heldObj); return; }
     if (typeId === 'sparkler' && handR) { clearHeld(); held = { id: 'sparkler' }; heldObj = sparklerMesh(); heldObj.position.set(0, -0.30, 0.02); handR.add(heldObj); const wp = heldWorld(); startSparkler(wp.x, wp.y + 0.18, wp.z, heldObj, false); return; }
-    if (typeId === 'fountain') { const p = playerRef ? playerRef.g.position : camera.position; placeFountain(p.x, p.z, false); netRoom?.emit({ k: 'fw', kind: 'fountain', x: +p.x.toFixed(1), z: +p.z.toFixed(1) }); return; }
+    if (typeId === 'fountain') { startPlacing(); return; }
   }
-  function aimDir() { const d = new T.Vector3(); camera.getWorldDirection(d); d.y = 0; if (d.lengthSq() < 1e-4) d.set(0, 0, -1); d.normalize(); const el = 64 * Math.PI / 180; return new T.Vector3(d.x * Math.cos(el), Math.sin(el), d.z * Math.cos(el)); }
+  function aimDir() { const d = new T.Vector3(); camera.getWorldDirection(d); d.y = 0; if (d.lengthSq() < 1e-4) d.set(0, 0, -1); d.normalize(); const el = 45 * Math.PI / 180; return new T.Vector3(d.x * Math.cos(el), Math.sin(el), d.z * Math.cos(el)); }
   function shoot() {
+    if (placing) { placeFountain(placing.position.x, placing.position.z, false); netRoom?.emit({ k: 'fw', kind: 'fountain', x: +placing.position.x.toFixed(1), z: +placing.position.z.toFixed(1) }); removeMarker(); return; }
     if (!held || held.id === 'sparkler') return;
     const hw = heldWorld(); const dir = aimDir(); const sp = 34;
     launchAerial(held.id, hw.x, hw.y, hw.z, dir.x * sp, dir.y * sp, dir.z * sp, false);
@@ -949,6 +924,7 @@ if (app){
 
   // ---- loop ----
   function fwUpdate(dt) {
+    if (placing) { const f = new T.Vector3(); camera.getWorldDirection(f); f.y = 0; if (f.lengthSq() < 1e-4) f.set(0, 0, -1); f.normalize(); const bx = playerRef ? playerRef.g.position.x : camera.position.x, bz = playerRef ? playerRef.g.position.z : camera.position.z; const px = bx + f.x * 4.5, pz = bz + f.z * 4.5; placing.position.set(px, hAt(px, pz) + 0.03, pz); }
     for (let i = rockets.length - 1; i >= 0; i--) {
       const p = rockets[i]; p.t += dt; p.vy += -20 * dt; p.x += p.vx * dt; p.y += p.vy * dt; p.z += p.vz * dt;
       p.trail -= dt;
@@ -1056,7 +1032,7 @@ if (app){
   function updateShopVisibility() {
     const near = camera.position.distanceTo(shopPos) < 8;
     if (near !== shopShown) { shopShown = near; shop.style.display = near ? 'block' : 'none'; }
-    if (near && hintEl) hintEl.textContent = held ? (held.id === 'sparkler' ? '스파클러 사용 중…' : '손에 폭죽 들고 있음 — 발사(Space)로 쏘세요') : '상점에 도착! 위에서 구매하세요';
+    if (near && hintEl) hintEl.textContent = placing ? '설치 위치로 이동 후 발사(Space)' : held ? (held.id === 'sparkler' ? '스파클러 사용 중…' : '손에 폭죽 들고 있음 — 발사(Space)로 쏘세요') : '상점에 도착! 위에서 구매하세요';
   }
   shop.style.display = 'none';
   setInterval(updateShopVisibility, 200);
