@@ -698,12 +698,36 @@ if (app){
     return Math.abs(lx) < shopInfo.hx && Math.abs(lz) < shopInfo.hz;
   }
 
+  // ---- first-person view (only while sitting) ----
+  let fpMode = false, fpYaw = 0, fpPitch = 0.05, fpDrag = false, fpPX = 0, fpPY = 0;
+  {
+    const cv = app.renderer.domElement;
+    cv.addEventListener('pointerdown', (e) => { if (!fpMode) return; fpDrag = true; fpPX = e.clientX; fpPY = e.clientY; try { cv.setPointerCapture(e.pointerId); } catch (err) {} });
+    cv.addEventListener('pointermove', (e) => { if (!fpMode || !fpDrag) return; fpYaw -= (e.clientX - fpPX) * 0.0032; fpPitch -= (e.clientY - fpPY) * 0.0032; fpPitch = Math.max(-1.45, Math.min(1.45, fpPitch)); fpPX = e.clientX; fpPY = e.clientY; });
+    cv.addEventListener('pointerup', () => { fpDrag = false; });
+    cv.addEventListener('pointercancel', () => { fpDrag = false; });
+  }
+  function updateFPBtn(){ const b = document.getElementById('fpBtn'); if (b){ b.textContent = fpMode ? '1인칭 끄기 (V)' : '1인칭 (앉아서 · V)'; b.style.opacity = (seated || fpMode) ? '1' : '0.45'; } }
+  function toggleFP(){
+    if (fpMode){ fpMode = false; controls.enabled = true; if (player) player.g.visible = true; if (player){ const hx = player.g.position.x, hy = player.g.position.y + 1.0, hz = player.g.position.z; controls.target.set(hx, hy, hz); camera.position.set(hx + Math.sin(fpYaw) * 5, hy + 1.6, hz + Math.cos(fpYaw) * 5); controls.update(); } updateFPBtn(); return; }
+    if (!seated) return;
+    fpMode = true; if (player) player.g.visible = false; controls.enabled = false; const d = new T.Vector3(); camera.getWorldDirection(d); d.y = 0; if (d.lengthSq() < 1e-4) d.set(0, 0, -1); d.normalize(); fpYaw = Math.atan2(-d.x, -d.z); fpPitch = 0.05; updateFPBtn();
+  }
+  addEventListener('keydown', (e) => { if (e.code === 'KeyV' && !e.repeat && player) toggleFP(); });
+  const fpBtn = document.createElement('button');
+  fpBtn.id = 'fpBtn'; fpBtn.textContent = '1인칭 (앉아서 · V)';
+  fpBtn.style.cssText = 'position:fixed;right:12px;top:12px;z-index:31;padding:8px 12px;border-radius:10px;border:1px solid rgba(140,200,230,.25);background:rgba(10,16,22,.82);color:#cfe3ee;font:700 11px ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:.04em;cursor:pointer;backdrop-filter:blur(10px)';
+  fpBtn.addEventListener('click', () => { if (player) toggleFP(); });
+  document.body.appendChild(fpBtn);
+  updateFPBtn();
+
   function tick(now){
     const dt = last ? Math.min(0.1, Math.max(0, (now - last) / 1000)) : 0;
     last = now;
     const t = now / 1000;
 
     if (seaTick) seaTick(dt);
+    if (fpMode && !seated) toggleFP();
 
     if (gliding){
       gliding = Math.max(0, gliding - dt / 1.1);
@@ -751,12 +775,17 @@ if (app){
     }
     pose(player, t, moving);
 
-    head.copy(player.g.position); head.y += seated ? 0.85 : 1.3;
-    const fk = 1 - Math.pow(0.0005, dt);
-    const ddx = (head.x - controls.target.x) * fk, ddy = (head.y - controls.target.y) * fk, ddz = (head.z - controls.target.z) * fk;
-    controls.target.x += ddx; controls.target.y += ddy; controls.target.z += ddz;
-    camera.position.x += ddx; camera.position.y += ddy; camera.position.z += ddz;
-    controls.update();
+    if (fpMode){
+      camera.position.set(player.g.position.x, player.g.position.y + 1.0 + Math.sin(t * 1.2) * 0.008, player.g.position.z);
+      camera.quaternion.setFromEuler(new T.Euler(fpPitch, fpYaw, 0, 'YXZ'));
+    } else {
+      head.copy(player.g.position); head.y += seated ? 0.85 : 1.3;
+      const fk = 1 - Math.pow(0.0005, dt);
+      const ddx = (head.x - controls.target.x) * fk, ddy = (head.y - controls.target.y) * fk, ddz = (head.z - controls.target.z) * fk;
+      controls.target.x += ddx; controls.target.y += ddy; controls.target.z += ddz;
+      camera.position.x += ddx; camera.position.y += ddy; camera.position.z += ddz;
+      controls.update();
+    }
     app.renderer.shadowMap.needsUpdate = true;
     requestAnimationFrame(tick);
   }
@@ -858,12 +887,15 @@ if (app){
     { id: 'double', name: '이중 (2색)', price: 2000, shape: 'double', count: 260, speed: 10, life: 1.9, size: 0.58, grav: -6, drag: 0.7, tw: 0 },
     { id: 'glitter', name: '반짝 글리터', price: 1500, shape: 'sphere', count: 340, speed: 8.5, life: 1.6, size: 0.34, grav: -6, drag: 0.7, tw: 1 },
     { id: 'crackle', name: '파직 크래클', price: 1800, shape: 'sphere', count: 280, speed: 11, life: 1.3, size: 0.36, grav: -7, drag: 0.7, tw: 2 },
+    { id: 'crossette', name: '크로제트 (4갈래)', price: 2200, shape: 'sphere', count: 60, speed: 8.5, life: 0.95, size: 0.75, grav: -6, drag: 0.7, tw: 0, multi: { type: 'peony', count: 6, delay: 0.5, spread: 7 } },
+    { id: 'multibreak', name: '다중 폭발', price: 3500, shape: 'sphere', count: 130, speed: 9, life: 1.0, size: 0.6, grav: -6, drag: 0.7, tw: 0, multi: { type: 'glitter', count: 5, delay: 0.55, spread: 20 } },
   ];
   const aerialById = (id) => AERIAL.find((t) => t.id === id) || AERIAL[0];
 
-  function burst(x, y, z, ty) {
+  function burst(x, y, z, ty, remote) {
     const base = ty.color ? ty.color() : randColor(); const c2 = randColor();
     for (let i = 0; i < 7; i++) { const u = randUnit(); emit1(x, y, z, u[0] * 2.2, u[1] * 2.2, u[2] * 2.2, 1, 1, 1, 2.8 - i * 0.25, 0.16 + i * 0.02, 0, 1.6, 0); }
+    if (ty.multi) { const sp2 = ty.multi.spread || 6; for (let k = 0; k < ty.multi.count; k++) secondaries.push({ t: 0, delay: ty.multi.delay + Math.random() * 0.35, x: x + (Math.random() - 0.5) * 2 * sp2, y: y + (Math.random() - 0.5) * sp2, z: z + (Math.random() - 0.5) * 2 * sp2, ty: aerialById(ty.multi.type), remote }); }
     const n = ty.count, sp = ty.speed;
     if (ty.shape === 'ring') {
       const ax = randUnit(); const u = Math.abs(ax[1]) < 0.9 ? [0, 1, 0] : [1, 0, 0];
@@ -880,7 +912,7 @@ if (app){
   }
 
   // ---- active effects ----
-  const rockets = [], fountains = [], sparklers = [];
+  const rockets = [], fountains = [], sparklers = [], secondaries = [];
   function launchAerial(typeId, x, y, z, vx, vy, vz, remote) { rockets.push({ t: 0, x, y, z, vx, vy, vz, ty: aerialById(typeId), remote, trail: 0 }); }
   function placeFountain(x, z, remote) { fountains.push({ x, z, y: hAt(x, z), t: 0, dur: 6, remote, acc: 0, snd: 0 }); }
   function startSparkler(x, y, z, follow, remote) { sparklers.push({ x, y, z, follow: follow || null, t: 0, dur: 7, remote, acc: 0, snd: 0 }); }
@@ -929,8 +961,9 @@ if (app){
       const p = rockets[i]; p.t += dt; p.vy += -20 * dt; p.x += p.vx * dt; p.y += p.vy * dt; p.z += p.vz * dt;
       p.trail -= dt;
       if (p.trail <= 0) { p.trail = 0.02; emit1(p.x, p.y, p.z, 0, -1, 0, 1, 0.7, 0.3, 0.5, 0.4, 0, 0.6, 1); }
-      if (p.vy <= 0 || p.t > 4 || p.y < 0.5) { burst(p.x, p.y, p.z, p.ty); boom(p.remote); rockets.splice(i, 1); }
+      if (p.vy <= 0 || p.t > 4 || p.y < 0.5) { burst(p.x, p.y, p.z, p.ty, p.remote); boom(p.remote); rockets.splice(i, 1); }
     }
+    for (let i = secondaries.length - 1; i >= 0; i--) { const s = secondaries[i]; s.t += dt; if (s.t >= s.delay) { burst(s.x, s.y, s.z, s.ty, s.remote); boom(s.remote); secondaries.splice(i, 1); } }
     for (let i = fountains.length - 1; i >= 0; i--) {
       const f = fountains[i]; f.t += dt; f.acc += dt; f.snd += dt;
       while (f.acc > 0.012) { f.acc -= 0.012; const a = Math.random() * Math.PI * 2, rr = Math.random() * 0.12; const up = 8 + Math.random() * 6; const cc = randColor(); emit1(f.x + Math.cos(a) * rr, f.y + 0.1, f.z + Math.sin(a) * rr, Math.cos(a) * 1.2, up, Math.sin(a) * 1.2, cc[0], cc[1], cc[2], 0.4 + Math.random() * 0.4, 1.0 + Math.random() * 0.8, -9, 0.5, 2); }

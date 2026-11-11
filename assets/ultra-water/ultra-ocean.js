@@ -19887,8 +19887,8 @@ float starField(vec3 d) {
   vec3 id = floor(p);
   vec3 f = fract(p) - 0.5;
   vec3 rnd = vec3(hash13(id), hash13(id + 17.1), hash13(id + 43.7));
-  float pt = smoothstep(0.22 + rnd.x * 0.1, 0.0, length(f - (rnd - 0.5) * 0.6));
-  return pt * step(0.80, rnd.y) * (0.3 + 0.7 * rnd.z);
+  float pt = smoothstep(0.16 + rnd.x * 0.08, 0.0, length(f - (rnd - 0.5) * 0.6));
+  return pt * step(0.88, rnd.y) * (0.25 + 0.6 * rnd.z);
 }
 
 void main() {
@@ -19908,9 +19908,9 @@ void main() {
     float band = exp(-pow(dot(d, normalize(vec3(0.45, 0.35, 0.82))) * 3.2, 2.0));
     float mwN = fbm(vec2(d.x + d.z * 0.6, d.y + d.z * 0.3) * 5.0) * 0.5 + 0.5;
     float horiz = smoothstep(0.0, 0.18, d.y);
-    col += night * horiz * starField(d) * 0.4;
-    col += night * horiz * band * (0.25 + 0.75 * mwN * mwN) * vec3(0.10, 0.13, 0.20);
-    col += night * horiz * band * band * vec3(0.02, 0.025, 0.04);
+    col += night * horiz * starField(d) * 0.16;
+    col += night * horiz * band * (0.25 + 0.75 * mwN * mwN) * vec3(0.05, 0.065, 0.10);
+    col += night * horiz * band * band * vec3(0.01, 0.013, 0.02);
   }
   float vis = 1.0;
   if (d.y > 1e-3 && uCloudCoverage > 0.0) {
