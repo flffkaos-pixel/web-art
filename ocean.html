@@ -979,8 +979,8 @@ if (app){
       if (s.follow) s.follow.getWorldPosition(new T.Vector3()).add(new T.Vector3(0, 0.18, 0));
       let px = s.x, py = s.y, pz = s.z;
       if (s.follow) { const w = s.follow.getWorldPosition(new T.Vector3()); px = w.x; py = w.y; pz = w.z; }
-      while (s.acc > 0.01) { s.acc -= 0.01; const dir = randUnit(); const v = 2.5 + Math.random() * 4; emit1(px, py, pz, dir[0] * v, Math.abs(dir[1]) * v * 0.5 + 0.8, dir[2] * v, 1, 0.9, 0.55, 0.24 + Math.random() * 0.18, 0.4 + Math.random() * 0.5, -6, 0.5, 2); }
-      s.core = (s.core || 0) + dt; if (s.core > 0.02) { s.core = 0; emit1(px, py, pz, 0, 0, 0, 1, 0.95, 0.72, 0.9, 0.08, 0, 1, 0); }
+      while (s.acc > 0.005) { s.acc -= 0.005; const dir = randUnit(); const v = 1.2 + Math.random() * 1.8; emit1(px, py, pz, dir[0] * v, Math.abs(dir[1]) * v + 0.4, dir[2] * v, 1, 0.9, 0.6, 0.18 + Math.random() * 0.12, 0.3 + Math.random() * 0.4, -6, 3.0, 2); }
+      s.core = (s.core || 0) + dt; if (s.core > 0.015) { s.core = 0; emit1(px, py, pz, 0, 0, 0, 1, 0.95, 0.75, 0.8, 0.06, 0, 1, 0); }
       if (s.snd > 0.07) { s.snd = 0; if (!s.remote || othersSound) pop(0.05); }
       if (s.t >= s.dur) { if (s.follow && s.follow === heldObj) clearHeld(); sparklers.splice(i, 1); }
     }
