@@ -701,11 +701,10 @@ if (app){
   // ---- first-person view (only while sitting) ----
   let fpMode = false, fpYaw = 0, fpPitch = 0.05, fpDrag = false, fpPX = 0, fpPY = 0;
   {
-    const cv = app.renderer.domElement;
-    cv.addEventListener('pointerdown', (e) => { if (!fpMode) return; fpDrag = true; fpPX = e.clientX; fpPY = e.clientY; try { cv.setPointerCapture(e.pointerId); } catch (err) {} });
-    cv.addEventListener('pointermove', (e) => { if (!fpMode || !fpDrag) return; fpYaw -= (e.clientX - fpPX) * 0.0032; fpPitch -= (e.clientY - fpPY) * 0.0032; fpPitch = Math.max(-1.45, Math.min(1.45, fpPitch)); fpPX = e.clientX; fpPY = e.clientY; });
-    cv.addEventListener('pointerup', () => { fpDrag = false; });
-    cv.addEventListener('pointercancel', () => { fpDrag = false; });
+    addEventListener('pointerdown', (e) => { if (!fpMode) return; if (e.target && e.target.closest && e.target.closest('#shop,#fpBtn')) return; fpDrag = true; fpPX = e.clientX; fpPY = e.clientY; });
+    addEventListener('pointermove', (e) => { if (!fpMode || !fpDrag) return; fpYaw -= (e.clientX - fpPX) * 0.0032; fpPitch -= (e.clientY - fpPY) * 0.0032; fpPitch = Math.max(-1.45, Math.min(1.45, fpPitch)); fpPX = e.clientX; fpPY = e.clientY; });
+    addEventListener('pointerup', () => { fpDrag = false; });
+    addEventListener('pointercancel', () => { fpDrag = false; });
   }
   function updateFPBtn(){ const b = document.getElementById('fpBtn'); if (b){ b.textContent = fpMode ? '1인칭 끄기 (V)' : '1인칭 (앉아서 · V)'; b.style.opacity = (seated || fpMode) ? '1' : '0.45'; } }
   function toggleFP(){
@@ -800,7 +799,7 @@ if (app){
   const dotTex = (() => {
     const c = document.createElement('canvas'); c.width = c.height = 64;
     const g = c.getContext('2d'); const gr = g.createRadialGradient(32, 32, 0, 32, 32, 32);
-    gr.addColorStop(0, 'rgba(255,255,255,1)'); gr.addColorStop(0.3, 'rgba(255,255,255,0.85)'); gr.addColorStop(1, 'rgba(255,255,255,0)');
+    gr.addColorStop(0, 'rgba(255,255,255,1)'); gr.addColorStop(0.16, 'rgba(255,255,255,1)'); gr.addColorStop(0.36, 'rgba(255,255,255,0.24)'); gr.addColorStop(1, 'rgba(255,255,255,0)');
     g.fillStyle = gr; g.beginPath(); g.arc(32, 32, 32, 0, Math.PI * 2); g.fill();
     return new T.CanvasTexture(c);
   })();
@@ -820,7 +819,7 @@ if (app){
     vertexShader: `attribute float aSize; attribute float aAlpha; attribute vec3 aColor;
       varying vec3 vColor; varying float vAlpha; uniform float uScale;
       void main(){ vColor=aColor; vAlpha=aAlpha; vec4 mv=modelViewMatrix*vec4(position,1.0);
-        gl_PointSize=max(1.0, aSize*uScale/max(0.1,-mv.z)); gl_Position=projectionMatrix*mv; }`,
+        gl_PointSize=max(1.0, aSize*0.6*uScale/max(0.1,-mv.z)); gl_Position=projectionMatrix*mv; }`,
     fragmentShader: `uniform sampler2D uTex; varying vec3 vColor; varying float vAlpha;
       void main(){ vec4 t=texture2D(uTex, gl_PointCoord); if(t.a<0.01) discard; gl_FragColor=vec4(vColor, t.a*vAlpha); }`,
   });
