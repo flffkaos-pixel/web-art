@@ -391,7 +391,7 @@ let playStep = null;
 
 /* ---------- ambience: sun follows the clock; the sea drifts calm ↔ stormy ---------- */
 let seaTick = null;
-let netRoom = null, netEvent = null, handR = null, playerRef = null, shopInfo = null, holdingItem = false;
+let netRoom = null, netEvent = null, handR = null, playerRef = null, shopInfo = null, holdingItem = false, nightMode = false, setNightMode = null;
 if (app){
   const auto = true;
   const KEYS = [  // hour → wind, waves, chop, swell, sun intensity, clouds, haze, spray
@@ -416,7 +416,7 @@ if (app){
     const d = new Date();
     const t = d.getHours() + d.getMinutes() / 60 + d.getSeconds() / 3600;
     const m = lerpKeys(t);
-    app.sky.params.elevation = Math.max(-8, 44 * Math.cos((t - 12.7) / 24 * Math.PI * 2));
+    app.sky.params.elevation = nightMode ? -6 : Math.max(-8, 44 * Math.cos((t - 12.7) / 24 * Math.PI * 2));
     app.sky.params.azimuth = (90 + (((t - 6.7 + 24) % 24) / 24) * 360) % 360;
     app.sky.params.sunIntensity = m.si;
     app.sky.params.turbidity = m.tb;
@@ -424,6 +424,7 @@ if (app){
   }
   applyAmbience();
   setInterval(applyAmbience, 10000);
+  setNightMode = (v) => { nightMode = v; applyAmbience(); };
 
   const SEA = [
     { nm: '잔잔', ws: 3.0, wv: 0.32, ch: 0.65, sw: 0.28, cc: 0.12, sp: 0.20 },
@@ -915,7 +916,7 @@ if (app){
   const rockets = [], fountains = [], sparklers = [], secondaries = [];
   function launchAerial(typeId, x, y, z, vx, vy, vz, remote) { rockets.push({ t: 0, x, y, z, vx, vy, vz, ty: aerialById(typeId), remote, trail: 0 }); }
   function placeFountain(x, z, remote) { fountains.push({ x, z, y: hAt(x, z), t: 0, dur: 6, remote, acc: 0, snd: 0 }); }
-  function startSparkler(x, y, z, follow, remote) { sparklers.push({ x, y, z, follow: follow || null, t: 0, dur: 7, remote, acc: 0, snd: 0 }); }
+  function startSparkler(x, y, z, follow, remote) { sparklers.push({ x, y, z, follow: follow || null, t: 0, dur: 30, remote, acc: 0, snd: 0 }); }
   netEvent = (data) => {
     if (!data || data.k !== 'fw') return;
     audioEnsure();
@@ -938,6 +939,8 @@ if (app){
   function startPlacing() { removeMarker(); const m = new T.Mesh(ringGeo, ringMat); m.rotation.x = -Math.PI / 2; scene.add(m); placing = m; }
   function removeMarker() { if (placing) { scene.remove(placing); placing = null; } }
   function buy(typeId) {
+    if (typeId === 'night') { if (setNightMode) setNightMode(true); return; }
+    if (typeId === 'day') { if (setNightMode) setNightMode(false); return; }
     const a = aerialById(typeId);
     if (AERIAL.some((t) => t.id === typeId) && handR) { clearHeld(); held = a; heldObj = rocketMesh(); heldObj.position.set(0, -0.30, 0.02); handR.add(heldObj); return; }
     if (typeId === 'sparkler' && handR) { clearHeld(); held = { id: 'sparkler' }; heldObj = sparklerMesh(); heldObj.position.set(0, -0.30, 0.02); handR.add(heldObj); const wp = heldWorld(); startSparkler(wp.x, wp.y + 0.18, wp.z, heldObj, false); return; }
@@ -976,8 +979,8 @@ if (app){
       if (s.follow) s.follow.getWorldPosition(new T.Vector3()).add(new T.Vector3(0, 0.18, 0));
       let px = s.x, py = s.y, pz = s.z;
       if (s.follow) { const w = s.follow.getWorldPosition(new T.Vector3()); px = w.x; py = w.y; pz = w.z; }
-      while (s.acc > 0.008) { s.acc -= 0.008; const dir = randUnit(); const v = 6 + Math.random() * 9; emit1(px, py, pz, dir[0] * v, Math.abs(dir[1]) * v * 0.6 + 1.2, dir[2] * v, 1, 0.9, 0.55, 0.26 + Math.random() * 0.2, 0.5 + Math.random() * 0.7, -7, 0.45, 2); }
-      s.core = (s.core || 0) + dt; if (s.core > 0.02) { s.core = 0; emit1(px, py, pz, 0, 0, 0, 1, 0.95, 0.72, 1.9, 0.1, 0, 1, 0); }
+      while (s.acc > 0.01) { s.acc -= 0.01; const dir = randUnit(); const v = 2.5 + Math.random() * 4; emit1(px, py, pz, dir[0] * v, Math.abs(dir[1]) * v * 0.5 + 0.8, dir[2] * v, 1, 0.9, 0.55, 0.24 + Math.random() * 0.18, 0.4 + Math.random() * 0.5, -6, 0.5, 2); }
+      s.core = (s.core || 0) + dt; if (s.core > 0.02) { s.core = 0; emit1(px, py, pz, 0, 0, 0, 1, 0.95, 0.72, 0.9, 0.08, 0, 1, 0); }
       if (s.snd > 0.07) { s.snd = 0; if (!s.remote || othersSound) pop(0.05); }
       if (s.t >= s.dur) { if (s.follow && s.follow === heldObj) clearHeld(); sparklers.splice(i, 1); }
     }
@@ -1056,6 +1059,7 @@ if (app){
     <div class="sec">하늘 불꽃 (사면 손에 들고, 발사 버튼으로 조준 발사)</div>${aerialBtns}
     <div class="sec">손에 드는</div><button data-id="sparkler"><span>스파클러</span><span class="pn">₩800</span></button>
     <div class="sec">바닥</div><button data-id="fountain"><span>분수 폭죽</span><span class="pn">₩2,500</span></button>
+    <div class="sec">무드 (과금)</div><button data-id="night"><span>밤으로 바꾸기</span><span class="pn">₩2,000</span></button><button data-id="day"><span>낮으로 되돌리기</span><span class="pn">무료</span></button>
     <button class="shoot" data-shoot="1">발사 (Space)</button>
     <div class="row"><label><input type="checkbox" id="othersSound" checked> 남의 폭죽 소리</label></div>
     <div class="hint" id="shopHint"></div>`;
