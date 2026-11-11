@@ -391,7 +391,7 @@ let playStep = null;
 
 /* ---------- ambience: sun follows the clock; the sea drifts calm ↔ stormy ---------- */
 let seaTick = null;
-let netRoom = null, netEvent = null, handR = null, playerRef = null, shopInfo = null;
+let netRoom = null, netEvent = null, handR = null, playerRef = null, shopInfo = null, holdingItem = false;
 if (app){
   const auto = true;
   const KEYS = [  // hour → wind, waves, chop, swell, sun intensity, clouds, haze, spray
@@ -773,6 +773,7 @@ if (app){
       pose(r.p, t, !r.sit && r.p.g.position.distanceTo(r.tp) > 0.25);
     }
     pose(player, t, moving);
+    if (holdingItem) { player.armR.rotation.x = -1.35; player.armR.rotation.z = 0.06; }
 
     if (fpMode){
       camera.position.set(player.g.position.x, player.g.position.y + 1.0 + Math.sin(t * 1.2) * 0.008, player.g.position.z);
@@ -955,6 +956,7 @@ if (app){
 
   // ---- loop ----
   function fwUpdate(dt) {
+    holdingItem = !!heldObj;
     if (placing) { const f = new T.Vector3(); camera.getWorldDirection(f); f.y = 0; if (f.lengthSq() < 1e-4) f.set(0, 0, -1); f.normalize(); const bx = playerRef ? playerRef.g.position.x : camera.position.x, bz = playerRef ? playerRef.g.position.z : camera.position.z; const px = bx + f.x * 4.5, pz = bz + f.z * 4.5; placing.position.set(px, hAt(px, pz) + 0.03, pz); }
     for (let i = rockets.length - 1; i >= 0; i--) {
       const p = rockets[i]; p.t += dt; p.vy += -20 * dt; p.x += p.vx * dt; p.y += p.vy * dt; p.z += p.vz * dt;
