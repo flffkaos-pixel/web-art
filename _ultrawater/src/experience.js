@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import GUI from 'lil-gui';
 import { OceanSim, defaultOceanParams } from './water/OceanSim.js';
 import { OceanSurface } from './water/OceanSurface.js';
@@ -619,3 +620,4 @@ void main() { outColor = texture(uTex, vUv); }`, { uTex: { value: null } }));
 }
 
 export default createOcean;
+export { GLTFLoader };
