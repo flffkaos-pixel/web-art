@@ -963,7 +963,7 @@ if (app){
   const ringMat = new T.MeshBasicMaterial({ color: 0xffd76a, transparent: true, opacity: 0.85, side: T.DoubleSide, depthWrite: false });
   function startPlacing() { removeMarker(); const m = new T.Mesh(ringGeo, ringMat); m.rotation.x = -Math.PI / 2; scene.add(m); placing = m; }
   function removeMarker() { if (placing) { scene.remove(placing); placing = null; } }
-  function buy(typeId) {
+  function grantItem(typeId) {
     if (typeId === 'night') { if (setNightMode) setNightMode(true); netRoom?.emit({ k: 'fw', kind: 'mood', v: 1 }); return; }
     if (typeId === 'day') { if (setNightMode) setNightMode(false); netRoom?.emit({ k: 'fw', kind: 'mood', v: 0 }); return; }
     removeMarker();
@@ -971,6 +971,11 @@ if (app){
     if (AERIAL.some((t) => t.id === typeId) && handR) { clearHeld(); held = a; heldObj = rocketMesh(); heldObj.position.set(0, -0.30, 0.02); handR.add(heldObj); return; }
     if (typeId === 'sparkler' && handR) { if (held && held.id === 'sparkler') return; clearHeld(); held = { id: 'sparkler' }; heldObj = sparklerMesh(); heldObj.position.set(0, -0.30, 0.02); handR.add(heldObj); const wp = heldWorld(); startSparkler(wp.x, wp.y, wp.z, heldObj, false); return; }
     if (typeId === 'fountain') { startPlacing(); return; }
+  }
+  function buy(typeId) {
+    if (typeId === 'day') { grantItem('day'); return; }
+    if (ppCfg && ppCfg.enabled) { openCheckout(typeId); return; }
+    grantItem(typeId);
   }
   function aimDir() { const d = new T.Vector3(); camera.getWorldDirection(d); d.y = 0; if (d.lengthSq() < 1e-4) d.set(0, 0, -1); d.normalize(); const el = 45 * Math.PI / 180; return new T.Vector3(d.x * Math.cos(el), Math.sin(el), d.z * Math.cos(el)); }
   function shoot() {
@@ -1121,11 +1126,18 @@ if (app){
     #shop button:hover{background:rgba(255,215,106,.13);border-color:rgba(255,215,106,.5);color:#fff}#shop .pn{color:#ffd76a;font-weight:700}
     #shop .row{display:flex;align-items:center;gap:8px;margin-top:9px;font-size:10px;color:#9fb6c4}
     #shop .hint{font-size:10px;color:#7ee0c0;margin-top:8px}#shop .shoot{width:100%;margin-top:8px;background:rgba(255,215,106,.16);border-color:rgba(255,215,106,.5);color:#ffd76a;font-weight:700}
-    @media (max-width:620px){#shop{left:10px;right:10px;width:auto;top:auto;bottom:64px;max-height:46vh}}`;
+    @media (max-width:620px){#shop{left:10px;right:10px;width:auto;top:auto;bottom:64px;max-height:46vh}}
+    #payOv{position:fixed;inset:0;z-index:60;display:flex;align-items:center;justify-content:center;background:rgba(3,7,11,.72);backdrop-filter:blur(4px)}
+    #payOv .pbox{width:320px;max-width:90vw;background:rgba(12,20,28,.97);border:1px solid rgba(255,215,106,.35);border-radius:14px;padding:18px;text-align:center;box-shadow:0 24px 70px rgba(0,0,0,.6)}
+    #payOv h4{margin:0 0 4px;font-size:14px;color:#ffe6a0}
+    #payOv .pamt{font-size:20px;font-weight:700;color:#ffd76a;margin-bottom:12px}
+    #payOv #ppbtns{margin:0 auto;max-width:260px}
+    #payOv .pmsg{min-height:16px;font-size:11px;color:#7ee0c0;margin:10px 0 6px}
+    #payOv .pcancel{background:none;border:1px solid rgba(140,200,230,.25);border-radius:8px;color:#9fb6c4;font:inherit;padding:7px 14px;cursor:pointer}`;
   document.head.appendChild(css);
   const shop = document.createElement('div'); shop.id = 'shop';
   const aerialBtns = AERIAL.map((t) => `<button data-id="${t.id}"><span>${t.name}</span><span class="pn">₩${t.price.toLocaleString()}</span></button>`).join('');
-  shop.innerHTML = `<h3>불꽃놀이 상점</h3><div class="sub">결제 연동 예정 · 지금은 무료</div>
+  shop.innerHTML = `<h3>불꽃놀이 상점</h3><div class="sub" id="shopSub">결제 연동 확인 중…</div>
     <div class="sec">하늘 불꽃 (사면 손에 들고, 발사 버튼으로 조준 발사)</div>${aerialBtns}
     <div class="sec">손에 드는</div><button data-id="sparkler"><span>스파클러</span><span class="pn">₩800</span></button>
     <div class="sec">바닥</div><button data-id="fountain"><span>분수 폭죽</span><span class="pn">₩2,500</span></button>
@@ -1146,6 +1158,46 @@ if (app){
   }
   shop.style.display = 'none';
   setInterval(updateShopVisibility, 200);
+
+  // ---- PayPal checkout (paid items; graceful free fallback when not configured) ----
+  let ppCfg = null, checkoutBusy = false;
+  const ppName = (id) => (ppCfg && ppCfg.catalog && ppCfg.catalog[id] && ppCfg.catalog[id].name) || '폭죽';
+  const ppUsd = (id) => { const c = ppCfg && ppCfg.catalog && ppCfg.catalog[id]; return c ? ('$' + c.usd) : ''; };
+  fetch('/api/paypal/config').then((r) => r.json()).then((c) => {
+    ppCfg = c;
+    const sub = shop.querySelector('#shopSub');
+    if (sub) sub.textContent = c.enabled ? ('PayPal 결제 · ' + (c.env === 'live' ? '실결제' : 'sandbox') + ' · ' + (c.currency || 'USD')) : '결제 미설정 · 지금은 무료';
+  }).catch(() => {});
+  function loadPPSdk(cb) {
+    if (window.paypal) return cb(null);
+    if (!ppCfg || !ppCfg.clientId) return cb(new Error('no client id'));
+    const s = document.createElement('script');
+    s.src = 'https://www.paypal.com/sdk/js?client-id=' + encodeURIComponent(ppCfg.clientId) + '&currency=' + encodeURIComponent(ppCfg.currency || 'USD') + '&intent=capture&components=buttons';
+    s.onload = () => cb(null);
+    s.onerror = () => cb(new Error('sdk load failed'));
+    document.head.appendChild(s);
+  }
+  function openCheckout(typeId) {
+    if (checkoutBusy) return; checkoutBusy = true;
+    const ov = document.createElement('div'); ov.id = 'payOv';
+    ov.innerHTML = '<div class="pbox"><h4>' + ppName(typeId) + ' 구매</h4><div class="pamt">' + ppUsd(typeId) + '</div><div id="ppbtns"></div><div class="pmsg" id="payMsg">결제 모듈 불러오는 중…</div><button class="pcancel" type="button">취소</button></div>';
+    document.body.appendChild(ov);
+    const close = () => { ov.remove(); checkoutBusy = false; };
+    ov.querySelector('.pcancel').addEventListener('click', close);
+    ov.addEventListener('click', (e) => { if (e.target === ov) close(); });
+    const msg = ov.querySelector('#payMsg');
+    loadPPSdk((err) => {
+      if (err) { msg.textContent = '결제 모듈을 불러오지 못했어요 (관리자 키 확인)'; return; }
+      msg.textContent = '';
+      window.paypal.Buttons({
+        style: { layout: 'vertical', color: 'gold', shape: 'rect', label: 'paypal' },
+        createOrder: () => fetch('/api/paypal/create-order', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ itemId: typeId }) }).then((r) => r.json()).then((d) => { if (!d.id) throw new Error(d.error || 'order'); return d.id; }),
+        onApprove: (data) => fetch('/api/paypal/capture-order', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ orderId: data.orderID }) }).then((r) => r.json()).then((d) => { if (!d.ok) throw new Error('capture'); msg.textContent = '결제 완료! 아이템 지급'; grantItem(d.itemId || typeId); setTimeout(close, 800); }),
+        onError: () => { msg.textContent = '결제 중 오류가 발생했어요'; },
+        onCancel: () => { msg.textContent = '결제가 취소되었어요'; },
+      }).render('#ppbtns');
+    });
+  }
 }
 
 window.addEventListener('error', (e) => { if (!app) fatal('Startup failed:<br><code style="color:#ffb">' + (e.message || e) + '</code>'); });
