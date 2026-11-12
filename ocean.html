@@ -840,6 +840,7 @@ if (app){
   const sparks = [];
   const SPARK_COL = [1, 0.42, 0.72];
   const _sparkOff = new T.Vector3(0, 0.18, 0);
+  const _q = new T.Quaternion();
   function addSpark(ox, oy, oz, vx, vy, vz) { if (sparks.length >= SPARK_MAX) sparks.shift(); sparks.push({ ox, oy, oz, x: ox, y: oy, z: oz, vx, vy, vz, life: 0.22 + Math.random() * 0.26, max: 0.48 }); }
 
   let fcursor = 0;
@@ -930,7 +931,7 @@ if (app){
   // ---- active effects ----
   const rockets = [], fountains = [], sparklers = [], secondaries = [];
   function launchAerial(typeId, x, y, z, vx, vy, vz, remote) { rockets.push({ t: 0, x, y, z, vx, vy, vz, ty: aerialById(typeId), remote, trail: 0 }); }
-  function placeFountain(x, z, remote) { fountains.push({ x, z, y: hAt(x, z), t: 0, dur: 6, remote, acc: 0, snd: 0 }); }
+  function placeFountain(x, z, remote) { fountains.push({ x, z, y: Math.max(hAt(x, z), 0.25), t: 0, dur: 8, remote, acc: 0, snd: 0, core: 0 }); }
   function startSparkler(x, y, z, follow, remote) { sparklers.push({ x, y, z, follow: follow || null, t: 0, dur: 30, remote, acc: 0, snd: 0 }); }
   netEvent = (data, id) => {
     if (!data || data.k !== 'fw') return;
@@ -947,7 +948,7 @@ if (app){
   // ---- held item on the hand ----
   let held = null, heldObj = null;
   const rocketMesh = () => { const g = new T.Group(); const body = new T.Mesh(new T.CylinderGeometry(0.03, 0.03, 0.24, 8), new T.MeshStandardMaterial({ color: 0xd23b3b })); g.add(body); const tip = new T.Mesh(new T.ConeGeometry(0.045, 0.1, 8), new T.MeshStandardMaterial({ color: 0xffd76a })); tip.position.y = 0.17; g.add(tip); return g; };
-  const sparklerMesh = () => { const g = new T.Group(); const stick = new T.Mesh(new T.CylinderGeometry(0.008, 0.008, 0.34, 6), new T.MeshStandardMaterial({ color: 0x8a8f98 })); g.add(stick); const tip = new T.Mesh(new T.SphereGeometry(0.02, 8, 6), new T.MeshBasicMaterial({ color: 0xffe6a0 })); tip.position.y = 0.18; g.add(tip); return g; };
+  const sparklerMesh = () => { const g = new T.Group(); g.userData.spark = true; const stick = new T.Mesh(new T.CylinderGeometry(0.008, 0.008, 0.34, 6), new T.MeshStandardMaterial({ color: 0x8a8f98 })); g.add(stick); const tip = new T.Mesh(new T.SphereGeometry(0.02, 8, 6), new T.MeshBasicMaterial({ color: 0xffe6a0 })); tip.position.y = 0.18; g.add(tip); return g; };
   function clearHeld() {
     if (heldObj && handR) handR.remove(heldObj);
     if (heldObj) for (let i = sparklers.length - 1; i >= 0; i--) if (sparklers[i].follow === heldObj) sparklers.splice(i, 1);
@@ -984,7 +985,7 @@ if (app){
   // ---- loop ----
   function fwUpdate(dt) {
     holdingItem = !!heldObj;
-    if (placing) { const f = new T.Vector3(); camera.getWorldDirection(f); f.y = 0; if (f.lengthSq() < 1e-4) f.set(0, 0, -1); f.normalize(); const bx = playerRef ? playerRef.g.position.x : camera.position.x, bz = playerRef ? playerRef.g.position.z : camera.position.z; const px = bx + f.x * 4.5, pz = bz + f.z * 4.5; placing.position.set(px, hAt(px, pz) + 0.03, pz); }
+    if (placing) { const f = new T.Vector3(); camera.getWorldDirection(f); f.y = 0; if (f.lengthSq() < 1e-4) f.set(0, 0, -1); f.normalize(); const bx = playerRef ? playerRef.g.position.x : camera.position.x, bz = playerRef ? playerRef.g.position.z : camera.position.z; const px = bx + f.x * 4.5, pz = bz + f.z * 4.5; placing.position.set(px, Math.max(hAt(px, pz), 0.25) + 0.03, pz); }
     for (let i = rockets.length - 1; i >= 0; i--) {
       const p = rockets[i]; p.t += dt; p.vy += -20 * dt; p.x += p.vx * dt; p.y += p.vy * dt; p.z += p.vz * dt;
       p.trail -= dt;
@@ -993,13 +994,15 @@ if (app){
     }
     for (let i = secondaries.length - 1; i >= 0; i--) { const s = secondaries[i]; s.t += dt; if (s.t >= s.delay) { burst(s.x, s.y, s.z, s.ty, s.remote); boom(s.remote); secondaries.splice(i, 1); } }
     for (let i = fountains.length - 1; i >= 0; i--) {
-      const f = fountains[i]; f.t += dt; f.acc += dt; f.snd += dt;
-      while (f.acc > 0.012) { f.acc -= 0.012; const a = Math.random() * Math.PI * 2, rr = Math.random() * 0.12; const up = 8 + Math.random() * 6; const cc = randColor(); emit1(f.x + Math.cos(a) * rr, f.y + 0.1, f.z + Math.sin(a) * rr, Math.cos(a) * 1.2, up, Math.sin(a) * 1.2, cc[0], cc[1], cc[2], 0.4 + Math.random() * 0.4, 1.0 + Math.random() * 0.8, -9, 0.5, 2); }
+      const f = fountains[i]; f.t += dt; f.acc += dt; f.snd += dt; f.core += dt;
+      while (f.acc > 0.008) { f.acc -= 0.008; const a = Math.random() * Math.PI * 2, rr = Math.random() * 0.18; const up = 11 + Math.random() * 7; const cc = randColor(); emit1(f.x + Math.cos(a) * rr, f.y + 0.15, f.z + Math.sin(a) * rr, Math.cos(a) * 1.7, up, Math.sin(a) * 1.7, cc[0], cc[1], cc[2], 0.5 + Math.random() * 0.5, 1.2 + Math.random() * 0.9, -9, 0.5, 2); }
+      if (f.core > 0.03) { f.core = 0; emit1(f.x + (Math.random() - 0.5) * 0.1, f.y + 0.15, f.z + (Math.random() - 0.5) * 0.1, (Math.random() - 0.5) * 0.5, 14 + Math.random() * 6, (Math.random() - 0.5) * 0.5, 1, 1, 1, 0.7, 0.9, -9, 0.6, 1); }
       if (f.snd > 0.05) { f.snd = 0; if (!f.remote || othersSound) { pop(0.09); if (actx && Math.random() < 0.3) { const t = actx.currentTime; const s = actx.createBufferSource(); s.buffer = noise; const g = actx.createGain(); g.gain.setValueAtTime(0.06, t); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.4); s.connect(g); g.connect(actx.destination); s.start(t); s.stop(t + 0.45); } } }
       if (f.t >= f.dur) fountains.splice(i, 1);
     }
     for (let i = sparklers.length - 1; i >= 0; i--) {
       const s = sparklers[i]; s.t += dt; s.acc += dt; s.snd += dt;
+      if (s.follow && s.follow.userData && s.follow.userData.spark && s.follow.parent) { s.follow.parent.getWorldQuaternion(_q); s.follow.quaternion.copy(_q).invert(); s.follow.updateWorldMatrix(true, false); }
       let px = s.x, py = s.y, pz = s.z;
       if (s.follow) { s.follow.localToWorld(_sparkOff.set(0, 0.18, 0)); px = _sparkOff.x; py = _sparkOff.y; pz = _sparkOff.z; }
       while (s.acc > 0.006) { s.acc -= 0.006; const dir = randUnit(); const v = 1.5 + Math.random() * 2; addSpark(px, py, pz, dir[0] * v, Math.abs(dir[1]) * v * 0.7 + 0.6, dir[2] * v); }
