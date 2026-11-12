@@ -391,7 +391,7 @@ let playStep = null;
 
 /* ---------- ambience: sun follows the clock; the sea drifts calm ↔ stormy ---------- */
 let seaTick = null;
-let netRoom = null, netEvent = null, handR = null, playerRef = null, shopInfo = null, holdingItem = false, nightMode = false, setNightMode = null;
+let netRoom = null, netEvent = null, handR = null, playerRef = null, shopInfo = null, holdingItem = false, nightMode = false, setNightMode = null, armForPeer = null;
 if (app){
   const auto = true;
   const KEYS = [  // hour → wind, waves, chop, swell, sun intensity, clouds, haze, spray
@@ -661,6 +661,7 @@ if (app){
     const r = remotes.get(id);
     if (r){ scene.remove(r.p.g); remotes.delete(id); setPeersText(); }
   }
+  armForPeer = (id) => { const r = remotes.get(id); return r ? r.p.armR : null; };
   const selfState = () => ({
     x: +player.g.position.x.toFixed(2), y: +player.g.position.y.toFixed(2), z: +player.g.position.z.toFixed(2),
     ry: +player.g.rotation.y.toFixed(2), sit: seated ? 1 : 0, c: MY.c, n: MY.n, hs: MY.hs,
@@ -678,7 +679,7 @@ if (app){
       r.seen = performance.now();
     },
     onStatus: (s) => { netUp = (s === 'online'); setPeersText(); },
-    onEvent: (data) => { if (netEvent) netEvent(data); },
+    onEvent: (data, id) => { if (netEvent) netEvent(data, id); },
   });
   netRoom = room;
   setInterval(() => room.send(selfState()), 150);
@@ -931,19 +932,27 @@ if (app){
   function launchAerial(typeId, x, y, z, vx, vy, vz, remote) { rockets.push({ t: 0, x, y, z, vx, vy, vz, ty: aerialById(typeId), remote, trail: 0 }); }
   function placeFountain(x, z, remote) { fountains.push({ x, z, y: hAt(x, z), t: 0, dur: 6, remote, acc: 0, snd: 0 }); }
   function startSparkler(x, y, z, follow, remote) { sparklers.push({ x, y, z, follow: follow || null, t: 0, dur: 30, remote, acc: 0, snd: 0 }); }
-  netEvent = (data) => {
+  netEvent = (data, id) => {
     if (!data || data.k !== 'fw') return;
     audioEnsure();
     if (data.kind === 'aerial') launchAerial(data.t, +data.x, +data.y, +data.z, +data.vx, +data.vy, +data.vz, true);
     else if (data.kind === 'fountain') placeFountain(+data.x, +data.z, true);
-    else if (data.kind === 'sparkler') startSparkler(+data.x, +data.y, +data.z, null, true);
+    else if (data.kind === 'sparkler') {
+      let mesh = null;
+      if (id && armForPeer) { const arm = armForPeer(id); if (arm) { mesh = sparklerMesh(); mesh.position.set(0, -0.30, 0.02); arm.add(mesh); } }
+      startSparkler(+data.x, +data.y, +data.z, mesh, true);
+    }
   };
 
   // ---- held item on the hand ----
   let held = null, heldObj = null;
   const rocketMesh = () => { const g = new T.Group(); const body = new T.Mesh(new T.CylinderGeometry(0.03, 0.03, 0.24, 8), new T.MeshStandardMaterial({ color: 0xd23b3b })); g.add(body); const tip = new T.Mesh(new T.ConeGeometry(0.045, 0.1, 8), new T.MeshStandardMaterial({ color: 0xffd76a })); tip.position.y = 0.17; g.add(tip); return g; };
   const sparklerMesh = () => { const g = new T.Group(); const stick = new T.Mesh(new T.CylinderGeometry(0.008, 0.008, 0.34, 6), new T.MeshStandardMaterial({ color: 0x8a8f98 })); g.add(stick); const tip = new T.Mesh(new T.SphereGeometry(0.02, 8, 6), new T.MeshBasicMaterial({ color: 0xffe6a0 })); tip.position.y = 0.18; g.add(tip); return g; };
-  function clearHeld() { if (heldObj && handR) handR.remove(heldObj); heldObj = null; held = null; }
+  function clearHeld() {
+    if (heldObj && handR) handR.remove(heldObj);
+    if (heldObj) for (let i = sparklers.length - 1; i >= 0; i--) if (sparklers[i].follow === heldObj) sparklers.splice(i, 1);
+    heldObj = null; held = null;
+  }
   function heldWorld() { const v = new T.Vector3(); if (heldObj) heldObj.getWorldPosition(v); else if (handR) handR.getWorldPosition(v); else camera.getWorldPosition(v); return v; }
 
   // fountain placement marker on the ground
@@ -955,6 +964,7 @@ if (app){
   function buy(typeId) {
     if (typeId === 'night') { if (setNightMode) setNightMode(true); return; }
     if (typeId === 'day') { if (setNightMode) setNightMode(false); return; }
+    removeMarker();
     const a = aerialById(typeId);
     if (AERIAL.some((t) => t.id === typeId) && handR) { clearHeld(); held = a; heldObj = rocketMesh(); heldObj.position.set(0, -0.30, 0.02); handR.add(heldObj); return; }
     if (typeId === 'sparkler' && handR) { if (held && held.id === 'sparkler') return; clearHeld(); held = { id: 'sparkler' }; heldObj = sparklerMesh(); heldObj.position.set(0, -0.30, 0.02); handR.add(heldObj); const wp = heldWorld(); startSparkler(wp.x, wp.y, wp.z, heldObj, false); return; }
@@ -995,7 +1005,7 @@ if (app){
       while (s.acc > 0.006) { s.acc -= 0.006; const dir = randUnit(); const v = 1.5 + Math.random() * 2; addSpark(px, py, pz, dir[0] * v, Math.abs(dir[1]) * v * 0.7 + 0.6, dir[2] * v); }
       s.core = (s.core || 0) + dt; if (s.core > 0.03) { s.core = 0; emit1(px, py, pz, 0, 0, 0, 1, 0.8, 0.9, 0.5, 0.07, 0, 1, 0); }
       if (s.snd > 0.07) { s.snd = 0; if (!s.remote || othersSound) pop(0.05); }
-      if (s.t >= s.dur) { if (s.follow && s.follow === heldObj) clearHeld(); sparklers.splice(i, 1); }
+      if (s.t >= s.dur) { if (s.follow && s.follow === heldObj) clearHeld(); else if (s.follow && s.follow.parent) s.follow.parent.remove(s.follow); if (sparklers[i] === s) sparklers.splice(i, 1); }
     }
     for (let i = sparks.length - 1; i >= 0; i--) { const sp = sparks[i]; sp.life -= dt; if (sp.life <= 0) { sparks.splice(i, 1); continue; } const dk = Math.max(0, 1 - 9 * dt); sp.vx *= dk; sp.vy = sp.vy * dk - 1.0 * dt; sp.vz *= dk; sp.x += sp.vx * dt; sp.y += sp.vy * dt; sp.z += sp.vz * dt; }
     { const n = Math.min(sparks.length, SPARK_MAX); for (let i = 0; i < n; i++) { const sp = sparks[i]; const k = i * 6; sPos[k] = sp.ox; sPos[k + 1] = sp.oy; sPos[k + 2] = sp.oz; sPos[k + 3] = sp.x; sPos[k + 4] = sp.y; sPos[k + 5] = sp.z; const a = Math.min(1, sp.life / (sp.max * 0.55)); sCol[k] = 1; sCol[k + 1] = 0.82; sCol[k + 2] = 0.9; sCol[k + 3] = SPARK_COL[0] * a; sCol[k + 4] = SPARK_COL[1] * a; sCol[k + 5] = SPARK_COL[2] * a; } sGeo.setDrawRange(0, n * 2); if (n) { sGeo.attributes.position.needsUpdate = true; sGeo.attributes.color.needsUpdate = true; } }
