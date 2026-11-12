@@ -838,8 +838,8 @@ if (app){
   sGeo.setDrawRange(0, 0);
   const sparks = [];
   const sparkTip = new T.Vector3(0, -999, 0);
-  const SPARK_COL = [1, 0.6, 0.82];
-  function addSpark(x, y, z, vx, vy, vz) { if (sparks.length >= SPARK_MAX) sparks.shift(); sparks.push({ x, y, z, vx, vy, vz, life: 0.35 + Math.random() * 0.4, max: 0.75 }); }
+  const SPARK_COL = [1, 0.42, 0.72];
+  function addSpark(x, y, z, vx, vy, vz) { if (sparks.length >= SPARK_MAX) sparks.shift(); sparks.push({ x, y, z, vx, vy, vz, life: 0.22 + Math.random() * 0.26, max: 0.48 }); }
 
   let fcursor = 0;
   function emit1(x, y, z, vx, vy, vz, r, g, b, size, lifeSec, grav, dragK, tw) {
@@ -994,13 +994,13 @@ if (app){
       let px = s.x, py = s.y, pz = s.z;
       if (s.follow) { const w = s.follow.getWorldPosition(new T.Vector3()); px = w.x; py = w.y; pz = w.z; }
       if (s.follow) sparkTip.set(px, py, pz);
-      while (s.acc > 0.004) { s.acc -= 0.004; const dir = randUnit(); const v = 4 + Math.random() * 6; addSpark(px, py, pz, dir[0] * v, Math.abs(dir[1]) * v * 0.7 + 1.5, dir[2] * v); }
-      s.core = (s.core || 0) + dt; if (s.core > 0.016) { s.core = 0; emit1(px, py, pz, 0, 0, 0, 1, 0.78, 0.88, 0.9, 0.09, 0, 1, 0); }
+      while (s.acc > 0.006) { s.acc -= 0.006; const dir = randUnit(); const v = 1.5 + Math.random() * 2; addSpark(px, py, pz, dir[0] * v, Math.abs(dir[1]) * v * 0.7 + 0.6, dir[2] * v); }
+      s.core = (s.core || 0) + dt; if (s.core > 0.03) { s.core = 0; emit1(px, py, pz, 0, 0, 0, 1, 0.8, 0.9, 0.5, 0.07, 0, 1, 0); }
       if (s.snd > 0.07) { s.snd = 0; if (!s.remote || othersSound) pop(0.05); }
       if (s.t >= s.dur) { if (s.follow && s.follow === heldObj) clearHeld(); sparklers.splice(i, 1); }
     }
-    for (let i = sparks.length - 1; i >= 0; i--) { const sp = sparks[i]; sp.life -= dt; if (sp.life <= 0) { sparks.splice(i, 1); continue; } const dk = Math.max(0, 1 - 2.2 * dt); sp.vx *= dk; sp.vy = sp.vy * dk - 2.2 * dt; sp.vz *= dk; sp.x += sp.vx * dt; sp.y += sp.vy * dt; sp.z += sp.vz * dt; }
-    { const n = Math.min(sparks.length, SPARK_MAX); for (let i = 0; i < n; i++) { const sp = sparks[i]; const k = i * 6; sPos[k] = sparkTip.x; sPos[k + 1] = sparkTip.y; sPos[k + 2] = sparkTip.z; sPos[k + 3] = sp.x; sPos[k + 4] = sp.y; sPos[k + 5] = sp.z; const a = Math.min(1, sp.life / (sp.max * 0.55)); sCol[k] = 1; sCol[k + 1] = 1; sCol[k + 2] = 1; sCol[k + 3] = SPARK_COL[0] * a; sCol[k + 4] = SPARK_COL[1] * a; sCol[k + 5] = SPARK_COL[2] * a; } sGeo.setDrawRange(0, n * 2); if (n) { sGeo.attributes.position.needsUpdate = true; sGeo.attributes.color.needsUpdate = true; } }
+    for (let i = sparks.length - 1; i >= 0; i--) { const sp = sparks[i]; sp.life -= dt; if (sp.life <= 0) { sparks.splice(i, 1); continue; } const dk = Math.max(0, 1 - 9 * dt); sp.vx *= dk; sp.vy = sp.vy * dk - 1.0 * dt; sp.vz *= dk; sp.x += sp.vx * dt; sp.y += sp.vy * dt; sp.z += sp.vz * dt; }
+    { const n = Math.min(sparks.length, SPARK_MAX); for (let i = 0; i < n; i++) { const sp = sparks[i]; const k = i * 6; sPos[k] = sparkTip.x; sPos[k + 1] = sparkTip.y; sPos[k + 2] = sparkTip.z; sPos[k + 3] = sp.x; sPos[k + 4] = sp.y; sPos[k + 5] = sp.z; const a = Math.min(1, sp.life / (sp.max * 0.55)); sCol[k] = 1; sCol[k + 1] = 0.82; sCol[k + 2] = 0.9; sCol[k + 3] = SPARK_COL[0] * a; sCol[k + 4] = SPARK_COL[1] * a; sCol[k + 5] = SPARK_COL[2] * a; } sGeo.setDrawRange(0, n * 2); if (n) { sGeo.attributes.position.needsUpdate = true; sGeo.attributes.color.needsUpdate = true; } }
     for (let i = 0; i < MAX; i++) {
       if (flife[i] <= 0) { if (falp[i] !== 0) falp[i] = 0; continue; }
       flife[i] -= dt; if (flife[i] <= 0) { falp[i] = 0; continue; }
