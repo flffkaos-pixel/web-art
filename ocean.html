@@ -668,7 +668,7 @@ if (app){
   });
   let room = null;
   room = app.createRoom({
-    onJoin: () => { room.send(selfState()); setPeersText(); },
+    onJoin: () => { room.send(selfState()); if (nightMode) room.emit({ k: 'fw', kind: 'mood', v: 1 }); setPeersText(); },
     onLeave: (id) => dropRemote(id),
     onState: (id, st) => {
       if (!remotes.has(id)) addRemote(id, st);
@@ -938,6 +938,7 @@ if (app){
     audioEnsure();
     if (data.kind === 'aerial') launchAerial(data.t, +data.x, +data.y, +data.z, +data.vx, +data.vy, +data.vz, true);
     else if (data.kind === 'fountain') placeFountain(+data.x, +data.z, true);
+    else if (data.kind === 'mood') { if (setNightMode) setNightMode(!!data.v); }
     else if (data.kind === 'sparkler') {
       let mesh = null;
       if (id && armForPeer) { const arm = armForPeer(id); if (arm) { mesh = sparklerMesh(); mesh.position.set(0, -0.30, 0.02); arm.add(mesh); } }
@@ -963,8 +964,8 @@ if (app){
   function startPlacing() { removeMarker(); const m = new T.Mesh(ringGeo, ringMat); m.rotation.x = -Math.PI / 2; scene.add(m); placing = m; }
   function removeMarker() { if (placing) { scene.remove(placing); placing = null; } }
   function buy(typeId) {
-    if (typeId === 'night') { if (setNightMode) setNightMode(true); return; }
-    if (typeId === 'day') { if (setNightMode) setNightMode(false); return; }
+    if (typeId === 'night') { if (setNightMode) setNightMode(true); netRoom?.emit({ k: 'fw', kind: 'mood', v: 1 }); return; }
+    if (typeId === 'day') { if (setNightMode) setNightMode(false); netRoom?.emit({ k: 'fw', kind: 'mood', v: 0 }); return; }
     removeMarker();
     const a = aerialById(typeId);
     if (AERIAL.some((t) => t.id === typeId) && handR) { clearHeld(); held = a; heldObj = rocketMesh(); heldObj.position.set(0, -0.30, 0.02); handR.add(heldObj); return; }
