@@ -283,7 +283,7 @@ try {
 }
 
 const hint = document.querySelector('#hud .desk-hint');
-if (hint) hint.innerHTML = '<kbd>W A S D</kbd> walk &nbsp; <kbd>Shift</kbd> run &nbsp; <kbd>F</kbd> sit / stand &nbsp; <kbd>drag</kbd> orbit &nbsp; <kbd>wheel</kbd> zoom';
+if (hint) hint.innerHTML = '<kbd>W A S D</kbd> walk &nbsp; <kbd>Shift</kbd> run &nbsp; <kbd>F</kbd> sit &nbsp; <kbd>V</kbd> 1인칭 &nbsp; <kbd>drag</kbd> look &nbsp; <kbd>wheel</kbd> zoom<span id="hintShoot" style="display:none"></span>';
 
 let playStep = null;
 /* ---------- procedural surf — waves only, no music ---------- */
@@ -998,9 +998,21 @@ if (app){
   }
   addEventListener('keydown', (e) => { if (e.code === 'Space') { e.preventDefault(); shoot(); } });
 
+  // ---- bottom-HUD hint: show "Space" only while holding/placing ----
+  let hintState = '';
+  function updateHintShoot() {
+    const st = placing ? 'place' : (heldObj ? 'shoot' : '');
+    if (st === hintState) return; hintState = st;
+    const el = document.getElementById('hintShoot'); if (!el) return;
+    if (st === 'place') { el.style.display = 'inline'; el.innerHTML = ' &nbsp; <kbd>Space</kbd> 분수 설치'; }
+    else if (st === 'shoot') { el.style.display = 'inline'; el.innerHTML = ' &nbsp; <kbd>Space</kbd> 폭죽 발사'; }
+    else el.style.display = 'none';
+  }
+
   // ---- loop ----
   function fwUpdate(dt) {
     holdingItem = !!heldObj;
+    updateHintShoot();
     if (placing) { const f = new T.Vector3(); camera.getWorldDirection(f); f.y = 0; if (f.lengthSq() < 1e-4) f.set(0, 0, -1); f.normalize(); const bx = playerRef ? playerRef.g.position.x : camera.position.x, bz = playerRef ? playerRef.g.position.z : camera.position.z; const lp = nearestLand(bx + f.x * 4.5, bz + f.z * 4.5); placing.position.set(lp[0], Math.max(hAt(lp[0], lp[1]), 0.35) + 0.02, lp[1]); }
     for (let i = rockets.length - 1; i >= 0; i--) {
       const p = rockets[i]; p.t += dt; p.vy += -20 * dt; p.x += p.vx * dt; p.y += p.vy * dt; p.z += p.vz * dt;
@@ -1162,7 +1174,8 @@ if (app){
   let shopShown = false;
   function updateShopVisibility() {
     const ref = playerRef ? playerRef.g.position : camera.position;
-    const near = ref.distanceTo(shopPos) < 8;
+    let near = false;
+    if (shopInfo) { const dx = ref.x - shopInfo.x, dz = ref.z - shopInfo.z; const c = Math.cos(-shopInfo.yaw), s = Math.sin(-shopInfo.yaw); const lx = dx * c - dz * s, lz = dx * s + dz * c; near = Math.abs(lx) < shopInfo.hx + 1.2 && Math.abs(lz) < shopInfo.hz + 1.2; }
     if (near !== shopShown) { shopShown = near; shop.style.display = near ? 'block' : 'none'; }
     if (near && hintEl) hintEl.textContent = placing ? '설치 위치로 이동 후 발사(Space)' : held ? (held.id === 'sparkler' ? '스파클러 사용 중…' : '손에 폭죽 들고 있음 — 발사(Space)로 쏘세요') : '상점에 도착! 위에서 구매하세요';
   }
@@ -1176,7 +1189,7 @@ if (app){
   fetch('/api/paypal/config').then((r) => r.json()).then((c) => {
     ppCfg = c;
     const sub = shop.querySelector('#shopSub');
-    if (sub) sub.textContent = c.enabled ? ('PayPal 결제 · ' + (c.env === 'live' ? '실결제' : 'sandbox') + ' · ' + (c.currency || 'USD')) : '결제 미설정 · 지금은 무료';
+    if (sub) sub.textContent = c.enabled ? ('PayPal 결제 · ' + (c.env === 'live' ? '실결제' : 'sandbox') + ' · ' + (c.currency || 'USD')) : (c.hasCreds ? '테스트 모드 · 지금은 무료' : '결제 미설정 · 지금은 무료');
   }).catch(() => {});
   function loadPPSdk(cb) {
     if (window.paypal) return cb(null);
