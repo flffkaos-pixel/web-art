@@ -1,8 +1,8 @@
 // PayPal helper + server-side price catalog (CommonJS for Vercel zero-config functions)
 
-const ENV = process.env.PAYPAL_ENV === 'live' ? 'live' : 'sandbox';
+const ENV = (process.env.PAYPAL_ENV || '').trim().toLowerCase() === 'live' ? 'live' : 'sandbox';
 const BASE = ENV === 'live' ? 'https://api-m.paypal.com' : 'https://api-m.sandbox.paypal.com';
-const CURRENCY = process.env.PAYPAL_CURRENCY || 'USD';
+const CURRENCY = (process.env.PAYPAL_CURRENCY || 'USD').trim();
 
 // server-authoritative prices (USD); ids match the shop buttons
 const CATALOG = {
@@ -26,8 +26,8 @@ let tokenCache = { token: null, exp: 0 };
 async function getAccessToken() {
   const now = Date.now();
   if (tokenCache.token && now < tokenCache.exp - 60000) return tokenCache.token;
-  const id = process.env.PAYPAL_CLIENT_ID;
-  const secret = process.env.PAYPAL_SECRET;
+  const id = (process.env.PAYPAL_CLIENT_ID || '').trim();
+  const secret = (process.env.PAYPAL_SECRET || '').trim();
   if (!id || !secret) throw new Error('PAYPAL_CLIENT_ID / PAYPAL_SECRET not configured');
   const auth = Buffer.from(id + ':' + secret).toString('base64');
   const r = await fetch(BASE + '/v1/oauth2/token', {
