@@ -931,7 +931,12 @@ if (app){
   // ---- active effects ----
   const rockets = [], fountains = [], sparklers = [], secondaries = [];
   function launchAerial(typeId, x, y, z, vx, vy, vz, remote) { rockets.push({ t: 0, x, y, z, vx, vy, vz, ty: aerialById(typeId), remote, trail: 0 }); }
-  function placeFountain(x, z, remote) { const y = Math.max(hAt(x, z), 0.3); const mesh = fountainMesh(); mesh.position.set(x, y, z); scene.add(mesh); fountains.push({ x, z, y, t: 0, dur: 8, remote, acc: 0, snd: 0, core: 0, mesh }); }
+  function nearestLand(x, z) {
+    if (hAt(x, z) > 0.35) return [x, z];
+    for (let r = 1.5; r <= 45; r += 1.5) { for (let k = 0; k < 8; k++) { const ang = k / 8 * Math.PI * 2; const tx = x + Math.cos(ang) * r, tz = z + Math.sin(ang) * r; if (hAt(tx, tz) > 0.35) return [tx, tz]; } }
+    return [x, z];
+  }
+  function placeFountain(x, z, remote) { const lp = nearestLand(x, z); const y = Math.max(hAt(lp[0], lp[1]), 0.35); const mesh = fountainMesh(); mesh.position.set(lp[0], y, lp[1]); scene.add(mesh); fountains.push({ x: lp[0], z: lp[1], y, t: 0, dur: 8, remote, acc: 0, snd: 0, core: 0, mesh }); }
   function startSparkler(x, y, z, follow, remote) { sparklers.push({ x, y, z, follow: follow || null, t: 0, dur: 30, remote, acc: 0, snd: 0 }); }
   netEvent = (data, id) => {
     if (!data || data.k !== 'fw') return;
@@ -992,7 +997,7 @@ if (app){
   // ---- loop ----
   function fwUpdate(dt) {
     holdingItem = !!heldObj;
-    if (placing) { const f = new T.Vector3(); camera.getWorldDirection(f); f.y = 0; if (f.lengthSq() < 1e-4) f.set(0, 0, -1); f.normalize(); const bx = playerRef ? playerRef.g.position.x : camera.position.x, bz = playerRef ? playerRef.g.position.z : camera.position.z; let px = bx + f.x * 4.5, pz = bz + f.z * 4.5; for (let d = 4.5; d >= 0; d -= 0.5) { const tx = bx + f.x * d, tz = bz + f.z * d; if (hAt(tx, tz) > 0.15) { px = tx; pz = tz; break; } } placing.position.set(px, Math.max(hAt(px, pz), 0.3) + 0.02, pz); }
+    if (placing) { const f = new T.Vector3(); camera.getWorldDirection(f); f.y = 0; if (f.lengthSq() < 1e-4) f.set(0, 0, -1); f.normalize(); const bx = playerRef ? playerRef.g.position.x : camera.position.x, bz = playerRef ? playerRef.g.position.z : camera.position.z; const lp = nearestLand(bx + f.x * 4.5, bz + f.z * 4.5); placing.position.set(lp[0], Math.max(hAt(lp[0], lp[1]), 0.35) + 0.02, lp[1]); }
     for (let i = rockets.length - 1; i >= 0; i--) {
       const p = rockets[i]; p.t += dt; p.vy += -20 * dt; p.x += p.vx * dt; p.y += p.vy * dt; p.z += p.vz * dt;
       p.trail -= dt;
