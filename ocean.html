@@ -592,6 +592,7 @@ if (app){
   let seated = true, gliding = 0;
   const goalCam = new T.Vector3();
   function toggleSit(){
+    if (fpMode) return;
     seated = !seated;
     player.sit = seated;
     sitBtn?.classList.toggle('on', seated);
@@ -708,11 +709,12 @@ if (app){
     addEventListener('pointerup', () => { fpDrag = false; });
     addEventListener('pointercancel', () => { fpDrag = false; });
   }
-  function updateFPBtn(){ const b = document.getElementById('fpBtn'); if (b){ b.textContent = fpMode ? '1인칭 끄기 (V)' : '1인칭 (앉아서 · V)'; b.style.opacity = (seated || fpMode) ? '1' : '0.45'; } }
+  function updateFPBtn(){ const b = document.getElementById('fpBtn'); if (b){ b.textContent = fpMode ? '1인칭 끄기 (V)' : '1인칭 (V)'; b.style.opacity = '1'; } }
   function toggleFP(){
     if (fpMode){ fpMode = false; controls.enabled = true; if (player) player.g.visible = true; if (player){ const hx = player.g.position.x, hy = player.g.position.y + 1.0, hz = player.g.position.z; controls.target.set(hx, hy, hz); camera.position.set(hx + Math.sin(fpYaw) * 5, hy + 1.6, hz + Math.cos(fpYaw) * 5); controls.update(); } updateFPBtn(); return; }
-    if (!seated) return;
-    fpMode = true; if (player) player.g.visible = false; controls.enabled = false; const d = new T.Vector3(); camera.getWorldDirection(d); d.y = 0; if (d.lengthSq() < 1e-4) d.set(0, 0, -1); d.normalize(); fpYaw = Math.atan2(-d.x, -d.z); fpPitch = 0.05; updateFPBtn();
+    if (player) player.g.visible = false;
+    fpMode = true; seated = false; if (player) player.sit = false; if (sitBtn){ sitBtn.classList.remove('on'); sitBtn.textContent = 'sit'; }
+    controls.enabled = false; const d = new T.Vector3(); camera.getWorldDirection(d); d.y = 0; if (d.lengthSq() < 1e-4) d.set(0, 0, -1); d.normalize(); fpYaw = Math.atan2(-d.x, -d.z); fpPitch = 0.05; updateFPBtn();
   }
   addEventListener('keydown', (e) => { if (e.code === 'KeyV' && !e.repeat && player) toggleFP(); });
   const fpBtn = document.createElement('button');
@@ -728,7 +730,6 @@ if (app){
     const t = now / 1000;
 
     if (seaTick) seaTick(dt);
-    if (fpMode && !seated) toggleFP();
 
     if (gliding){
       gliding = Math.max(0, gliding - dt / 1.1);
@@ -778,8 +779,11 @@ if (app){
     if (holdingItem) { player.armR.rotation.x = -1.35; player.armR.rotation.z = 0.06; }
 
     if (fpMode){
-      camera.position.set(player.g.position.x, player.g.position.y + 1.0 + Math.sin(t * 1.2) * 0.008, player.g.position.z);
-      camera.quaternion.setFromEuler(new T.Euler(fpPitch, fpYaw, 0, 'YXZ'));
+      const hx = player.g.position.x, hy = player.g.position.y + 1.05 + Math.sin(t * 1.2) * 0.008, hz = player.g.position.z;
+      const cp = Math.cos(fpPitch), dx = -Math.sin(fpYaw) * cp, dy = Math.sin(fpPitch), dz = -Math.cos(fpYaw) * cp;
+      camera.position.set(hx, hy, hz);
+      controls.target.set(hx + dx, hy + dy, hz + dz);
+      controls.update();
     } else {
       head.copy(player.g.position); head.y += seated ? 0.85 : 1.3;
       const fk = 1 - Math.pow(0.0005, dt);
@@ -818,7 +822,7 @@ if (app){
   geo.setAttribute('aAlpha', new T.BufferAttribute(falp, 1));
   const fmat = new T.ShaderMaterial({
     uniforms: { uTex: { value: dotTex }, uScale: { value: 600 } },
-    transparent: true, depthWrite: false, blending: T.AdditiveBlending,
+    transparent: true, depthWrite: false, depthTest: false, blending: T.AdditiveBlending,
     vertexShader: `attribute float aSize; attribute float aAlpha; attribute vec3 aColor;
       varying vec3 vColor; varying float vAlpha; uniform float uScale;
       void main(){ vColor=aColor; vAlpha=aAlpha; vec4 mv=modelViewMatrix*vec4(position,1.0);
@@ -826,7 +830,7 @@ if (app){
     fragmentShader: `uniform sampler2D uTex; varying vec3 vColor; varying float vAlpha;
       void main(){ vec4 t=texture2D(uTex, gl_PointCoord); if(t.a<0.01) discard; gl_FragColor=vec4(vColor*1.4, t.a*vAlpha); }`,
   });
-  const fpoints = new T.Points(geo, fmat); fpoints.frustumCulled = false; scene.add(fpoints);
+  const fpoints = new T.Points(geo, fmat); fpoints.frustumCulled = false; fpoints.renderOrder = 900; scene.add(fpoints);
 
   // sparkler: thin radiating spark lines (LineSegments) + glowing core
   const SPARK_MAX = 480;
@@ -834,8 +838,8 @@ if (app){
   const sGeo = new T.BufferGeometry();
   sGeo.setAttribute('position', new T.BufferAttribute(sPos, 3));
   sGeo.setAttribute('color', new T.BufferAttribute(sCol, 3));
-  const sMat = new T.LineBasicMaterial({ vertexColors: true, transparent: true, blending: T.AdditiveBlending, depthWrite: false });
-  const sLines = new T.LineSegments(sGeo, sMat); sLines.frustumCulled = false; scene.add(sLines);
+  const sMat = new T.LineBasicMaterial({ vertexColors: true, transparent: true, blending: T.AdditiveBlending, depthWrite: false, depthTest: false });
+  const sLines = new T.LineSegments(sGeo, sMat); sLines.frustumCulled = false; sLines.renderOrder = 901; scene.add(sLines);
   sGeo.setDrawRange(0, 0);
   const sparks = [];
   const SPARK_COL = [1, 0.42, 0.72];
