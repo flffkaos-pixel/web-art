@@ -693,12 +693,28 @@ if (app){
   const head = new T.Vector3(), fwd = new T.Vector3(), dir = new T.Vector3(), right = new T.Vector3(), _look = new T.Vector3();
   let last = 0, stepTimer = 0;
 
+  // rock colliders: read the terrain's instanced rocks once
+  const rockCols = [];
+  {
+    let im = null;
+    if (app.terrain && app.terrain.group) app.terrain.group.traverse((o) => { if (o.isInstancedMesh && !im) im = o; });
+    if (im) {
+      const mtx = new T.Matrix4(), pos = new T.Vector3(), quat = new T.Quaternion(), scl = new T.Vector3();
+      for (let i = 0; i < im.count; i++) { im.getMatrixAt(i, mtx); mtx.decompose(pos, quat, scl); const r = Math.max(scl.x, scl.z) * 0.85; if (r > 0.4) rockCols.push({ x: pos.x, z: pos.z, r }); }
+    }
+    // if the player spawned inside a rock, push them out
+    for (let i = 0; i < rockCols.length; i++) { const rc = rockCols[i], dx = player.g.position.x - rc.x, dz = player.g.position.z - rc.z; const d = Math.hypot(dx, dz), rr = rc.r + 0.5; if (d < rr) { const k = (rr - d) / (d || 1); player.g.position.x += dx * k; player.g.position.z += dz * k; } }
+    player.g.position.y = hAt(player.g.position.x, player.g.position.z);
+  }
   function blockedAt(x, z){
-    if (!shopInfo) return false;
-    const dx = x - shopInfo.x, dz = z - shopInfo.z;
-    const c = Math.cos(-shopInfo.yaw), s = Math.sin(-shopInfo.yaw);
-    const lx = dx * c - dz * s, lz = dx * s + dz * c;
-    return Math.abs(lx) < shopInfo.hx && Math.abs(lz) < shopInfo.hz;
+    if (shopInfo) {
+      const dx = x - shopInfo.x, dz = z - shopInfo.z;
+      const c = Math.cos(-shopInfo.yaw), s = Math.sin(-shopInfo.yaw);
+      const lx = dx * c - dz * s, lz = dx * s + dz * c;
+      if (Math.abs(lx) < shopInfo.hx && Math.abs(lz) < shopInfo.hz) return true;
+    }
+    for (let i = 0; i < rockCols.length; i++) { const rc = rockCols[i], dx = x - rc.x, dz = z - rc.z, rr = rc.r + 0.3; if (dx * dx + dz * dz < rr * rr) return true; }
+    return false;
   }
 
   // ---- first-person view (only while sitting) ----
