@@ -822,7 +822,7 @@ if (app){
   geo.setAttribute('aAlpha', new T.BufferAttribute(falp, 1));
   const fmat = new T.ShaderMaterial({
     uniforms: { uTex: { value: dotTex }, uScale: { value: 600 } },
-    transparent: true, depthWrite: false, depthTest: false, blending: T.AdditiveBlending,
+    transparent: true, depthWrite: false, blending: T.AdditiveBlending,
     vertexShader: `attribute float aSize; attribute float aAlpha; attribute vec3 aColor;
       varying vec3 vColor; varying float vAlpha; uniform float uScale;
       void main(){ vColor=aColor; vAlpha=aAlpha; vec4 mv=modelViewMatrix*vec4(position,1.0);
@@ -838,14 +838,13 @@ if (app){
   const sGeo = new T.BufferGeometry();
   sGeo.setAttribute('position', new T.BufferAttribute(sPos, 3));
   sGeo.setAttribute('color', new T.BufferAttribute(sCol, 3));
-  const sMat = new T.LineBasicMaterial({ vertexColors: true, transparent: true, blending: T.AdditiveBlending, depthWrite: false, depthTest: false });
+  const sMat = new T.LineBasicMaterial({ vertexColors: true, transparent: true, blending: T.AdditiveBlending, depthWrite: false });
   const sLines = new T.LineSegments(sGeo, sMat); sLines.frustumCulled = false; sLines.renderOrder = 901; scene.add(sLines);
   sGeo.setDrawRange(0, 0);
   const sparks = [];
-  const SPARK_COL = [1, 0.42, 0.72];
+  const SPARK_COL = [1, 0.86, 0.34];
   const _sparkOff = new T.Vector3(0, 0.18, 0);
-  const _q = new T.Quaternion();
-  function addSpark(ox, oy, oz, vx, vy, vz) { if (sparks.length >= SPARK_MAX) sparks.shift(); sparks.push({ ox, oy, oz, x: ox, y: oy, z: oz, vx, vy, vz, life: 0.22 + Math.random() * 0.26, max: 0.48 }); }
+  function addSpark(s, vx, vy, vz) { if (sparks.length >= SPARK_MAX) sparks.shift(); sparks.push({ s, rx: 0, ry: 0, rz: 0, vx, vy, vz, life: 0.22 + Math.random() * 0.26, max: 0.48 }); }
 
   let fcursor = 0;
   function emit1(x, y, z, vx, vy, vz, r, g, b, size, lifeSec, grav, dragK, tw) {
@@ -941,7 +940,7 @@ if (app){
     return [x, z];
   }
   function placeFountain(x, z, remote) { const lp = nearestLand(x, z); const y = Math.max(hAt(lp[0], lp[1]), 0.35); const mesh = fountainMesh(); mesh.position.set(lp[0], y, lp[1]); scene.add(mesh); fountains.push({ x: lp[0], z: lp[1], y, t: 0, dur: 8, remote, acc: 0, snd: 0, core: 0, mesh }); }
-  function startSparkler(x, y, z, follow, remote) { sparklers.push({ x, y, z, follow: follow || null, t: 0, dur: 30, remote, acc: 0, snd: 0 }); }
+  function startSparkler(x, y, z, follow, remote) { sparklers.push({ x, y, z, tx: x, ty: y, tz: z, follow: follow || null, t: 0, dur: 30, remote, acc: 0, snd: 0 }); }
   netEvent = (data, id) => {
     if (!data || data.k !== 'fw') return;
     audioEnsure();
@@ -1000,13 +999,22 @@ if (app){
 
   // ---- bottom-HUD hint: show "Space" only while holding/placing ----
   let hintState = '';
+  const fireBtn = document.createElement('button');
+  fireBtn.id = 'fireBtn'; fireBtn.type = 'button'; fireBtn.textContent = '발사';
+  fireBtn.style.cssText = 'position:fixed;left:50%;transform:translateX(-50%);bottom:max(20px,env(safe-area-inset-bottom));z-index:25;padding:12px 30px;border-radius:26px;border:1px solid rgba(255,215,106,.55);background:rgba(255,215,106,.2);color:#ffd76a;font:700 14px ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:.1em;cursor:pointer;backdrop-filter:blur(10px);box-shadow:0 10px 30px rgba(0,0,0,.45);display:none';
+  fireBtn.addEventListener('click', (e) => { e.preventDefault(); shoot(); });
+  document.body.appendChild(fireBtn);
   function updateHintShoot() {
     const st = placing ? 'place' : (heldObj ? 'shoot' : '');
     if (st === hintState) return; hintState = st;
-    const el = document.getElementById('hintShoot'); if (!el) return;
-    if (st === 'place') { el.style.display = 'inline'; el.innerHTML = ' &nbsp; <kbd>Space</kbd> 분수 설치'; }
-    else if (st === 'shoot') { el.style.display = 'inline'; el.innerHTML = ' &nbsp; <kbd>Space</kbd> 폭죽 발사'; }
-    else el.style.display = 'none';
+    const el = document.getElementById('hintShoot');
+    if (el) {
+      if (st === 'place') { el.style.display = 'inline'; el.innerHTML = ' &nbsp; <kbd>Space</kbd> 분수 설치'; }
+      else if (st === 'shoot') { el.style.display = 'inline'; el.innerHTML = ' &nbsp; <kbd>Space</kbd> 폭죽 발사'; }
+      else el.style.display = 'none';
+    }
+    if (st) { fireBtn.style.display = 'block'; fireBtn.textContent = st === 'place' ? '설치' : '발사'; }
+    else fireBtn.style.display = 'none';
   }
 
   // ---- loop ----
@@ -1033,13 +1041,14 @@ if (app){
       if (s.follow && s.follow.userData && s.follow.userData.spark && s.follow.parent) { s.follow.parent.getWorldQuaternion(_q); s.follow.quaternion.copy(_q).invert(); s.follow.updateWorldMatrix(true, false); }
       let px = s.x, py = s.y, pz = s.z;
       if (s.follow) { s.follow.localToWorld(_sparkOff.set(0, 0.18, 0)); px = _sparkOff.x; py = _sparkOff.y; pz = _sparkOff.z; }
-      while (s.acc > 0.006) { s.acc -= 0.006; const dir = randUnit(); const v = 1.5 + Math.random() * 2; addSpark(px, py, pz, dir[0] * v, Math.abs(dir[1]) * v * 0.7 + 0.6, dir[2] * v); }
+      s.tx = px; s.ty = py; s.tz = pz;
+      while (s.acc > 0.006) { s.acc -= 0.006; const dir = randUnit(); const v = 1.5 + Math.random() * 2; addSpark(s, dir[0] * v, Math.abs(dir[1]) * v * 0.7 + 0.6, dir[2] * v); }
       s.core = (s.core || 0) + dt; if (s.core > 0.03) { s.core = 0; emit1(px, py, pz, 0, 0, 0, 1, 0.8, 0.9, 0.5, 0.07, 0, 1, 0); }
       if (s.snd > 0.07) { s.snd = 0; if (!s.remote || othersSound) pop(0.05); }
       if (s.t >= s.dur) { if (s.follow && s.follow === heldObj) clearHeld(); else if (s.follow && s.follow.parent) s.follow.parent.remove(s.follow); if (sparklers[i] === s) sparklers.splice(i, 1); }
     }
-    for (let i = sparks.length - 1; i >= 0; i--) { const sp = sparks[i]; sp.life -= dt; if (sp.life <= 0) { sparks.splice(i, 1); continue; } const dk = Math.max(0, 1 - 9 * dt); sp.vx *= dk; sp.vy = sp.vy * dk - 1.0 * dt; sp.vz *= dk; sp.x += sp.vx * dt; sp.y += sp.vy * dt; sp.z += sp.vz * dt; }
-    { const n = Math.min(sparks.length, SPARK_MAX); for (let i = 0; i < n; i++) { const sp = sparks[i]; const k = i * 6; sPos[k] = sp.ox; sPos[k + 1] = sp.oy; sPos[k + 2] = sp.oz; sPos[k + 3] = sp.x; sPos[k + 4] = sp.y; sPos[k + 5] = sp.z; const a = Math.min(1, sp.life / (sp.max * 0.55)); sCol[k] = 1; sCol[k + 1] = 0.82; sCol[k + 2] = 0.9; sCol[k + 3] = SPARK_COL[0] * a; sCol[k + 4] = SPARK_COL[1] * a; sCol[k + 5] = SPARK_COL[2] * a; } sGeo.setDrawRange(0, n * 2); if (n) { sGeo.attributes.position.needsUpdate = true; sGeo.attributes.color.needsUpdate = true; } }
+    for (let i = sparks.length - 1; i >= 0; i--) { const sp = sparks[i]; sp.life -= dt; if (sp.life <= 0) { sparks.splice(i, 1); continue; } const dk = Math.max(0, 1 - 9 * dt); sp.vx *= dk; sp.vy = sp.vy * dk - 1.0 * dt; sp.vz *= dk; sp.rx += sp.vx * dt; sp.ry += sp.vy * dt; sp.rz += sp.vz * dt; }
+    { const n = Math.min(sparks.length, SPARK_MAX); for (let i = 0; i < n; i++) { const sp = sparks[i], s = sp.s, k = i * 6; const tx = s.tx || s.x, ty = s.ty || s.y, tz = s.tz || s.z; sPos[k] = tx; sPos[k + 1] = ty; sPos[k + 2] = tz; sPos[k + 3] = tx + sp.rx; sPos[k + 4] = ty + sp.ry; sPos[k + 5] = tz + sp.rz; const a = Math.min(1, sp.life / (sp.max * 0.55)); sCol[k] = 1; sCol[k + 1] = 0.96; sCol[k + 2] = 0.74; sCol[k + 3] = SPARK_COL[0] * a; sCol[k + 4] = SPARK_COL[1] * a; sCol[k + 5] = SPARK_COL[2] * a; } sGeo.setDrawRange(0, n * 2); if (n) { sGeo.attributes.position.needsUpdate = true; sGeo.attributes.color.needsUpdate = true; } }
     for (let i = 0; i < MAX; i++) {
       if (flife[i] <= 0) { if (falp[i] !== 0) falp[i] = 0; continue; }
       flife[i] -= dt; if (flife[i] <= 0) { falp[i] = 0; continue; }
