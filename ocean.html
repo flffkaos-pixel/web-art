@@ -1021,6 +1021,7 @@ if (app){
   const WALLET_KEY = 'fw_wallet';
   let wallet = 0; try { wallet = parseInt(localStorage.getItem(WALLET_KEY) || '0', 10) || 0; } catch (e) {}
   const walletChip = document.createElement('div');
+  walletChip.id = 'walletChip';
   walletChip.style.cssText = 'position:fixed;left:50%;transform:translateX(-50%);top:max(10px,env(safe-area-inset-top));z-index:26;padding:7px 14px;border-radius:20px;border:1px solid rgba(255,215,106,.4);background:rgba(10,16,22,.8);color:#ffd76a;font:700 12px ui-monospace,SFMono-Regular,Menlo,monospace;backdrop-filter:blur(10px);pointer-events:none;letter-spacing:.06em';
   document.body.appendChild(walletChip);
   function saveWallet() { try { localStorage.setItem(WALLET_KEY, String(wallet)); } catch (e) {} }
@@ -1091,12 +1092,23 @@ if (app){
   const clamMat = new T.MeshStandardMaterial({ color: 0xf0b9cf, roughness: 0.35, metalness: 0.05, emissive: 0x7a2f52, emissiveIntensity: 0.35 });
   const clamMatTop = new T.MeshStandardMaterial({ color: 0xf6d3e0, roughness: 0.4, metalness: 0.05, emissive: 0x7a2f52, emissiveIntensity: 0.22 });
   const pearlMat = new T.MeshStandardMaterial({ color: 0xfff6ea, roughness: 0.15, metalness: 0.3, emissive: 0xffe9c9, emissiveIntensity: 0.55 });
+  const rockColsFw = [];
+  if (app.terrain && app.terrain.group) app.terrain.group.traverse((o) => {
+    if (!o.isInstancedMesh || rockColsFw.length) return;
+    const mtx = new T.Matrix4(), pos = new T.Vector3(), quat = new T.Quaternion(), scl = new T.Vector3();
+    for (let i = 0; i < o.count; i++) { o.getMatrixAt(i, mtx); mtx.decompose(pos, quat, scl); const r = Math.max(scl.x, scl.z) * 0.85; if (r > 0.4) rockColsFw.push({ x: pos.x, z: pos.z, r }); }
+  });
+  function clamBlocked(x, z) {
+    if (shopInfo && (x - shopInfo.x) * (x - shopInfo.x) + (z - shopInfo.z) * (z - shopInfo.z) < 36) return true;
+    for (let i = 0; i < rockColsFw.length; i++) { const rc = rockColsFw[i], dx = x - rc.x, dz = z - rc.z, rr = rc.r + 0.3; if (dx * dx + dz * dz < rr * rr) return true; }
+    return false;
+  }
   function beachSpot(cx, cz) {
     for (let i = 0; i < 80; i++) {
       const a = Math.random() * Math.PI * 2, r = 8 + Math.random() * 60;
       const x = cx + Math.cos(a) * r, z = cz + Math.sin(a) * r;
       const h = hAt(x, z);
-      if (h < 0.08 || h > 1.15 || blockedAt(x, z)) continue;
+      if (h < 0.08 || h > 1.15 || clamBlocked(x, z)) continue;
       return [x, z, h];
     }
     for (let i = 0; i < 60; i++) {
@@ -1104,7 +1116,7 @@ if (app){
       let r = 20; while (r < 800 && hAt(Math.cos(a) * r, Math.sin(a) * r) > 0.35) r += 4;
       const jx = Math.cos(a) * r + (Math.random() - 0.5) * 40, jz = Math.sin(a) * r + (Math.random() - 0.5) * 40;
       const h = hAt(jx, jz);
-      if (h < 0.08 || h > 1.15 || blockedAt(jx, jz)) continue;
+      if (h < 0.08 || h > 1.15 || clamBlocked(jx, jz)) continue;
       return [jx, jz, h];
     }
     return null;
