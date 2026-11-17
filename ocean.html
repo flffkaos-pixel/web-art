@@ -999,8 +999,9 @@ if (app){
   }
   function buy(typeId) {
     if (typeId === 'day') { grantItem('day'); return; }
-    if (ppCfg && ppCfg.enabled) { openCheckout(typeId); return; }
-    grantItem(typeId);
+    const price = PRICE[typeId] || 0;
+    if (wallet >= price) { wallet -= price; saveWallet(); updateWalletUI(); grantItem(typeId); toast(ppName(typeId) + ' 구매 완료 −₩' + price.toLocaleString()); return; }
+    openFundDialog(typeId, price);
   }
   function aimDir() { const d = new T.Vector3(); camera.getWorldDirection(d); d.y = 0; if (d.lengthSq() < 1e-4) d.set(0, 0, -1); d.normalize(); const el = 45 * Math.PI / 180; return new T.Vector3(d.x * Math.cos(el), Math.sin(el), d.z * Math.cos(el)); }
   function shoot() {
@@ -1012,6 +1013,135 @@ if (app){
     clearHeld();
   }
   addEventListener('keydown', (e) => { if (e.code === 'Space') { e.preventDefault(); shoot(); } });
+
+  // ---- wallet: pick beach clams -> watch ad -> +500 won -> buy fireworks ----
+  const PRICE = {};
+  AERIAL.forEach((t) => { PRICE[t.id] = t.price; });
+  PRICE.sparkler = 800; PRICE.fountain = 2500; PRICE.night = 2000; PRICE.day = 0;
+  const WALLET_KEY = 'fw_wallet';
+  let wallet = 0; try { wallet = parseInt(localStorage.getItem(WALLET_KEY) || '0', 10) || 0; } catch (e) {}
+  const walletChip = document.createElement('div');
+  walletChip.style.cssText = 'position:fixed;left:50%;transform:translateX(-50%);top:max(10px,env(safe-area-inset-top));z-index:26;padding:7px 14px;border-radius:20px;border:1px solid rgba(255,215,106,.4);background:rgba(10,16,22,.8);color:#ffd76a;font:700 12px ui-monospace,SFMono-Regular,Menlo,monospace;backdrop-filter:blur(10px);pointer-events:none;letter-spacing:.06em';
+  document.body.appendChild(walletChip);
+  function saveWallet() { try { localStorage.setItem(WALLET_KEY, String(wallet)); } catch (e) {} }
+  function updateWalletUI() { walletChip.textContent = '지갑 ₩' + wallet.toLocaleString(); const sv = document.getElementById('walletVal'); if (sv) sv.textContent = '₩' + wallet.toLocaleString(); }
+  updateWalletUI();
+  let toastEl = null, toastTimer = 0;
+  function toast(msg) {
+    if (!toastEl) { toastEl = document.createElement('div'); toastEl.style.cssText = 'position:fixed;left:50%;transform:translateX(-50%);top:max(54px,calc(env(safe-area-inset-top) + 46px));z-index:85;padding:8px 16px;border-radius:10px;border:1px solid rgba(255,215,106,.45);background:rgba(10,16,22,.92);color:#ffe6a0;font:600 12px ui-monospace,SFMono-Regular,Menlo,monospace;backdrop-filter:blur(10px);pointer-events:none;transition:opacity .3s;opacity:0'; document.body.appendChild(toastEl); }
+    toastEl.textContent = msg; toastEl.style.opacity = '1';
+    clearTimeout(toastTimer); toastTimer = setTimeout(() => { if (toastEl) toastEl.style.opacity = '0'; }, 2200);
+  }
+  function coinSound() { if (!actx || actx.state !== 'running') return; const t = actx.currentTime; const o = actx.createOscillator(); o.type = 'triangle'; o.frequency.setValueAtTime(880, t); o.frequency.setValueAtTime(1318, t + 0.09); const g = actx.createGain(); g.gain.setValueAtTime(0.16, t); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.4); o.connect(g); g.connect(actx.destination); o.start(t); o.stop(t + 0.45); }
+  function openAd(onClose) {
+    if (document.getElementById('adOv')) return;
+    const ov = document.createElement('div'); ov.id = 'adOv';
+    ov.style.cssText = 'position:fixed;inset:0;z-index:80;display:flex;align-items:center;justify-content:center;background:rgba(3,7,11,.8);backdrop-filter:blur(5px)';
+    const ADS = ['불꽃놀이 상점 — 조개 캐시로 폭죽을!', '밤바다 스페셜 — 황금 윌로우', '하트 불꽃으로 마음을 전해요', '크래클 스톰 — 하늘이 반짝인다'];
+    const pick = ADS[Math.floor(Math.random() * ADS.length)];
+    ov.innerHTML = '<div style="width:340px;max-width:88vw;border-radius:16px;overflow:hidden;border:1px solid rgba(255,215,106,.35);box-shadow:0 24px 70px rgba(0,0,0,.6);background:linear-gradient(160deg,#1a1030,#301a3a 55%,#0c1420);text-align:center;color:#ffe6a0;font:12px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace">'
+      + '<div style="padding:8px 12px;font-size:9px;letter-spacing:.3em;color:#1a1030;background:#ffd76a;font-weight:700">SPONSORED</div>'
+      + '<div style="padding:24px 18px 12px"><div style="font-size:15px;font-weight:700;margin-bottom:4px">' + pick + '</div>'
+      + '<div style="height:5px;border-radius:3px;background:rgba(255,215,106,.18);overflow:hidden;margin:14px 0 8px"><div id="adBarIn" style="height:100%;width:0%;background:#ffd76a"></div></div>'
+      + '<div id="adCnt" style="font-size:22px;font-weight:700;color:#ffd76a">5</div>'
+      + '<div style="font-size:10px;color:#9fb6c4;margin:2px 0 14px">광고를 끝까지 보면 <b style="color:#ffd76a">+500원</b></div>'
+      + '<button id="adReward" type="button" style="display:none;width:100%;margin-bottom:8px;padding:11px;border:0;border-radius:10px;background:#ffd76a;color:#1a1030;font:700 13px ui-monospace,SFMono-Regular,Menlo,monospace;cursor:pointer">보상 받기 +500원</button>'
+      + '<button id="adSkip" type="button" style="width:100%;padding:9px;border:1px solid rgba(140,200,230,.25);border-radius:10px;background:none;color:#9fb6c4;font:inherit;cursor:pointer">건너뛰기 (보상 없음)</button></div></div>';
+    document.body.appendChild(ov);
+    const cnt = ov.querySelector('#adCnt'), bar = ov.querySelector('#adBarIn');
+    const DUR = 5000, t0 = performance.now(); let done = false;
+    const tick = () => {
+      if (done) return;
+      const el = performance.now() - t0, k = Math.min(1, el / DUR);
+      bar.style.width = (k * 100).toFixed(1) + '%';
+      cnt.textContent = k >= 1 ? '완료!' : Math.ceil((DUR - el) / 1000);
+      if (k >= 1) { done = true; ov.querySelector('#adReward').style.display = 'block'; ov.querySelector('#adSkip').textContent = '닫기'; return; }
+      requestAnimationFrame(tick);
+    };
+    requestAnimationFrame(tick);
+    const close = () => { done = true; ov.remove(); if (onClose) onClose(); };
+    ov.querySelector('#adReward').addEventListener('click', () => { wallet += 500; saveWallet(); updateWalletUI(); coinSound(); toast('+500원 (조개 광고 보상)'); close(); });
+    ov.querySelector('#adSkip').addEventListener('click', close);
+  }
+  function openFundDialog(typeId, price) {
+    const ov = document.createElement('div'); ov.id = 'fundOv';
+    ov.style.cssText = 'position:fixed;inset:0;z-index:75;display:flex;align-items:center;justify-content:center;background:rgba(3,7,11,.72);backdrop-filter:blur(4px)';
+    ov.innerHTML = '<div style="width:320px;max-width:88vw;background:rgba(12,20,28,.97);border:1px solid rgba(255,215,106,.35);border-radius:14px;padding:18px;text-align:center;color:#cfe3ee;font:12px/1.55 ui-monospace,SFMono-Regular,Menlo,monospace;box-shadow:0 24px 70px rgba(0,0,0,.6)">'
+      + '<h4 style="margin:0 0 6px;font-size:14px;color:#ffe6a0">' + ppName(typeId) + ' — 잔액 부족</h4>'
+      + '<div style="margin-bottom:2px">가격 <b style="color:#ffd76a">₩' + price.toLocaleString() + '</b> · 내 지갑 <b style="color:#ffd76a">₩' + wallet.toLocaleString() + '</b></div>'
+      + '<div style="font-size:10px;color:#7ee0c0;margin:10px 0 14px">해변의 조개를 주우면 광고 1개마다 +500원이 쌓여요</div>'
+      + '<div id="fundBtns"></div>'
+      + '<button id="fundClose" type="button" style="margin-top:8px;width:100%;padding:8px;border:1px solid rgba(140,200,230,.25);border-radius:8px;background:none;color:#9fb6c4;font:inherit;cursor:pointer">닫기</button></div>';
+    document.body.appendChild(ov);
+    const btns = ov.querySelector('#fundBtns');
+    if (ppCfg && ppCfg.enabled) {
+      const bp = document.createElement('button'); bp.type = 'button'; bp.textContent = 'PayPal로 결제'; bp.style.cssText = 'width:100%;padding:10px;border:0;border-radius:10px;background:#ffd76a;color:#1a1030;font:700 12px ui-monospace,SFMono-Regular,Menlo,monospace;cursor:pointer';
+      bp.addEventListener('click', () => { ov.remove(); openCheckout(typeId); });
+      btns.appendChild(bp);
+    } else {
+      const info = document.createElement('div'); info.style.cssText = 'font-size:10px;color:#9fb6c4'; info.textContent = '조개를 계속 주워 모으면 살 수 있어요!'; btns.appendChild(info);
+    }
+    ov.querySelector('#fundClose').addEventListener('click', () => ov.remove());
+    ov.addEventListener('click', (e) => { if (e.target === ov) ov.remove(); });
+  }
+  const clams = [];
+  const CLAM_N = 16;
+  const clamShellGeo = new T.SphereGeometry(0.16, 14, 10);
+  const pearlGeo = new T.SphereGeometry(0.05, 10, 8);
+  const clamMat = new T.MeshStandardMaterial({ color: 0xf0b9cf, roughness: 0.35, metalness: 0.05, emissive: 0x7a2f52, emissiveIntensity: 0.35 });
+  const clamMatTop = new T.MeshStandardMaterial({ color: 0xf6d3e0, roughness: 0.4, metalness: 0.05, emissive: 0x7a2f52, emissiveIntensity: 0.22 });
+  const pearlMat = new T.MeshStandardMaterial({ color: 0xfff6ea, roughness: 0.15, metalness: 0.3, emissive: 0xffe9c9, emissiveIntensity: 0.55 });
+  function beachSpot(cx, cz) {
+    for (let i = 0; i < 80; i++) {
+      const a = Math.random() * Math.PI * 2, r = 8 + Math.random() * 60;
+      const x = cx + Math.cos(a) * r, z = cz + Math.sin(a) * r;
+      const h = hAt(x, z);
+      if (h < 0.08 || h > 1.15 || blockedAt(x, z)) continue;
+      return [x, z, h];
+    }
+    for (let i = 0; i < 60; i++) {
+      const a = Math.random() * Math.PI * 2;
+      let r = 20; while (r < 800 && hAt(Math.cos(a) * r, Math.sin(a) * r) > 0.35) r += 4;
+      const jx = Math.cos(a) * r + (Math.random() - 0.5) * 40, jz = Math.sin(a) * r + (Math.random() - 0.5) * 40;
+      const h = hAt(jx, jz);
+      if (h < 0.08 || h > 1.15 || blockedAt(jx, jz)) continue;
+      return [jx, jz, h];
+    }
+    return null;
+  }
+  function spawnClam() {
+    const p0 = playerRef ? playerRef.g.position : camera.position;
+    const spot = beachSpot(p0.x, p0.z);
+    if (!spot) return;
+    const g = new T.Group();
+    const bottom = new T.Mesh(clamShellGeo, clamMat); bottom.scale.set(1, 0.42, 0.85); g.add(bottom);
+    const top = new T.Mesh(clamShellGeo, clamMatTop); top.scale.set(1, 0.34, 0.85); top.position.set(0, 0.05, -0.03); top.rotation.x = -0.55; g.add(top);
+    const pearl = new T.Mesh(pearlGeo, pearlMat); pearl.position.set(0, 0.07, 0.05); g.add(pearl);
+    g.position.set(spot[0], spot[2] + 0.1, spot[1]);
+    scene.add(g);
+    clams.push({ g, x: spot[0], z: spot[1], baseY: spot[2] + 0.1, phase: Math.random() * Math.PI * 2, t: Math.random() * 10 });
+  }
+  for (let i = 0; i < CLAM_N; i++) spawnClam();
+  let lastPickup = 0;
+  function updateClams(dt) {
+    const pp = playerRef ? playerRef.g.position : null;
+    const nowMs = performance.now();
+    for (let i = clams.length - 1; i >= 0; i--) {
+      const c = clams[i]; c.t += dt;
+      c.g.position.y = c.baseY + 0.06 + Math.sin(c.t * 2.2 + c.phase) * 0.04;
+      c.g.rotation.y += dt * 0.8;
+      if (!pp || nowMs - lastPickup < 350) continue;
+      const dx = pp.x - c.x, dz = pp.z - c.z;
+      if (dx * dx + dz * dz < 2.9) {
+        lastPickup = nowMs;
+        for (let k = 0; k < 12; k++) { const u = randUnit(); emit1(c.x, c.baseY + 0.25, c.z, u[0] * 1.4, Math.abs(u[1]) * 1.6 + 0.6, u[2] * 1.4, 1, 0.85, 0.62, 0.42, 0.55, -3, 0.8, 1); }
+        pop(0.07);
+        scene.remove(c.g); clams.splice(i, 1);
+        setTimeout(() => openAd(() => spawnClam()), 250);
+      }
+    }
+  }
+
 
   // ---- bottom-HUD hint: show "Space" only while holding/placing ----
   let hintState = '';
@@ -1037,6 +1167,7 @@ if (app){
   function fwUpdate(dt) {
     holdingItem = !!heldObj;
     updateHintShoot();
+    updateClams(dt);
     if (placing) { const f = new T.Vector3(); camera.getWorldDirection(f); f.y = 0; if (f.lengthSq() < 1e-4) f.set(0, 0, -1); f.normalize(); const bx = playerRef ? playerRef.g.position.x : camera.position.x, bz = playerRef ? playerRef.g.position.z : camera.position.z; const lp = nearestLand(bx + f.x * 4.5, bz + f.z * 4.5); placing.position.set(lp[0], Math.max(hAt(lp[0], lp[1]), 0.35) + 0.02, lp[1]); }
     for (let i = rockets.length - 1; i >= 0; i--) {
       const p = rockets[i]; p.t += dt; p.vy += -20 * dt; p.x += p.vx * dt; p.y += p.vy * dt; p.z += p.vz * dt;
@@ -1185,14 +1316,17 @@ if (app){
   const shop = document.createElement('div'); shop.id = 'shop';
   const aerialBtns = AERIAL.map((t) => `<button data-id="${t.id}"><span>${t.name}</span><span class="pn">₩${t.price.toLocaleString()}</span></button>`).join('');
   shop.innerHTML = `<h3>불꽃놀이 상점</h3><div class="sub" id="shopSub">결제 연동 확인 중…</div>
+    <div class="row" style="justify-content:space-between;border:1px dashed rgba(255,215,106,.4);border-radius:8px;padding:6px 8px;margin-bottom:4px"><span>내 지갑</span><b class="pn" id="walletVal">₩0</b></div>
     <div class="sec">하늘 불꽃 (사면 손에 들고, 발사 버튼으로 조준 발사)</div>${aerialBtns}
     <div class="sec">손에 드는</div><button data-id="sparkler"><span>스파클러</span><span class="pn">₩800</span></button>
     <div class="sec">바닥</div><button data-id="fountain"><span>분수 폭죽</span><span class="pn">₩2,500</span></button>
     <div class="sec">무드 (과금)</div><button data-id="night"><span>밤으로 바꾸기</span><span class="pn">₩2,000</span></button><button data-id="day"><span>낮으로 되돌리기</span><span class="pn">무료</span></button>
+    <div style="font-size:10px;color:#7ee0c0;margin-top:6px">해변 조개를 주우면 광고 1개당 +500원</div>
     <button class="shoot" data-shoot="1">발사 (Space)</button>
     <div class="row"><label><input type="checkbox" id="othersSound" checked> 남의 폭죽 소리</label></div>
     <div class="hint" id="shopHint"></div>`;
   document.body.appendChild(shop);
+  updateWalletUI();
   shop.addEventListener('click', (e) => { if (e.target.closest('[data-shoot]')) { shoot(); return; } const b = e.target.closest('button'); if (b && b.dataset.id) buy(b.dataset.id); });
   const chk = shop.querySelector('#othersSound'); chk.addEventListener('change', () => { othersSound = chk.checked; });
   const hintEl = shop.querySelector('#shopHint');
