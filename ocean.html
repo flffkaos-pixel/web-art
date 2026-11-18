@@ -1095,13 +1095,7 @@ if (app){
       + '<button id="fundClose" type="button" style="margin-top:8px;width:100%;padding:8px;border:1px solid rgba(140,200,230,.25);border-radius:8px;background:none;color:#9fb6c4;font:inherit;cursor:pointer">닫기</button></div>';
     document.body.appendChild(ov);
     const btns = ov.querySelector('#fundBtns');
-    if (ppCfg && ppCfg.enabled) {
-      const bp = document.createElement('button'); bp.type = 'button'; bp.textContent = 'PayPal로 결제'; bp.style.cssText = 'width:100%;padding:10px;border:0;border-radius:10px;background:#ffd76a;color:#1a1030;font:700 12px ui-monospace,SFMono-Regular,Menlo,monospace;cursor:pointer';
-      bp.addEventListener('click', () => { ov.remove(); openCheckout(typeId); });
-      btns.appendChild(bp);
-    } else {
-      const info = document.createElement('div'); info.style.cssText = 'font-size:10px;color:#9fb6c4'; info.textContent = '조개를 계속 주워 모으면 살 수 있어요!'; btns.appendChild(info);
-    }
+    const info = document.createElement('div'); info.style.cssText = 'font-size:10px;color:#9fb6c4'; info.textContent = '조개를 계속 주워 모으면 살 수 있어요!'; btns.appendChild(info);
     ov.querySelector('#fundClose').addEventListener('click', () => ov.remove());
     ov.addEventListener('click', (e) => { if (e.target === ov) ov.remove(); });
   }
@@ -1373,45 +1367,8 @@ if (app){
   shop.style.display = 'none';
   setInterval(updateShopVisibility, 200);
 
-  // ---- PayPal checkout (paid items; graceful free fallback when not configured) ----
-  let ppCfg = null, checkoutBusy = false;
-  const ppName = (id) => (ppCfg && ppCfg.catalog && ppCfg.catalog[id] && ppCfg.catalog[id].name) || '폭죽';
-  const ppUsd = (id) => { const c = ppCfg && ppCfg.catalog && ppCfg.catalog[id]; return c ? ('$' + c.usd) : ''; };
-  fetch('/api/paypal/config').then((r) => r.json()).then((c) => {
-    ppCfg = c;
-    const sub = shop.querySelector('#shopSub');
-    if (sub) sub.textContent = c.enabled ? ('PayPal 결제 · ' + (c.env === 'live' ? '실결제' : 'sandbox') + ' · ' + (c.currency || 'USD')) : (c.hasCreds ? '테스트 모드 · 지금은 무료' : '결제 미설정 · 지금은 무료');
-  }).catch(() => {});
-  function loadPPSdk(cb) {
-    if (window.paypal) return cb(null);
-    if (!ppCfg || !ppCfg.clientId) return cb(new Error('no client id'));
-    const s = document.createElement('script');
-    s.src = 'https://www.paypal.com/sdk/js?client-id=' + encodeURIComponent(ppCfg.clientId) + '&currency=' + encodeURIComponent(ppCfg.currency || 'USD') + '&intent=capture&components=buttons';
-    s.onload = () => cb(null);
-    s.onerror = () => cb(new Error('sdk load failed'));
-    document.head.appendChild(s);
-  }
-  function openCheckout(typeId) {
-    if (checkoutBusy) return; checkoutBusy = true;
-    const ov = document.createElement('div'); ov.id = 'payOv';
-    ov.innerHTML = '<div class="pbox"><h4>' + ppName(typeId) + ' 구매</h4><div class="pamt">' + ppUsd(typeId) + '</div><div id="ppbtns"></div><div class="pmsg" id="payMsg">결제 모듈 불러오는 중…</div><button class="pcancel" type="button">취소</button></div>';
-    document.body.appendChild(ov);
-    const close = () => { ov.remove(); checkoutBusy = false; };
-    ov.querySelector('.pcancel').addEventListener('click', close);
-    ov.addEventListener('click', (e) => { if (e.target === ov) close(); });
-    const msg = ov.querySelector('#payMsg');
-    loadPPSdk((err) => {
-      if (err) { msg.textContent = '결제 모듈을 불러오지 못했어요 (관리자 키 확인)'; return; }
-      msg.textContent = '';
-      window.paypal.Buttons({
-        style: { layout: 'vertical', color: 'gold', shape: 'rect', label: 'paypal' },
-        createOrder: () => fetch('/api/paypal/create-order', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ itemId: typeId }) }).then((r) => r.json()).then((d) => { if (!d.id) throw new Error(d.error || 'order'); return d.id; }),
-        onApprove: (data) => fetch('/api/paypal/capture-order', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ orderId: data.orderID }) }).then((r) => r.json()).then((d) => { if (!d.ok) throw new Error('capture'); msg.textContent = '결제 완료! 아이템 지급'; grantItem(d.itemId || typeId); setTimeout(close, 800); }),
-        onError: () => { msg.textContent = '결제 중 오류가 발생했어요'; },
-        onCancel: () => { msg.textContent = '결제가 취소되었어요'; },
-      }).render('#ppbtns');
-    });
-  }
+  // ---- item names (PayPal checkout removed: wallet from clams + rewarded ads only) ----
+  const ppName = (id) => (AERIAL.find((t) => t.id === id) || {}).name || (id === 'sparkler' ? '스파클러' : id === 'fountain' ? '분수' : '무드');
 }
 
 window.addEventListener('error', (e) => { if (!app) fatal('Startup failed:<br><code style="color:#ffb">' + (e.message || e) + '</code>'); });
