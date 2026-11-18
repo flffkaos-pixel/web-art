@@ -860,6 +860,7 @@ if (app){
   const sparks = [];
   const SPARK_COL = [1, 0.86, 0.34];
   const _sparkOff = new T.Vector3(0, 0.18, 0);
+  const _q = new T.Quaternion();
   function addSpark(s, vx, vy, vz) { if (sparks.length >= SPARK_MAX) sparks.shift(); sparks.push({ s, rx: 0, ry: 0, rz: 0, vx, vy, vz, life: 0.22 + Math.random() * 0.26, max: 0.48 }); }
 
   let fcursor = 0;
