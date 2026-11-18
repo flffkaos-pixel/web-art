@@ -1034,7 +1034,7 @@ if (app){
     clearTimeout(toastTimer); toastTimer = setTimeout(() => { if (toastEl) toastEl.style.opacity = '0'; }, 2200);
   }
   function coinSound() { if (!actx || actx.state !== 'running') return; const t = actx.currentTime; const o = actx.createOscillator(); o.type = 'triangle'; o.frequency.setValueAtTime(880, t); o.frequency.setValueAtTime(1318, t + 0.09); const g = actx.createGain(); g.gain.setValueAtTime(0.16, t); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.4); o.connect(g); g.connect(actx.destination); o.start(t); o.stop(t + 0.45); }
-  const ADMOB_REWARD_ID = 'ca-app-pub-3940256099942544/5224354917';
+  const ADMOB_REWARD_ID = 'ca-app-pub-1955893232253258/6546816689';
   let admobInit = null;
   function claimReward() { wallet += 500; saveWallet(); updateWalletUI(); coinSound(); toast('+500원 (조개 보상)'); }
   function openAdFake() {
@@ -1074,7 +1074,7 @@ if (app){
     try {
       if (Cap && Cap.isNativePlatform && Cap.isNativePlatform() && Cap.Plugins && Cap.Plugins.AdMob) {
         const AdMob = Cap.Plugins.AdMob;
-        if (!admobInit) admobInit = AdMob.initialize({ initializeForTesting: true }).catch((e) => { admobInit = null; throw e; });
+        if (!admobInit) admobInit = AdMob.initialize({ initializeForTesting: false }).catch((e) => { admobInit = null; throw e; });
         await admobInit;
         await AdMob.prepareRewardVideoAd({ adId: ADMOB_REWARD_ID });
         await AdMob.showRewardVideoAd();
