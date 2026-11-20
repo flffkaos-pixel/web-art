@@ -730,7 +730,15 @@ if (app){
     if (fpMode){ fpMode = false; controls.enabled = true; if (player) player.g.visible = true; if (player){ const hx = player.g.position.x, hy = player.g.position.y + 1.0, hz = player.g.position.z; controls.target.set(hx, hy, hz); camera.position.set(hx + Math.sin(fpYaw) * 5, hy + 1.6, hz + Math.cos(fpYaw) * 5); controls.update(); } updateFPBtn(); return; }
     if (player) player.g.visible = false;
     fpMode = true; seated = false; if (player) player.sit = false; if (sitBtn){ sitBtn.classList.remove('on'); sitBtn.textContent = 'sit'; }
-    controls.enabled = false; const d = new T.Vector3(); camera.getWorldDirection(d); d.y = 0; if (d.lengthSq() < 1e-4) d.set(0, 0, -1); d.normalize(); fpYaw = Math.atan2(-d.x, -d.z); fpPitch = 0.05; updateFPBtn();
+    controls.enabled = false;
+    // 1인칭은 캐릭터가 바라보는 방향에서 시작한다 (캐릭터 모델의 정면 = 로컬 +Z)
+    if (player){
+      const th = player.g.rotation.y;
+      fpYaw = Math.atan2(-Math.sin(th), -Math.cos(th));
+    } else {
+      const d = new T.Vector3(); camera.getWorldDirection(d); d.y = 0; if (d.lengthSq() < 1e-4) d.set(0, 0, -1); d.normalize(); fpYaw = Math.atan2(-d.x, -d.z);
+    }
+    fpPitch = 0.05; updateFPBtn();
   }
   addEventListener('keydown', (e) => { if (e.code === 'KeyV' && !e.repeat && player) toggleFP(); });
   const fpBtn = document.createElement('button');
