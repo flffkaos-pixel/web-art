@@ -1,0 +1,14 @@
+# never upload these to Cloudflare
+.git
+.vercel
+.wrangler
+node_modules
+api
+_ultrawater
+vercel.json
+.vercel.json
+.vercelignore
+.gitignore
+wrangler.jsonc
+.assetsignore
+deploy-cloudflare.ps1
