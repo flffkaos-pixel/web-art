@@ -80,6 +80,24 @@
   #sound-toggle:active{transform:scale(.97)}
   #hud kbd{background:rgba(140,200,230,.13);border:1px solid var(--line);border-radius:3px;
     padding:0 4px;color:var(--txt)}
+  .hud-debug{display:none}
+  /* top overlay: wallet + first-person toggle (positioned in CSS so media queries can move them) */
+  #walletChip{position:fixed;left:50%;transform:translateX(-50%);top:max(10px,env(safe-area-inset-top));
+    z-index:26;padding:7px 14px;border-radius:20px;border:1px solid rgba(255,215,106,.4);
+    background:rgba(10,16,22,.8);color:#ffd76a;font:700 12px ui-monospace,SFMono-Regular,Menlo,monospace;
+    backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);pointer-events:none;letter-spacing:.06em;white-space:nowrap}
+  #fpBtn{position:fixed;right:12px;top:12px;z-index:31;padding:8px 12px;border-radius:10px;
+    border:1px solid rgba(140,200,230,.25);background:rgba(10,16,22,.82);color:#cfe3ee;
+    font:700 11px ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:.04em;cursor:pointer;
+    backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);white-space:nowrap}
+  @media (pointer:coarse), (max-width:620px){
+    #hud{max-width:calc(100vw - 150px)}
+    #hud #stat{display:none}
+    #fpBtn{top:max(10px,env(safe-area-inset-top));right:max(10px,env(safe-area-inset-right));
+      padding:7px 10px;font-size:10px}
+    #walletChip{left:auto;right:max(10px,env(safe-area-inset-right));transform:none;
+      top:calc(max(10px,env(safe-area-inset-top)) + 38px);padding:5px 10px;font-size:11px}
+  }
   #boot{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;
     flex-direction:column;gap:12px;background:#05080c;z-index:50;transition:opacity .6s}
   #boot .t{letter-spacing:.4em;color:var(--acc);font-size:13px}
@@ -223,7 +241,7 @@
 <canvas id="c"></canvas>
 
 <div id="hud">
-  <div><b id="fps">--</b> fps &nbsp;·&nbsp; <span id="stat"></span> &nbsp;·&nbsp; <span id="peers"></span> &nbsp;·&nbsp; <button type="button" id="sound-toggle" aria-pressed="false" aria-label="파도 소리 켜기"><span id="sound-label">waves off</span></button></div>
+  <div><span class="hud-debug"><b id="fps">--</b> fps &nbsp;·&nbsp; <span id="stat"></span> &nbsp;·&nbsp; <span id="peers"></span></span><button type="button" id="sound-toggle" aria-pressed="false" aria-label="파도 소리 켜기"><span id="sound-label">waves off</span></button></div>
   <div class="desk-hint"><kbd>drag</kbd> look &nbsp; <kbd>W A S D</kbd> move &nbsp; <kbd>Space</kbd>/<kbd>Ctrl</kbd> up/down &nbsp; <kbd>wheel</kbd> speed</div>
 </div>
 
@@ -289,7 +307,7 @@ let playStep = null;
 /* ---------- procedural surf — waves only, no music ---------- */
 {
   const btn = document.getElementById('sound-toggle'), lbl = document.getElementById('sound-label');
-  let ctx = null, master = null, stepGain = null, hiss = null, buf = null, swell = 0, on = false, audioEl = null;
+  let ctx = null, master = null, stepGain = null, hiss = null, buf = null, wbuf = null, swell = 0, on = false, audioEl = null;
 
   function brown(){
     const sr = ctx.sampleRate, len = sr * 4, b = ctx.createBuffer(2, len, sr);
@@ -297,6 +315,12 @@ let playStep = null;
       const d = b.getChannelData(ch); let last = 0;
       for (let i = 0; i < len; i++){ last = (last + 0.02 * (Math.random() * 2 - 1)) / 1.02; d[i] = last * 3.5; }
     }
+    return b;
+  }
+  function white(){
+    const sr = ctx.sampleRate, len = Math.floor(sr * 2), b = ctx.createBuffer(1, len, sr);
+    const d = b.getChannelData(0);
+    for (let i = 0; i < len; i++) d[i] = Math.random() * 2 - 1;
     return b;
   }
   function layer(type, freq, depth, rate){
@@ -327,8 +351,9 @@ let playStep = null;
     if (!AC) return;
     ctx = new AC();
     master = ctx.createGain(); master.gain.value = 0; master.connect(ctx.destination);
-    stepGain = ctx.createGain(); stepGain.gain.value = 1.1; stepGain.connect(ctx.destination);
+    stepGain = ctx.createGain(); stepGain.gain.value = 1.0; stepGain.connect(ctx.destination);
     buf = brown();
+    wbuf = white();
     layer('lowpass', 360, 0.45, 0.055);
     hiss = layer('bandpass', 920, 0.3, 0.1);
   }
@@ -355,21 +380,49 @@ let playStep = null;
     if (btn){ btn.setAttribute('aria-pressed', String(on)); btn.classList.toggle('is-playing', on); }
     if (lbl) lbl.textContent = on ? 'waves on' : 'waves off';
   }
-  function step(){
+  function step(power){
     if (!ctx || ctx.state !== 'running') return;
-    const t = ctx.currentTime;
-    // low thump (body of the step)
-    const s1 = ctx.createBufferSource(); s1.buffer = buf; s1.loop = true; s1.playbackRate.value = 0.8 + Math.random() * 0.4;
-    const lp = ctx.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 420; lp.Q.value = 1.0;
-    const g1 = ctx.createGain(); g1.gain.setValueAtTime(0.0001, t); g1.gain.linearRampToValueAtTime(1.1, t + 0.015); g1.gain.exponentialRampToValueAtTime(0.0001, t + 0.22);
-    s1.connect(lp); lp.connect(g1); g1.connect(stepGain);
-    s1.start(t, Math.random() * 2); s1.stop(t + 0.26);
-    // bright sploosh (hiss of the water)
-    const s2 = ctx.createBufferSource(); s2.buffer = buf; s2.loop = true; s2.playbackRate.value = 1.0 + Math.random() * 0.5;
-    const bp = ctx.createBiquadFilter(); bp.type = 'bandpass'; bp.frequency.value = 1500 + Math.random() * 1200; bp.Q.value = 0.6;
-    const g2 = ctx.createGain(); g2.gain.setValueAtTime(0.0001, t); g2.gain.linearRampToValueAtTime(1.2, t + 0.012); g2.gain.exponentialRampToValueAtTime(0.0001, t + 0.16);
-    s2.connect(bp); bp.connect(g2); g2.connect(stepGain);
-    s2.start(t, Math.random() * 2); s2.stop(t + 0.2);
+    const t = ctx.currentTime + 0.001;
+    const P = power || 1;
+
+    // 1) splash body: broadband noise swept downward -> water pushed aside, not a hiss
+    const n = ctx.createBufferSource(); n.buffer = wbuf; n.loop = true;
+    n.playbackRate.value = 0.9 + Math.random() * 0.25;
+    const bp = ctx.createBiquadFilter(); bp.type = 'bandpass'; bp.Q.value = 0.85;
+    bp.frequency.setValueAtTime(2400 + Math.random() * 1000, t);
+    bp.frequency.exponentialRampToValueAtTime(600 + Math.random() * 300, t + 0.17);
+    const g = ctx.createGain();
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.linearRampToValueAtTime(0.55 * P, t + 0.007);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + 0.2);
+    n.connect(bp); bp.connect(g); g.connect(stepGain);
+    n.start(t, Math.random() * 2); n.stop(t + 0.24);
+
+    // 2) bubbles: small rising sine chirps that follow the splash
+    const nb = 3 + ((Math.random() * 3) | 0);
+    for (let i = 0; i < nb; i++){
+      const tt = t + 0.02 + Math.random() * 0.14;
+      const o = ctx.createOscillator(); o.type = 'sine';
+      const f0 = 300 + Math.random() * 520;
+      o.frequency.setValueAtTime(f0, tt);
+      o.frequency.exponentialRampToValueAtTime(f0 * (2.1 + Math.random() * 1.7), tt + 0.05 + Math.random() * 0.03);
+      const bg = ctx.createGain();
+      bg.gain.setValueAtTime(0.0001, tt);
+      bg.gain.linearRampToValueAtTime(0.09 * P * (0.6 + Math.random() * 0.8), tt + 0.005);
+      bg.gain.exponentialRampToValueAtTime(0.0001, tt + 0.08);
+      o.connect(bg); bg.connect(stepGain);
+      o.start(tt); o.stop(tt + 0.1);
+    }
+
+    // 3) soft low body: muffled weight of the foot under the surface
+    const s = ctx.createBufferSource(); s.buffer = buf; s.loop = true; s.playbackRate.value = 0.7 + Math.random() * 0.2;
+    const lp = ctx.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 300; lp.Q.value = 0.7;
+    const lg = ctx.createGain();
+    lg.gain.setValueAtTime(0.0001, t);
+    lg.gain.linearRampToValueAtTime(0.6 * P, t + 0.02);
+    lg.gain.exponentialRampToValueAtTime(0.0001, t + 0.15);
+    s.connect(lp); lp.connect(lg); lg.connect(stepGain);
+    s.start(t, Math.random() * 2); s.stop(t + 0.18);
   }
   playStep = step;
   function toggle(e){
@@ -759,7 +812,6 @@ if (app){
   addEventListener('keydown', (e) => { if (e.code === 'KeyV' && !e.repeat && player) toggleFP(); });
   const fpBtn = document.createElement('button');
   fpBtn.id = 'fpBtn'; fpBtn.textContent = '1인칭 (앉아서 · V)';
-  fpBtn.style.cssText = 'position:fixed;right:12px;top:12px;z-index:31;padding:8px 12px;border-radius:10px;border:1px solid rgba(140,200,230,.25);background:rgba(10,16,22,.82);color:#cfe3ee;font:700 11px ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:.04em;cursor:pointer;backdrop-filter:blur(10px)';
   fpBtn.addEventListener('click', () => { if (player) toggleFP(); });
   document.body.appendChild(fpBtn);
   updateFPBtn();
@@ -803,9 +855,14 @@ if (app){
       }
     }
     // water footsteps: splash cadence while walking in the shallows
-    if (moving && playStep && hAt(player.g.position.x, player.g.position.z) < 0.1){
-      stepTimer -= dt;
-      if (stepTimer <= 0){ stepTimer = 0.36; playStep(); }
+    if (moving && playStep){
+      const gh = hAt(player.g.position.x, player.g.position.z);
+      if (gh < 0.1){
+        const swim = gh < -1.0;
+        const run = !!(keys.ShiftLeft || keys.ShiftRight);
+        stepTimer -= dt;
+        if (stepTimer <= 0){ stepTimer = swim ? 0.62 : run ? 0.29 : 0.41; playStep(swim ? 1.1 : run ? 1.35 : 0.9); }
+      } else stepTimer = 0;
     } else stepTimer = 0;
     for (const r of remotes.values()){
       r.p.g.position.lerp(r.tp, Math.min(1, dt * 6));
@@ -1047,7 +1104,6 @@ if (app){
   let wallet = 0; try { wallet = parseInt(localStorage.getItem(WALLET_KEY) || '0', 10) || 0; } catch (e) {}
   const walletChip = document.createElement('div');
   walletChip.id = 'walletChip';
-  walletChip.style.cssText = 'position:fixed;left:50%;transform:translateX(-50%);top:max(10px,env(safe-area-inset-top));z-index:26;padding:7px 14px;border-radius:20px;border:1px solid rgba(255,215,106,.4);background:rgba(10,16,22,.8);color:#ffd76a;font:700 12px ui-monospace,SFMono-Regular,Menlo,monospace;backdrop-filter:blur(10px);pointer-events:none;letter-spacing:.06em';
   document.body.appendChild(walletChip);
   function saveWallet() { try { localStorage.setItem(WALLET_KEY, String(wallet)); } catch (e) {} }
   function updateWalletUI() { walletChip.textContent = '지갑 ₩' + wallet.toLocaleString(); const sv = document.getElementById('walletVal'); if (sv) sv.textContent = '₩' + wallet.toLocaleString(); }
@@ -1354,7 +1410,8 @@ if (app){
     #shop button:hover{background:rgba(255,215,106,.13);border-color:rgba(255,215,106,.5);color:#fff}#shop .pn{color:#ffd76a;font-weight:700}
     #shop .row{display:flex;align-items:center;gap:8px;margin-top:9px;font-size:10px;color:#9fb6c4}
     #shop .hint{font-size:10px;color:#7ee0c0;margin-top:8px}#shop .shoot{width:100%;margin-top:8px;background:rgba(255,215,106,.16);border-color:rgba(255,215,106,.5);color:#ffd76a;font-weight:700}
-    @media (max-width:620px){#shop{left:10px;right:10px;width:auto;top:calc(max(10px,env(safe-area-inset-top)) + 46px);bottom:auto;max-height:54vh;padding-bottom:16px;-webkit-mask-image:linear-gradient(#000 calc(100% - 20px),transparent);mask-image:linear-gradient(#000 calc(100% - 20px),transparent)}}
+    @media (max-width:620px){#shop{left:10px;right:10px;width:auto;top:calc(max(10px,env(safe-area-inset-top)) + 82px);bottom:auto;max-height:54vh;padding-bottom:16px;-webkit-mask-image:linear-gradient(#000 calc(100% - 20px),transparent);mask-image:linear-gradient(#000 calc(100% - 20px),transparent)}}
+    @media (pointer:coarse) and (min-width:621px){#shop{top:calc(max(10px,env(safe-area-inset-top)) + 78px)}}
     #payOv{position:fixed;inset:0;z-index:60;display:flex;align-items:center;justify-content:center;background:rgba(3,7,11,.72);backdrop-filter:blur(4px)}
     #payOv .pbox{width:320px;max-width:90vw;background:rgba(12,20,28,.97);border:1px solid rgba(255,215,106,.35);border-radius:14px;padding:18px;text-align:center;box-shadow:0 24px 70px rgba(0,0,0,.6)}
     #payOv h4{margin:0 0 4px;font-size:14px;color:#ffe6a0}
