@@ -332,6 +332,11 @@ let playStep = null;
     layer('lowpass', 360, 0.45, 0.055);
     hiss = layer('bandpass', 920, 0.3, 0.1);
   }
+  function stopFallback(){
+    if (!audioEl) return;
+    try { audioEl.pause(); } catch (e) {}
+    audioEl = null;
+  }
   function useFallback(){
     if (audioEl) return;
     audioEl = new Audio('assets/audio/island-ocean.mp3');
@@ -375,7 +380,18 @@ let playStep = null;
       if (ctx && ctx.state !== 'running') ctx.resume().catch(() => {});
       ramp(0.6, 1.2);
       if (!swell) swell = setTimeout(crash, 900);
-      setTimeout(() => { if (on && (!ctx || ctx.state !== 'running')) useFallback(); }, 800);
+      // 파도 합성음과 mp3가 겹쳐 들리지 않도록:
+      // WebAudio가 없을 때만 mp3로 대체하고, 합성음이 살아나면 mp3는 즉시 끈다.
+      if (!ctx) setTimeout(() => { if (on && !ctx) useFallback(); }, 800);
+      else {
+        let tries = 0;
+        const retry = setInterval(() => {
+          if (!on || !ctx) { clearInterval(retry); return; }
+          if (ctx.state === 'running') { stopFallback(); clearInterval(retry); return; }
+          ctx.resume().catch(() => {});
+          if (++tries >= 10) useFallback();
+        }, 500);
+      }
     } else {
       clearTimeout(swell); swell = 0;
       ramp(0, 0.3);
