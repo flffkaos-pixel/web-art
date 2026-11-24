@@ -385,18 +385,18 @@ let playStep = null;
     const t = ctx.currentTime + 0.001;
     const P = power || 1;
 
-    // 1) splash body: broadband noise swept downward -> water pushed aside, not a hiss
+    // 1) splash body: more "splat" - faster attack and a tighter, higher-mid "pop"
     const n = ctx.createBufferSource(); n.buffer = wbuf; n.loop = true;
-    n.playbackRate.value = 0.9 + Math.random() * 0.25;
-    const bp = ctx.createBiquadFilter(); bp.type = 'bandpass'; bp.Q.value = 0.85;
-    bp.frequency.setValueAtTime(2400 + Math.random() * 1000, t);
-    bp.frequency.exponentialRampToValueAtTime(600 + Math.random() * 300, t + 0.17);
+    n.playbackRate.value = 1.2 + Math.random() * 0.4;
+    const bp = ctx.createBiquadFilter(); bp.type = 'bandpass'; bp.Q.value = 1.5;
+    bp.frequency.setValueAtTime(1800 + Math.random() * 600, t);
+    bp.frequency.exponentialRampToValueAtTime(800 + Math.random() * 400, t + 0.1);
     const g = ctx.createGain();
     g.gain.setValueAtTime(0.0001, t);
-    g.gain.linearRampToValueAtTime(0.55 * P, t + 0.007);
-    g.gain.exponentialRampToValueAtTime(0.0001, t + 0.2);
+    g.gain.linearRampToValueAtTime(0.6 * P, t + 0.005);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + 0.15);
     n.connect(bp); bp.connect(g); g.connect(stepGain);
-    n.start(t, Math.random() * 2); n.stop(t + 0.24);
+    n.start(t, Math.random() * 2); n.stop(t + 0.18);
 
     // 2) bubbles: small rising sine chirps that follow the splash
     const nb = 3 + ((Math.random() * 3) | 0);

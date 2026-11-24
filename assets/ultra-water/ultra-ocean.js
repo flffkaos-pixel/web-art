@@ -20736,9 +20736,11 @@ function gv(e) {
 	return o.setAttribute("position", new li(r, 3)), o.setIndex(new li(new Uint32Array(a), 1)), o;
 }
 var _v = "\nuniform sampler2D uShore;\nuniform sampler2D uTravel;   // wave travel time from the coast (s), propagation dir xz, shoaling\nuniform float uShoreExtent;\nuniform float uTime;\nuniform vec4 uShoreWave;   // amplitude, wavelength, speed, steepness\nuniform vec2 uSwellDir;    // propagation direction of the swell (xz)\n\nvec4 shoreSample(vec2 xz) {\n  vec2 uv = xz / uShoreExtent + 0.5;\n  if (any(lessThan(uv, vec2(0.0))) || any(greaterThan(uv, vec2(1.0)))) return vec4(-60.0, 1e4, 0.0, 0.0);\n  return textureLod(uShore, uv, 0.0);\n}\nvec4 travelSample(vec2 xz) {\n  vec2 uv = xz / uShoreExtent + 0.5;\n  if (any(lessThan(uv, vec2(0.0))) || any(greaterThan(uv, vec2(1.0)))) return vec4(0.0);\n  return textureLod(uTravel, uv, 0.0);\n}\n\nfloat hash12(vec2 p) {\n  vec3 p3 = fract(vec3(p.xyx) * 0.1031);\n  p3 += dot(p3, p3.yzx + 33.33);\n  return fract((p3.x + p3.y) * p3.z);\n}\nfloat vnoise(vec2 p) {\n  vec2 i = floor(p), f = fract(p);\n  vec2 u = f * f * (3.0 - 2.0 * f);\n  return mix(mix(hash12(i), hash12(i + vec2(1, 0)), u.x), mix(hash12(i + vec2(0, 1)), hash12(i + 1.0), u.x), u.y);\n}\n\n// phase offset along the coast, the slowly drifting sets, and how much of the swell a\n// coast facing dir receives\nfloat shoreNoisePhase(vec2 xz) { return vnoise(xz * 0.0042) * 9.0 + vnoise(xz * 0.011 + 7.0) * 2.5; }\nfloat shoreGroup(vec2 xz) { return 0.45 + 0.55 * vnoise(xz * 0.004 + vec2(uTime * 0.021, -uTime * 0.017)); }\nfloat shoreExposure(vec2 dir) { return mix(0.25, 1.0, smoothstep(-0.3, 0.7, dot(dir, uSwellDir))); }\nvec2 shoreDir(vec4 sh, vec4 tr) { return dot(tr.yz, tr.yz) > 0.25 ? normalize(tr.yz) : -sh.zw / max(length(sh.zw), 1e-3); }\n", vv = "\nvec3 swash(vec2 xz, float hgt) {\n  vec4 sh = shoreSample(xz);\n  if (hgt < -0.3 || sh.y > 60.0 || uShoreWave.x <= 0.0) return vec3(0.0);\n  vec2 dir = shoreDir(sh, travelSample(xz));\n  float R = 0.55 * uShoreWave.x * shoreExposure(dir) * shoreGroup(xz) * smoothstep(0.35, 0.8, length(sh.zw));\n  if (R < 0.02) return vec3(0.0);\n  if (hgt > R) return vec3(0.0, 0.0, 0.5 * smoothstep(1.5 * R, R, hgt));   // reached by bigger sets\n  float w = sqrt(9.81 * 6.2831853 / uShoreWave.y) * uShoreWave.z;\n  // fraction of a period since the last bore reached the waterline (tau = 0 there)\n  float s = fract((w * uTime + shoreNoisePhase(xz)) / 6.2831853);\n  float eta = R * (s < 0.3 ? sin(s / 0.3 * 1.5708) : cos((s - 0.3) / 0.7 * 1.5708));\n  float th = eta - hgt;\n  float edge = s < 0.35 ? smoothstep(-0.01, 0.0, th) * (1.0 - smoothstep(0.0, 0.05, th)) : 0.0;\n  // drying since the backwash uncovered this height\n  float sPass = 0.3 + 0.7 * acos(clamp(hgt / R, 0.0, 1.0)) / 1.5708;\n  float dry = (s > sPass ? s - sPass : s + 1.0 - sPass) * 6.2831853 / w;\n  return vec3(max(th, 0.0), edge, th > 0.0 ? 1.0 : exp(-dry / 5.0));\n}\n", yv = `
+precision highp float;
 #define N_TEX ${256 .toFixed(1)}
 #define PI 3.14159265359
 uniform sampler2D uDisp0, uDisp1, uDisp2;           // the capillary cascade is slopes only
+
 uniform sampler2D uSlope0, uSlope1, uSlope2, uSlope3;
 uniform vec4 uLength;
 uniform vec2 uWaveDamp;    // depth where long swell fully exists, chop strength in shallows
@@ -25322,10 +25324,10 @@ function zE(e = {}) {
 	});
 	l.autoClear = !1, l.shadowMap.enabled = !0, l.shadowMap.type = 1, l.shadowMap.autoUpdate = !1;
 	let u = new URLSearchParams(location.search), d = e.mobile ?? (u.has("mobile") || !u.has("desktop") && matchMedia("(pointer: coarse)").matches), f = e.quality || (d ? {
-		resolution: .6,
-		msaa: 2,
+		resolution: .85,
+		msaa: 4,
 		reflections: !0,
-		reflectionScale: .35,
+		reflectionScale: .45,
 		autoResolution: !0
 	} : {
 		resolution: 1,
@@ -25726,7 +25728,7 @@ function zE(e = {}) {
 	function Pe(e) {
 		if (e > 250 || ++H.n <= 0 || (e > (H.cap30 ? 40 : 20) && H.missed++, H.n < 120 || H.cap30)) return;
 		let t = f.resolution, n = H.missed / H.n;
-		H.n = H.missed = 0, n > .04 ? (H.clean = 0, t > .5 ? Fe(t - .05) : n > .25 && (H.cap30 = !0)) : n <= .01 && ++H.clean >= 3 && t < H.top && (H.clean = 0, Fe(t + .05));
+		H.n = H.missed = 0, n > .04 ? (H.clean = 0, t > .7 ? Fe(t - .05) : n > .25 && (H.cap30 = !0)) : n <= .01 && ++H.clean >= 3 && t < H.top && (H.clean = 0, Fe(t + .05));
 	}
 	function Fe(e) {
 		f.resolution = Math.round(e * 20) / 20, pe?.updateDisplay(), R(), H.n = -60;

@@ -48,7 +48,10 @@ export function createOcean(options = {}) {
   const args = new URLSearchParams(location.search);
   const mobile = options.mobile ?? (args.has('mobile') || (!args.has('desktop') && matchMedia('(pointer: coarse)').matches));
   const quality = options.quality || (mobile
-    ? { resolution: 0.6, msaa: 2, reflections: true, reflectionScale: 0.35, autoResolution: true }
+    // phones: keep the wave detail close to the desktop profile. A low resolution
+    // changes the mip levels the surface samples, so the waves come out smoother
+    // and differently shaped - not just blurrier.
+    ? { resolution: 0.85, msaa: 4, reflections: true, reflectionScale: 0.45, autoResolution: true }
     : { resolution: 1, msaa: 4, reflections: true, reflectionScale: 0.5 });
   document.body.classList.toggle('mobile', mobile);
 
@@ -533,7 +536,7 @@ void main() { outColor = texture(uTex, vUv); }`, { uTex: { value: null } }));
     auto.n = auto.missed = 0;
     if (miss > 0.04) {
       auto.clean = 0;
-      if (r > 0.5) setResolution(r - 0.05);
+      if (r > 0.7) setResolution(r - 0.05);
       else if (miss > 0.25) auto.cap30 = true;
     } else if (miss <= 0.01 && ++auto.clean >= 3 && r < auto.top) {
       auto.clean = 0;

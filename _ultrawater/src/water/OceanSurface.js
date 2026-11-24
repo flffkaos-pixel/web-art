@@ -108,9 +108,11 @@ vec3 swash(vec2 xz, float hgt) {
 // Shared by the surface, the CPU height queries and the underwater pass, so every
 // consumer sees exactly the same surface.
 export const WATER_GLSL = /* glsl */`
+precision highp float;
 #define N_TEX ${N.toFixed(1)}
 #define PI 3.14159265359
 uniform sampler2D uDisp0, uDisp1, uDisp2;           // the capillary cascade is slopes only
+
 uniform sampler2D uSlope0, uSlope1, uSlope2, uSlope3;
 uniform vec4 uLength;
 uniform vec2 uWaveDamp;    // depth where long swell fully exists, chop strength in shallows
