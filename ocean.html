@@ -460,6 +460,7 @@ let playStep = null;
 
 /* ---------- ambience: sun follows the clock; the sea drifts calm ↔ stormy ---------- */
 let seaTick = null;
+let atmoTick = null;
 let netRoom = null, netEvent = null, handR = null, playerRef = null, shopInfo = null, holdingItem = false, nightMode = false, setNightMode = null, armForPeer = null;
 if (app){
   const auto = true;
@@ -525,6 +526,209 @@ if (app){
     app.sky.params.cloudCoverage = cur.cc;
     dirtyAcc += dt; if (f < 1 && dirtyAcc > 0.4){ app.ocean.dirty = true; dirtyAcc = 0; }
     sunAcc += dt; if (f < 1 && sunAcc > 2.5){ app.markSun(); sunAcc = 0; }
+  };
+}
+
+/* ---------- atmosphere: windborne motes, seeds and storm rain ----------
+   Built on the "ride-particles-and-clouds" technique: one fixed pool of instanced
+   quads, wrapped through a bounded volume around the camera with a positive
+   modulo, hugging the terrain, faded at both ends of the wrap and in camera
+   depth, lit by the same sun and weather state as the sky.                  */
+if (app){
+  const T = app.THREE;
+  const coarse = matchMedia('(pointer: coarse)').matches;
+  const COUNT = coarse ? 2600 : 6000;    // skill: 920 desktop, 425 small devices
+  const SPAN = coarse ? 20 : 26;         // bounded volume around the camera (m)
+  const RAIN_SHARE = 0.30, SEED_SHARE = 0.04;
+
+  const quad = new T.PlaneGeometry(1, 1);
+  const geo = new T.InstancedBufferGeometry();
+  geo.index = quad.index;
+  geo.setAttribute('position', quad.getAttribute('position'));
+  geo.setAttribute('uv', quad.getAttribute('uv'));
+  const aSeed = new Float32Array(COUNT * 3), aPhase = new Float32Array(COUNT);
+  const aSize = new Float32Array(COUNT), aType = new Float32Array(COUNT);
+  for (let i = 0; i < COUNT; i++){
+    const r = Math.random();
+    const type = r < RAIN_SHARE ? 2 : (r < RAIN_SHARE + SEED_SHARE ? 1 : 0);
+    aSeed[i * 3] = Math.random() * SPAN;
+    aSeed[i * 3 + 1] = Math.random() * SPAN;
+    aSeed[i * 3 + 2] = type === 1 ? 0.7 + Math.random() * 2.6 : 0.15 + Math.random() * 4.2;
+    aPhase[i] = Math.random();
+    aSize[i] = type === 2 ? 0.013 + Math.random() * 0.012 : type === 1 ? 0.05 + Math.random() * 0.07 : 0.010 + Math.random() * 0.025;
+    aType[i] = type;
+  }
+  geo.setAttribute('aSeed', new T.InstancedBufferAttribute(aSeed, 3));
+  geo.setAttribute('aPhase', new T.InstancedBufferAttribute(aPhase, 1));
+  geo.setAttribute('aSize', new T.InstancedBufferAttribute(aSize, 1));
+  geo.setAttribute('aType', new T.InstancedBufferAttribute(aType, 1));
+  geo.instanceCount = COUNT;
+
+  const U = {
+    uTime: { value: 0 }, uDt: { value: 0.016 }, uSpan: { value: SPAN },
+    uWindSpeed: { value: 4 }, uWindDir: { value: new T.Vector2(1, 0.25) },
+    uRain: { value: 0 }, uAmount: { value: 1 },
+    uCamPos: { value: new T.Vector3() }, uCamWorld: { value: new T.Matrix4() },
+    uVP: { value: new T.Matrix4() }, uPrevVP: { value: new T.Matrix4() },
+    uAspect: { value: 1 }, uTanHalf: { value: 0.466 }, uPixelScale: { value: 0.0013 },
+    uSunDirView: { value: new T.Vector3(0, 1, 0) }, uSunColor: { value: new T.Color(1, 1, 1) },
+    uAmbient: { value: new T.Color(0.12, 0.15, 0.21) }, uSunStrength: { value: 1 },
+    uShore: { value: app.surface.uniforms.uShore.value },
+    uShoreExtent: { value: app.surface.uniforms.uShoreExtent.value },
+  };
+
+  const mat = new T.ShaderMaterial({
+    uniforms: U,
+    transparent: true, depthTest: true, depthWrite: false, side: T.DoubleSide,
+    blending: T.AdditiveBlending,
+    vertexShader: /* glsl */`
+      attribute vec3 aSeed; attribute float aPhase; attribute float aSize; attribute float aType;
+      uniform float uTime, uDt, uSpan, uWindSpeed, uRain, uShoreExtent, uAspect, uTanHalf, uAmount, uPixelScale;
+      uniform vec3 uCamPos; uniform vec2 uWindDir;
+      uniform mat4 uVP, uPrevVP, uCamWorld;
+      uniform sampler2D uShore;
+      varying vec2 vUv; varying float vAlpha; varying vec3 vTint; varying vec3 vViewPos;
+
+      float groundAt(vec2 xz){
+        vec2 uv = xz / uShoreExtent + 0.5;
+        if (any(lessThan(uv, vec2(0.0))) || any(greaterThan(uv, vec2(1.0)))) return -60.0;
+        return textureLod(uShore, uv, 0.0).r;
+      }
+      // the wind-borne layer rides the beach, but over the sea it rides the water surface (y = 0)
+      float surfaceAt(vec2 xz){ return max(groundAt(xz), 0.0); }
+      // field station -> world position, wrapped through a bounded volume around the camera
+      vec2 fieldXZ(float t, out vec2 rel){
+        float span = uSpan;
+        float drift = mod(t * uWindSpeed, span);                 // positive modulo
+        float fl = 0.20 + aSize * 2.4;
+        vec2 flut = vec2(sin(t * 1.55 + aPhase * 6.2831), cos(t * 1.19 + aPhase * 5.13)) * fl;
+        vec2 anchor = uCamPos.xz - span * 0.5;
+        vec2 w = aSeed.xy + uWindDir * drift + flut;
+        w = mod(w - anchor, span) + anchor;                       // hide the wrap at the edge
+        rel = w - anchor;
+        return w;
+      }
+      vec3 posAt(float t, out vec2 rel){
+        vec2 w = fieldXZ(t, rel);
+        float g = surfaceAt(w);
+        float y;
+        if (aType > 1.5){                                        // rain: falls from the ceiling
+          float H = 15.0;
+          y = g + H * (1.0 - fract(aPhase + t * (9.0 / H)));
+        } else {                                                 // motes and seeds: hug the slope
+          float bob = sin(t * (0.9 + aPhase) + aPhase * 6.0) * (0.05 + aSize * 0.9);
+          y = g + aSeed.z + bob;
+        }
+        return vec3(w.x, y, w.y);
+      }
+      void main(){
+        vec2 rel, relP;
+        vec3 p = posAt(uTime, rel);
+        vec3 pPrev = posAt(uTime - uDt, relP);
+        vec4 cc = uVP * vec4(p, 1.0);
+        if (cc.w <= 0.0){ gl_Position = vec4(2.0, 2.0, 2.0, 1.0); return; }
+        vec4 cp = uPrevVP * vec4(pPrev, 1.0);
+        vec2 sc = cc.xy / cc.w, sp = cp.xy / max(cp.w, 1e-4);
+        vec2 motion = sc - sp;
+
+        // screen motion -> world streak (previous and current positions through their own camera matrices)
+        float iso = length(motion * vec2(uAspect, 1.0));
+        float dist = length(p - uCamPos);
+        float worldLen = iso * dist * uTanHalf;
+        vec2 md = iso > 1e-6 ? motion / max(length(motion), 1e-6) : vec2(0.0, 1.0);
+        vec3 dirWorld = normalize(mat3(uCamWorld) * vec3(md.x * uAspect, md.y, 0.0));
+        vec3 toCam = uCamPos - p;
+        vec3 across = normalize(cross(dirWorld, toCam));
+        // a grain smaller than a pixel never rasterises: keep every particle at least ~2 px wide
+        float worldPerPixel = dist * uPixelScale;
+        float minW = max(worldPerPixel * 2.2, 0.006);
+        float wide = aType > 1.5 ? max(aSize * 0.85, minW * 0.65) : max(aSize, minW);
+        float len = aType > 1.5 ? clamp(max(worldLen * 0.85, 0.42), 0.42, 2.4)
+                                : max(aSize * (1.0 + min(worldLen, 0.45) * 1.7), minW);
+        vec3 world = p + dirWorld * (position.y * len) + across * (position.x * wide);
+
+        float edge = min(min(rel.x, uSpan - rel.x), min(rel.y, uSpan - rel.y));
+        float fadeEdge = smoothstep(0.0, 5.0, edge);
+        float fadeNear = smoothstep(0.80, 2.60, dist);
+        float fadeFar = 1.0 - smoothstep(uSpan * 0.42, uSpan * 0.72, dist);
+        float land = mix(0.55, 1.0, smoothstep(-3.0, 0.2, groundAt(p.xz)));
+        float rain = aType > 1.5 ? uRain : 1.0;
+        float base = aType > 1.5 ? 0.50 : (aType > 0.5 ? 0.48 : 0.38);
+        vAlpha = base * fadeEdge * fadeNear * fadeFar * land * rain * uAmount;
+        vTint = aType > 1.5 ? vec3(0.72, 0.84, 0.96) : (aType > 0.5 ? vec3(1.0, 0.90, 0.70) : vec3(1.0, 0.95, 0.83));
+        vUv = uv;
+        vec4 mv = viewMatrix * vec4(world, 1.0);
+        vViewPos = mv.xyz;
+        gl_Position = uVP * vec4(world, 1.0);
+      }`,
+    fragmentShader: /* glsl */`
+      uniform vec3 uSunDirView, uSunColor, uAmbient; uniform float uSunStrength;
+      varying vec2 vUv; varying float vAlpha; varying vec3 vTint; varying vec3 vViewPos;
+      void main(){
+        float r = length(vUv * 2.0 - 1.0);
+        float a = vAlpha * (1.0 - smoothstep(0.45, 1.0, r));
+        if (a <= 0.003) discard;
+        vec3 V = normalize(vViewPos);
+        float back = pow(max(dot(V, uSunDirView), 0.0), 4.0);
+        // airborne dust glints when it sits between the eye and the sun
+        vec3 col = uAmbient * vTint * 2.4 + uSunColor * uSunStrength * (0.55 + back * 2.6);
+        gl_FragColor = vec4(col, a);
+      }`,
+  });
+
+  const mesh = new T.Mesh(geo, mat);
+  mesh.frustumCulled = false;
+  mesh.renderOrder = 20;
+  // the water scene draws after the terrain, so motes sit behind the swell and rain
+  // falls in front of it, and both are still depth-tested against the beach
+  const host = (app.surface && app.surface.mesh && app.surface.mesh.parent) || app.scene;
+  host.add(mesh);
+
+  const _vp = new T.Matrix4(), _prevVP = new T.Matrix4(), _prevCam = new T.Vector3(), _bufSize = new T.Vector2();
+  const cam = app.camera;
+  let _first = true, _time = 0;
+  atmoTick = function (dt){
+    if (dt <= 0) return;
+    _time += dt;
+    cam.updateMatrixWorld();
+    cam.matrixWorldInverse.copy(cam.matrixWorld).invert();
+    _vp.multiplyMatrices(cam.projectionMatrix, cam.matrixWorldInverse);
+    // a camera cut (sit/stand, first person) drops the streak history
+    if (_first || cam.position.distanceTo(_prevCam) > 3.0) _prevVP.copy(_vp);
+    _prevCam.copy(cam.position);
+    U.uPrevVP.value.copy(_prevVP);
+    U.uVP.value.copy(_vp);
+    _prevVP.copy(_vp);
+    _first = false;
+
+    U.uTime.value = _time;
+    U.uDt.value = Math.min(dt, 0.05);
+    U.uCamPos.value.copy(cam.position);
+    U.uCamWorld.value.copy(cam.matrixWorld);
+    U.uAspect.value = cam.aspect;
+    U.uTanHalf.value = Math.tan((cam.fov * 0.5) * Math.PI / 180);
+    // world units per CSS pixel, per metre of distance: keeps grains above one pixel
+    if (app.renderer && app.renderer.getSize){
+      app.renderer.getSize(_bufSize);
+      U.uPixelScale.value = (2 * U.uTanHalf.value) / Math.max(1, _bufSize.y);
+    }
+
+    const sky = app.sky;
+    if (sky){
+      U.uSunDirView.value.copy(sky.sunDir).transformDirection(cam.matrixWorldInverse).normalize();
+      const sc = sky.sunColor, m = Math.max(sc.x, sc.y, sc.z) || 1;
+      U.uSunColor.value.setRGB(sc.x / m, sc.y / m, sc.z / m);
+      const day = Math.max(0, Math.min(1, (sky.params.elevation + 4) / 14));
+      const cloudy = sky.params.cloudCoverage || 0;
+      U.uSunStrength.value = day * (1 - cloudy * 0.5);
+      U.uAmbient.value.setRGB(0.10 + day * 0.16, 0.12 + day * 0.18, 0.18 + day * 0.20);
+    }
+    const ws = (app.ocean && app.ocean.params && app.ocean.params.windSpeed) || 6;
+    U.uWindSpeed.value = ws * 0.55;
+    const wd = app.surface && app.surface.uniforms.uSwellDir && app.surface.uniforms.uSwellDir.value;
+    if (wd && (wd.x || wd.y)) U.uWindDir.value.set(wd.x, wd.y).normalize();
+    U.uRain.value = Math.max(0, Math.min(1, (ws - 12.5) / 4.5));
+    U.uAmount.value = nightMode ? 1.0 : 0.85;
   };
 }
 
@@ -822,6 +1026,7 @@ if (app){
     const t = now / 1000;
 
     if (seaTick) seaTick(dt);
+    if (atmoTick) atmoTick(dt);
 
     if (gliding){
       gliding = Math.max(0, gliding - dt / 1.1);
